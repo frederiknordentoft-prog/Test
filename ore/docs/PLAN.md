@@ -407,3 +407,27 @@ node qa/qa.cjs
 | Overload | Lagbudgettet, regionstælleren og §13 |
 | Viften læses som en garanti | Synlige stier, "X af 100"-sproget og tally lig pris |
 | Demo-skrøbelighed | Instruktør-JSON er eneste kilde, og `tune-demo` genererer og asserterer alle tal i teksten |
+
+---
+
+## 15. F0-fund og planændringer (1. nov. 2026)
+
+Målt i headless Chromium i et cross-origin iframe-harness med artifact-lignende CSP. Telefonens diagnoserapport er facit.
+
+| Fund | Ændring i planen |
+|---|---|
+| I en opaque-origin sandbox virker kun **klassiske blob-workere**. Module-workere, workere fra egen fil og `data:`-workere fejler | Alle workere bygges som iife (`worker.format: 'iife'`). Klienten prøver egen fil → inlinet blob → hovedtråd med ping-round-trip |
+| Pris kun som funktion af (t, d) giver identiske stier pr. stilling, så viften bliver til få kurver | **Pres pr. sti** (OU i kamptid, opdateret pr. kampminut og interpoleret) indgår i MC-intensiteten og i stiens pris. Den indgår også i F1/F2-motoren |
+| Stykvis lineære akser giver knæk i stierne | **Glatte akser**: log-warp om NU med samme hældning på begge sider og tanh-fisheye om prisen |
+| Det viste pris-offset (pres og flow) skal med i udvælgelsen, ellers passer "X af 100" ikke med prisen | Udvælgelsen bruger de viste sandsynligheder. Tallyen er testet lig `largestRemainder(p)` |
+| Et blit pr. frame og akse-bisektion pr. punkt dominerede CPU | Viften tegnes kun ved dataændring i to stablede canvas med CSS-krydsfade. Hovedet er et DOM-element med CSS-animation, og der er intet rAF-loop i hvile |
+| Ved 4× CPU giver native canvas-raster stadig long tasks på 100–600 ms (software uden GPU) | Måles på telefonen. Rammer det også WebKit, flyttes stregtegningen til OffscreenCanvas i workeren i F2/F3 |
+| Viften fortjener mere plads end 360 px | Elastisk 220–440 px |
+| MC pr. kampminut: 230 ms med gauss pr. trin | Rate-tabeller og pres pr. minut giver 45–70 ms |
+
+**Look-dev-varianter:**
+- A · Lyn: ærlige målspring som svage tråde og glatte plateauer.
+- B · Langtid: A som tone-mappet langtidseksponering. Den er tungere (`getImageData`).
+- C · Spaghetti: glattede spring.
+
+C er den smukkeste, men dens glatning får stierne til at stige *før* målet. Det er en lille usandhed om fremtiden.

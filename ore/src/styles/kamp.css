@@ -1,0 +1,87 @@
+/* Match screen: a flex stack of fixed bands around an elastic fan (220–360 px). */
+.kamp { gap: 0; }
+.kb { flex: 0 0 44px; display: flex; align-items: center; gap: 4px; padding: 0 8px 0 0; border-bottom: 1px solid var(--hairline); }
+.kb .back { min-width: 40px; }
+.kb-logo { font-family: var(--font-num); font-weight: 760; font-size: 20px; min-width: 32px; min-height: 44px; }
+.kb-score { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.mono { font: 700 12px/1 var(--font-num); letter-spacing: 0.06em; padding: 6px 7px; border-radius: 6px; border: 1px solid var(--hairline); }
+.mono.fck { color: var(--fck-ice); }
+.mono.bif { color: var(--bif); }
+.sc { font: 650 24px/28px var(--font-num); }
+.kb-min { font: 600 14px/1 var(--font-num); display: inline-flex; align-items: center; gap: 6px; min-width: 44px; }
+.live { width: 6px; height: 6px; border-radius: 50%; background: var(--text); animation: live 1.6s ease-in-out infinite; }
+@keyframes live { 50% { opacity: 0.25; } }
+.pill { font: 700 10px/1 var(--font-ui); letter-spacing: 0.08em; padding: 6px 8px; border-radius: 999px; border: 1px solid var(--hairline); color: var(--udsigt); }
+
+.ih { flex: 0 0 84px; display: flex; align-items: center; justify-content: space-between; padding: 6px 16px 4px; }
+.ih-left { display: flex; flex-direction: column; }
+.ih-label { font-size: 13px; color: var(--text-2); }
+.ih-price { font-weight: 640; font-size: 56px; line-height: 56px; letter-spacing: -0.02em; }
+.ih-price small { font: 500 15px/1 var(--font-ui); color: var(--text-2); margin-left: 6px; letter-spacing: 0; }
+.ih-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+.ih-futures { font-size: 14px; color: var(--text); }
+.ih-futures b { color: var(--fck); font-weight: 700; }
+.ih-sub { font-size: 12px; color: var(--text-2); }
+
+.fan-slot { flex: 1 1 auto; min-height: 220px; max-height: 440px; position: relative; }
+.fan-wrap { position: absolute; inset: 0; }
+.fan { position: absolute; inset: 0; display: block; width: 100%; height: 100%; opacity: 0; transition: opacity 300ms linear; }
+.fan.on { opacity: 1; }
+.fan-head { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: var(--fck); transition: transform 300ms var(--ease-out); pointer-events: none; }
+.fan-head::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--fck); animation: breathe 1.2s ease-out infinite; }
+@keyframes breathe { from { transform: scale(1); opacity: 0.4; } to { transform: scale(3); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .fan, .fan-head { transition: none; } .fan-head::after { animation: none; } }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ld-ctl { position: absolute; left: 10px; bottom: 2px; display: flex; gap: 6px; align-items: center; }
+.ld-ctl button { min-height: 30px; padding: 0 10px; border-radius: 999px; background: rgba(21, 26, 33, 0.9); border: 1px solid var(--hairline); font: 600 11.5px/1 var(--font-ui); color: var(--udsigt); }
+.ld-swaps { font-size: 11px; color: var(--text-2); }
+
+.ab { flex: 0 0 56px; display: flex; gap: 3px; padding: 6px 16px 4px; }
+.ab-seg { min-width: 48px; flex-basis: 0; border-radius: var(--radius-tile); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; background: var(--surface-1); border: 1px solid var(--hairline); }
+.ab-seg.fck { background: rgba(92, 225, 255, 0.1); }
+.ab-seg.bif { background: rgba(255, 210, 0, 0.08); }
+.ab-seg.on { border-color: rgba(92, 225, 255, 0.7); }
+.ab-l { font: 600 11px/1 var(--font-ui); color: var(--text-2); }
+.ab-v { font-weight: 650; font-size: 22px; }
+.ab-seg.fck .ab-v { color: var(--fck); }
+.ab-seg.bif .ab-v { color: var(--bif); }
+
+.mv { flex: 0 0 84px; padding: 6px 16px 2px; display: flex; flex-direction: column; gap: 4px; }
+.mv-h { margin: 0; font-size: 13px; line-height: 18px; color: var(--udsigt); }
+.mv-bars { flex: 1; display: flex; align-items: flex-end; gap: 3px; min-height: 0; }
+.mv-bar { flex: 1; height: 100%; display: flex; align-items: flex-end; min-width: 0; }
+.mv-col { width: 100%; display: flex; flex-direction: column; border-radius: 3px 3px 0 0; overflow: hidden; min-height: 2px; }
+.mv-f { background: var(--fck); opacity: 0.85; }
+.mv-b { background: var(--bif); opacity: 0.85; }
+.mv-axis { display: flex; justify-content: space-between; font-size: 10px; line-height: 12px; color: var(--text-2); }
+
+.pc { flex: 0 0 96px; margin: 4px 12px; padding: 8px 12px; border: 1px solid var(--hairline); border-radius: var(--radius-card); background: var(--surface-1); display: flex; flex-direction: column; gap: 4px; }
+.pc-top, .pc-mid { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.pc-what { font-size: 12px; color: var(--text-2); }
+.pc-win { font-size: 12px; color: var(--text-2); }
+.pc-win b { color: var(--text); font-size: 15px; }
+.pc-val { font-size: 12px; color: var(--text-2); }
+.pc-val b { color: var(--text); font-size: 17px; margin-left: 4px; }
+.pc-pnl { font-size: 13px; font-weight: 600; }
+.up { color: var(--up); }
+.down { color: var(--down); }
+.pc-bid { font-size: 12px; color: var(--text-2); }
+.fader { position: relative; height: 28px; margin-top: 2px; }
+.fd-track { position: absolute; left: 0; right: 0; top: 13px; height: 3px; border-radius: 2px; background: var(--hairline); }
+.fd-vu { display: block; height: 100%; background: var(--fck); opacity: 0.6; border-radius: 2px; }
+.fd-cap { position: absolute; right: 0; top: 0; width: 44px; height: 28px; border-radius: 5px; background: repeating-linear-gradient(90deg, #2a323e 0 2px, #1b222b 2px 4px); border: 1px solid #3a4452; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06); }
+.fd-cap::after { content: ''; position: absolute; left: 21px; top: 3px; bottom: 3px; width: 2px; background: var(--text); border-radius: 1px; }
+.fd-scale { position: absolute; left: 0; right: 48px; top: -2px; height: 10px; }
+.fd-scale i { position: absolute; font: 500 9px/10px var(--font-ui); font-style: normal; color: var(--text-2); white-space: nowrap; }
+.fd-scale i.end { transform: translateX(-100%); }
+
+.bb { flex: 0 0 44px; display: flex; border-top: 1px solid var(--hairline); }
+.bb button { flex: 1; min-height: 44px; font-size: 13px; color: var(--udsigt); }
+
+@media (max-height: 700px) {
+  .ih { flex-basis: 72px; }
+  .ih-price { font-size: 48px; line-height: 48px; }
+  .mv { flex-basis: 60px; }
+  .mv-axis { display: none; }
+  .pc { flex-basis: 84px; }
+}
