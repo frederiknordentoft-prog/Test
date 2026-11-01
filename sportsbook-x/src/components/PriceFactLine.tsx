@@ -1,5 +1,7 @@
-import { impliedSum } from '../odds/model';
+import { factLine } from '../odds/factline';
 import type { Market } from '../data/catalog';
+
+const fmt = (n: number) => n.toFixed(1).replace('.', ',');
 
 export function PriceFactLine({ market }: { market: Market }) {
   if (market.layout === 'ladder') {
@@ -11,13 +13,12 @@ export function PriceFactLine({ market }: { market: Market }) {
       </div>
     );
   }
-  const sum = impliedSum(market.selections.map((s) => s.odds)) * 100;
-  const margin = sum - 100;
+  const { impliedPct, marginPct } = factLine(market.selections.map((s) => s.odds));
   return (
     <div className="factline" role="note">
-      <span>Samlet implicit <b className="num">{sum.toFixed(1).replace('.', ',')} %</b></span>
-      <span>Margin <b className="num">{margin.toFixed(1).replace('.', ',')} %</b></span>
-      <span>Beregnet fra uafrundede værdier</span>
+      <span>Samlet implicit <b className="num">{fmt(impliedPct)} %</b></span>
+      <span>Margin <b className="num">{fmt(marginPct)} %</b></span>
+      <span>Beregnet fra de viste odds</span>
     </div>
   );
 }

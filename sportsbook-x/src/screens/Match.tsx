@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ForecastCurve } from '../components/ForecastCurve';
+import { MomentumStrip } from '../components/MomentumStrip';
 import { fixtureFor, feedFor, type Market } from '../data/catalog';
 import { probSeries, stateAt } from '../odds/feed';
 
@@ -14,6 +15,7 @@ export function Match({ fixtureId, minute, markets, onOpen }: Props) {
   const f = fixtureFor(fixtureId);
   const feed = feedFor(fixtureId);
   const series = useMemo(() => (f ? probSeries(feed, f.lamH, f.lamA) : []), [f, feed]);
+  const [showMomentum, setShowMomentum] = useState(true);
   if (!f) return null;
   const s = stateAt(feed, minute);
   const lastEvent = [...s.past].reverse().find((e) => e.kind === 'goal' || e.kind === 'card' || e.kind === 'half' || e.kind === 'full');
@@ -26,8 +28,9 @@ export function Match({ fixtureId, minute, markets, onOpen }: Props) {
 
   return (
     <section aria-label={`${f.home} mod ${f.away}`}>
+      <h1 className="sr-only">{f.home} mod {f.away}</h1>
       <div className="hero">
-        <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 8 }}>{f.league}</div>
+        <div style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 8 }}>{f.league}</div>
         <div className="teams">
           <strong>{f.home}</strong>
           <div className="score num">{s.h}–{s.a}</div>
@@ -42,7 +45,14 @@ export function Match({ fixtureId, minute, markets, onOpen }: Props) {
 
       <div className="section-title">Forløb</div>
       <div className="card">
-        <ForecastCurve series={series} events={feed} homeLabel={f.home} minute={minute} />
+        <ForecastCurve series={series} events={feed} homeLabel={f.home} awayLabel={f.away} minute={minute} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '12px 0 8px' }}>
+          <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>Skud</span>
+          <button className="btn ghost" style={{ minHeight: 44, padding: '6px 14px' }} aria-pressed={showMomentum} onClick={() => setShowMomentum((v) => !v)}>
+            {showMomentum ? 'Skjul' : 'Vis'} skud pr. 10 min
+          </button>
+        </div>
+        {showMomentum && <MomentumStrip feed={feed} minute={minute} homeLabel={f.home} awayLabel={f.away} />}
       </div>
 
       <div className="section-title">Markeder</div>

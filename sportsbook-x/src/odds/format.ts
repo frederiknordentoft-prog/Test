@@ -1,7 +1,11 @@
 export type OddsFormat = 'decimal' | 'fraction' | 'american';
 
-/** Best rational approximation with denominator up to maxDen (Stern-Brocot style search). */
-function bestFraction(x: number, maxDen = 20): [number, number] {
+/**
+ * Best rational approximation of x (x ≥ 0) with denominator up to maxDen.
+ * Very small x (odds close to 1) get a larger denominator, so 0.01 is 1/100, not 0/1.
+ */
+export function bestFraction(x: number, maxDen = 20): [number, number] {
+  if (Math.round(x * maxDen) === 0) return [1, Math.round(1 / x)];
   let bestN = Math.round(x);
   let bestD = 1;
   let bestErr = Math.abs(x - bestN);

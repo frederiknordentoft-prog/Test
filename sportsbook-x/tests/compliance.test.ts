@@ -19,7 +19,7 @@ function visibleSource(path: string): string {
 
 // Words that push urgency, chase or compulsion. Checked against the source the user can read.
 const FORBIDDEN = [
-  /\bSnart\b/,
+  /\bsnart\b/i,
   /\bcountdown\b/i,
   /\bact now\b/i,
   /\bvalue bet\b/i,
@@ -33,6 +33,11 @@ const FORBIDDEN = [
 
 describe('anti-compulsion copy rules', () => {
   const sources = files(join(process.cwd(), 'src')).map((p) => ({ p, text: visibleSource(p) }));
+
+  it('scans a real set of files (the check is not vacuous)', () => {
+    expect(sources.length).toBeGreaterThan(15);
+    expect(sources.some((s) => s.p.endsWith('screens/Board.tsx'))).toBe(true);
+  });
 
   it('no forbidden urgency or chase phrases in visible UI source', () => {
     const hits: string[] = [];

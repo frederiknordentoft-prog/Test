@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { bo3Win, impliedSum, poissonPmf, priceFromProb, probsFromState } from '../src/odds/model';
 import { formatOdds } from '../src/odds/format';
-import { generateFeed, probsAt, probSeries, stateAt } from '../src/odds/feed';
+import { generateFeed, mainEvents, probsAt, probSeries, shotEvents, stateAt } from '../src/odds/feed';
+import { factLine } from '../src/odds/factline';
 import { combinedOdds, combinedProb, cashOutOffer, potentialReturn, type SlipSelection } from '../src/state/betslip';
 
 const close = (a: number, b: number, eps = 1e-9) => expect(Math.abs(a - b)).toBeLessThan(eps);
@@ -45,9 +46,11 @@ describe('pricing and implied probability', () => {
     expect(o).toBeCloseTo(1.9, 1);
     expect(impliedSum([o, o])).toBeGreaterThan(1.04);
   });
-  it('the -110/-110 example: 1.91 each gives 104.71 % implied (exact, not rounded)', () => {
+  it('the -110/-110 example: 1.91 each gives 104.71 % implied and 4.71 % margin', () => {
     close(impliedSum([1.91, 1.91]), 2 / 1.91, 1e-12);
-    expect((impliedSum([1.91, 1.91]) * 100).toFixed(2)).toBe('104.71');
+    const f = factLine([1.91, 1.91]);
+    expect(f.impliedPct.toFixed(2)).toBe('104.71');
+    expect(f.marginPct.toFixed(2)).toBe('4.71');
   });
   it('bo3 probability from 56 % per map', () => {
     close(bo3Win(0.5), 0.5);
@@ -84,12 +87,19 @@ describe('seeded feed', () => {
     expect(s.h).toBe(feed.filter((e) => e.kind === 'goal' && e.side === 'h').length);
     expect(s.a).toBe(feed.filter((e) => e.kind === 'goal' && e.side === 'a').length);
   });
-  it('the probability series ends in a deterministic result', () => {
+  it('at full time the result probability equals the actual final outcome', () => {
+    for (const seed of ['sl-1-2026', 'cl-1-2026', 'pl-1-2026', 'calib-3']) {
+      const feed = generateFeed(seed, 1.55, 1.15);
+      const s = stateAt(feed, 90);
+      const end = probsAt(feed, 1.55, 1.15, 90);
+      const expected = s.h > s.a ? 'home' : s.h === s.a ? 'draw' : 'away';
+      expect(end[expected]).toBe(1);
+      expect(end.home + end.draw + end.away).toBeCloseTo(1, 12);
+    }
+  });
+  it('the probability series has one point per minute', () => {
     const feed = generateFeed('sl-1-2026', 1.55, 1.15);
-    const series = probSeries(feed, 1.55, 1.15);
-    expect(series).toHaveLength(91);
-    const end = probsAt(feed, 1.55, 1.15, 90);
-    expect(end.home === 1 || end.home === 0 || end.draw === 1).toBe(true);
+    expect(probSeries(feed, 1.55, 1.15)).toHaveLength(91);
   });
 });
 
@@ -117,18 +127,41 @@ describe('bet slip maths', () => {
 });
 
 describe('feed calibration', () => {
-  it('average goals over many seeds match the model expectation within 5 %', () => {
-    const N = 2000;
-    let home = 0;
-    let away = 0;
+  // Minutes 1..89 each carry an independent chance lambda/90, so the expected count is 89·λ/90.
+  // The test passes when the sample mean is within 3 standard errors of that expectation.
+  const N = 4000;
+  const goalCounts = (lamH: number, lamA: number, side: 'h' | 'a') => {
+    const xs: number[] = [];
     for (let i = 0; i < N; i++) {
-      const f = generateFeed(`calib-${i}`, 1.55, 1.15);
-      home += f.filter((e) => e.kind === 'goal' && e.side === 'h').length;
-      away += f.filter((e) => e.kind === 'goal' && e.side === 'a').length;
+      xs.push(mainEvents(`calib-${i}`, lamH, lamA).filter((e) => e.kind === 'goal' && e.side === side).length);
     }
-    const expectedHome = (88 * 1.55) / 90;
-    const expectedAway = (88 * 1.15) / 90;
-    expect(Math.abs(home / N - expectedHome) / expectedHome).toBeLessThan(0.05);
-    expect(Math.abs(away / N - expectedAway) / expectedAway).toBeLessThan(0.05);
+    return xs;
+  };
+  const withinSe = (xs: number[], expected: number) => {
+    const mean = xs.reduce((s, x) => s + x, 0) / xs.length;
+    const variance = xs.reduce((s, x) => s + (x - mean) ** 2, 0) / (xs.length - 1);
+    const se = Math.sqrt(variance / xs.length);
+    return Math.abs(mean - expected) < 3 * se;
+  };
+
+  it('home goals match the model expectation within 3 standard errors', () => {
+    expect(withinSe(goalCounts(1.55, 1.15, 'h'), (89 * 1.55) / 90)).toBe(true);
+  });
+  it('away goals match the model expectation within 3 standard errors', () => {
+    expect(withinSe(goalCounts(1.55, 1.15, 'a'), (89 * 1.15) / 90)).toBe(true);
+  });
+  it('shots do not change any goal or card', () => {
+    const full = generateFeed('sl-1-2026', 1.55, 1.15).filter((e) => e.kind !== 'shot');
+    const main = [...mainEvents('sl-1-2026', 1.55, 1.15)].sort((x, y) => x.minute - y.minute);
+    expect(full).toEqual(main);
+  });
+  it('shots are weighted by expected goals', () => {
+    let h = 0;
+    let a = 0;
+    for (let i = 0; i < 400; i++) {
+      for (const e of shotEvents(`shot-${i}`, 2.4, 0.6)) (e.side === 'h' ? (h += 1) : (a += 1));
+    }
+    expect(h / (h + a)).toBeGreaterThan(0.72);
+    expect(h / (h + a)).toBeLessThan(0.88);
   });
 });

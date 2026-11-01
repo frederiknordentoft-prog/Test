@@ -11,28 +11,24 @@ export function Ladder({ market, onPick, pickedIds }: Props) {
   const top = market.selections[0]?.prob ?? 1;
   return (
     <div>
-      <div className="ladder" role="list">
+      <ul className="ladder">
         {market.selections.map((s) => (
-          <button
-            key={s.id}
-            role="listitem"
-            className="ladder-row"
-            aria-pressed={pickedIds.has(s.id)}
-            onClick={() => onPick(s)}
-          >
-            <span>{s.label}</span>
-            <span className="pct num">{Math.round(s.prob * 100)} % · {s.odds.toFixed(2).replace('.', ',')}</span>
-            <span className="bar" aria-hidden="true"><i style={{ width: `${(s.prob / top) * 100}%` }} /></span>
-          </button>
+          <li key={s.id}>
+            <button className="ladder-row" aria-pressed={pickedIds.has(s.id)} onClick={() => onPick(s)}>
+              <span>{s.label}</span>
+              <span className="pct num">{Math.round(s.prob * 100)} % · {s.odds.toFixed(2).replace('.', ',')}</span>
+              <span className="bar" aria-hidden="true"><i style={{ width: `${(s.prob / top) * 100}%` }} /></span>
+            </button>
+          </li>
         ))}
         {market.infoRows.map((r) => (
-          <div key={r.label} className="ladder-row info" role="listitem" aria-disabled="true">
+          <li key={r.label} className="ladder-row info" aria-disabled="true">
             <span>{r.label}</span>
             <span className="pct num">{Math.round(r.prob * 100)} %</span>
             <span className="bar" aria-hidden="true"><i style={{ width: `${(r.prob / top) * 100}%`, opacity: 0.4 }} /></span>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
       <div className="ladder-foot">
         <span>I alt 100 %</span>
         <span>Kun information for "Andet"</span>

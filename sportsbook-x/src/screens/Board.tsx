@@ -5,7 +5,6 @@ interface Props {
   category: Category | 'alle';
   onCategory: (c: Category | 'alle') => void;
   onOpen: (m: Market) => void;
-  clock: number;
 }
 
 function lead(m: Market) {
@@ -13,11 +12,15 @@ function lead(m: Market) {
   return [...m.selections].sort((a, b) => b.prob - a.prob)[0];
 }
 
-/** Market board: every market on one canvas. Standard view shows probability only. */
-export function Board({ markets, category, onCategory, onOpen, clock }: Props) {
+/**
+ * Market board: every market on one canvas. Standard view shows probability only.
+ * Tile size follows the number of choices (ladders are wide), not betting volume.
+ */
+export function Board({ markets, category, onCategory, onOpen }: Props) {
   const shown = markets.filter((m) => category === 'alle' || m.category === category);
   return (
     <section aria-label="Markedsbræt">
+      <h1 className="sr-only">Markedsbræt</h1>
       <div className="pills" role="group" aria-label="Kategorier">
         <button className="pill" aria-pressed={category === 'alle'} onClick={() => onCategory('alle')}>Alle</button>
         {CATEGORIES.map((c) => (
@@ -26,8 +29,8 @@ export function Board({ markets, category, onCategory, onOpen, clock }: Props) {
           </button>
         ))}
       </div>
-      <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '10px 0 0' }}>
-        Sandsynlighed som standard. Priser opdateres højst hvert 10. sekund. Klokke: {clock} s.
+      <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '10px 0 0' }}>
+        Sandsynlighed som standard. Priser opdateres højst hvert 10. sekund.
       </p>
       <div className="grid-board">
         {shown.map((m) => {
@@ -44,7 +47,7 @@ export function Board({ markets, category, onCategory, onOpen, clock }: Props) {
               <strong>{m.title}</strong>
               <div>
                 <div className="lead">
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{l?.label}</span>
+                  <span>{l?.label}</span>
                   <b className="num">{pct} %</b>
                 </div>
                 <div className="bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>

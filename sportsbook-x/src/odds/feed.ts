@@ -10,19 +10,41 @@ export interface FeedEvent {
   side: Side | null;
 }
 
-/** Pre-generated, seeded event stream for one match. Same seed, same match. */
-export function generateFeed(seedText: string, lamH: number, lamA: number): FeedEvent[] {
+/** Shot rate per minute, both teams together. Mock value. */
+const SHOT_RATE = 0.14;
+const CARD_RATE = 0.012;
+
+/**
+ * Goals, cards, half-time and full-time from the main stream. Goal and card draws
+ * never depend on shot draws, so adding shots cannot move a goal.
+ */
+export function mainEvents(seedText: string, lamH: number, lamA: number): FeedEvent[] {
   const rnd = mulberry32(hashSeed(seedText));
   const events: FeedEvent[] = [];
   for (let m = 1; m < FULL_MINUTES; m++) {
-    if (m !== 45 && rnd() < lamH / FULL_MINUTES) events.push({ minute: m, kind: 'goal', side: 'h' });
+    if (rnd() < lamH / FULL_MINUTES) events.push({ minute: m, kind: 'goal', side: 'h' });
     if (rnd() < lamA / FULL_MINUTES) events.push({ minute: m, kind: 'goal', side: 'a' });
-    if (rnd() < 0.14) events.push({ minute: m, kind: 'shot', side: rnd() < 0.5 ? 'h' : 'a' });
-    if (rnd() < 0.012) events.push({ minute: m, kind: 'card', side: rnd() < 0.5 ? 'h' : 'a' });
+    if (rnd() < CARD_RATE) events.push({ minute: m, kind: 'card', side: rnd() < 0.5 ? 'h' : 'a' });
   }
   events.push({ minute: 45, kind: 'half', side: null });
   events.push({ minute: FULL_MINUTES, kind: 'full', side: null });
-  return events.sort((x, y) => x.minute - y.minute);
+  return events;
+}
+
+/** Shots from a separate stream. The side is weighted by expected goals. */
+export function shotEvents(seedText: string, lamH: number, lamA: number): FeedEvent[] {
+  const rnd = mulberry32(hashSeed(`${seedText}|shots`));
+  const pHome = lamH / (lamH + lamA);
+  const events: FeedEvent[] = [];
+  for (let m = 1; m < FULL_MINUTES; m++) {
+    if (rnd() < SHOT_RATE) events.push({ minute: m, kind: 'shot', side: rnd() < pHome ? 'h' : 'a' });
+  }
+  return events;
+}
+
+/** Pre-generated, seeded event stream for one match. Same seed, same match. */
+export function generateFeed(seedText: string, lamH: number, lamA: number): FeedEvent[] {
+  return [...mainEvents(seedText, lamH, lamA), ...shotEvents(seedText, lamH, lamA)].sort((x, y) => x.minute - y.minute);
 }
 
 export interface MatchState {
