@@ -67,3 +67,4 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .gesture-box small { color: var(--text-2); font-size: 12px; }
 .raw summary { color: var(--text-2); font-size: 13px; min-height: 44px; display: flex; align-items: center; }
 .raw pre { font-size: 10px; line-height: 14px; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; background: var(--surface-1); padding: 10px; border-radius: 8px; }
+.report-box { width: 100%; min-height: 220px; font: 10px/14px ui-monospace, monospace; background: var(--surface-1); color: var(--text); border: 1px solid var(--hairline); border-radius: 8px; padding: 8px; user-select: text; -webkit-user-select: text; }

@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useChecks } from '../diag/store';
 
 /** Debug HUD: fps, worker mode, fonts, CSP. Opened by a long press on the Ø. */
@@ -16,16 +17,18 @@ export function Hud({ extra }: { extra?: string }) {
   );
 }
 
-/** Long-press helper (600 ms) for the logo. */
+/** Long-press helper (600 ms) for the logo. The timer lives in a ref, so re-renders cannot lose it. */
 export function useLongPress(onLong: () => void, ms = 600) {
-  let timer: number | undefined;
+  const timer = useRef<number | undefined>(undefined);
+  const clear = () => window.clearTimeout(timer.current);
   return {
     onPointerDown: () => {
-      timer = window.setTimeout(onLong, ms);
+      clear();
+      timer.current = window.setTimeout(onLong, ms);
     },
-    onPointerUp: () => window.clearTimeout(timer),
-    onPointerLeave: () => window.clearTimeout(timer),
-    onPointerCancel: () => window.clearTimeout(timer),
+    onPointerUp: clear,
+    onPointerLeave: clear,
+    onPointerCancel: clear,
     onContextMenu: (e: { preventDefault: () => void }) => e.preventDefault(),
   };
 }

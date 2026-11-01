@@ -16,15 +16,15 @@ const FACES = [
 async function loadOne(face: (typeof FACES)[number]): Promise<'egen fil' | 'data-URI' | 'fejl'> {
   try {
     const ff = new FontFace(face.family, `url(${face.url}) format('woff2')`, face.desc);
+    document.fonts.add(ff); // add before load, so 'loadingdone' fires for canvas redraws
     await ff.load();
-    document.fonts.add(ff);
     return 'egen fil';
   } catch {
     try {
       const mod = await face.inline();
       const ff = new FontFace(face.family, `url(${mod.default}) format('woff2')`, face.desc);
-      await ff.load();
       document.fonts.add(ff);
+      await ff.load();
       return 'data-URI';
     } catch {
       return 'fejl';
@@ -32,8 +32,19 @@ async function loadOne(face: (typeof FACES)[number]): Promise<'egen fil' | 'data
   }
 }
 
+let resolveReady: () => void = () => {};
+/** Resolves when all fonts have settled (loaded or failed). Canvas renderers redraw on it. */
+export const fontsReady: Promise<void> = new Promise((r) => {
+  resolveReady = r;
+});
+
 export async function loadFonts(): Promise<void> {
   setCheck('fonts', { status: 'afventer', detail: 'Indlæser …' });
+  if (typeof FontFace === 'undefined' || !document.fonts) {
+    setCheck('fonts', { status: 'advarsel', detail: 'FontFace API mangler; systemfonte bruges' });
+    resolveReady();
+    return;
+  }
   const t0 = performance.now();
   const res = await Promise.all(FACES.map(loadOne));
   const byFamily = Object.fromEntries(FACES.map((f, i) => [f.family, res[i]]));
@@ -44,4 +55,5 @@ export async function loadFonts(): Promise<void> {
     detail: bad ? `${bad} font(e) kunne ikke indlæses` : viaData ? 'Egne filer blokeret, data-URI virker' : 'Egne fontfiler virker',
     data: { ...byFamily, ms: Math.round(performance.now() - t0) },
   });
+  resolveReady();
 }

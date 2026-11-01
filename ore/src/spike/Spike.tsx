@@ -26,6 +26,8 @@ const COLOR: Record<Status, string> = { afventer: 'var(--text-2)', ok: 'var(--up
 export function Spike() {
   const checks = useChecks();
   const [copied, setCopied] = useState('');
+  const [frozen, setFrozen] = useState<string | null>(null);
+  const area = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     void checkWorkers();
   }, []);
@@ -35,7 +37,20 @@ export function Spike() {
       await navigator.clipboard.writeText(report());
       setCopied('Kopieret. Indsæt rapporten i chatten.');
     } catch {
-      setCopied('Kopiering blev afvist. Markér teksten nederst og kopiér den manuelt.');
+      // Clipboard refused: freeze the report in a selectable box and try the legacy copy.
+      const text = report();
+      setFrozen(text);
+      setTimeout(() => {
+        area.current?.focus();
+        area.current?.select();
+        let ok = false;
+        try {
+          ok = document.execCommand('copy');
+        } catch {
+          ok = false;
+        }
+        setCopied(ok ? 'Kopieret. Indsæt rapporten i chatten.' : 'Kopiering blev afvist. Teksten nedenfor er markeret; hold på den og vælg Kopiér.');
+      }, 0);
     }
   };
 
@@ -67,6 +82,7 @@ export function Spike() {
           <GestureBox />
           <button className="act primary" onClick={() => void copy()}>Kopiér rapport</button>
           {copied && <p className="note" role="status">{copied}</p>}
+          {frozen && <textarea ref={area} className="report-box" readOnly value={frozen} aria-label="Rapport" />}
           <details className="raw">
             <summary>Rå rapport</summary>
             <pre>{report()}</pre>
