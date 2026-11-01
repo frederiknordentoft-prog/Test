@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRoute, type Route } from './router';
 import { Gate } from './Gate';
 import { Lobby } from './Lobby';
@@ -9,6 +9,7 @@ import { Byg } from './byg/Byg';
 import { Portefolje } from './portefolje/Portefolje';
 import { Afregning } from './afregning/Afregning';
 import { MatchStore } from '../state/match';
+import { McClient } from '../engine/mc/client';
 import { FREE_PLAY } from '../engine/director/timeline';
 import { DEMO90, demoSegments } from '../engine/director/demo90';
 import { DemoThumb } from './demo/DemoThumb';
@@ -29,9 +30,12 @@ export default function App() {
   const boot = window.__ORE_BOOT ?? {};
   const [open, setOpen] = useState(Boolean(boot.skipGate));
   const [hud, setHud] = useState(Boolean(boot.hud));
-  const derby = useMemo(() => new MatchStore(FREE_PLAY, { mc: boot.mc }), [boot.mc]);
-  const hallen = useMemo(() => new HallenStore(), []);
+  const derby = useMemo(() => new MatchStore(FREE_PLAY, new McClient(boot.mc ?? 'auto')), [boot.mc]);
+  const hallen = useMemo(() => new HallenStore(derby.book), [derby]);
+  const [hallDemo, setHallDemo] = useState<HallenStore | null>(null);
   const [demo, setDemo] = useState<MatchStore | null>(null);
+  const demoRef = useRef<MatchStore | null>(null);
+  const prevRoute = useRef<Route>(route);
   // Which match the Byg / Portefølje / Afregning screens show: the demo while it runs.
   const [active, setActive] = useState<'derby' | 'demo'>('derby');
 
@@ -47,8 +51,12 @@ export default function App() {
   }, [open, derby, hallen]);
 
   useEffect(() => {
-    if (route === 'demo' && open) {
-      const s = new MatchStore(DEMO90, { mc: boot.mc });
+    const prev = prevRoute.current;
+    prevRoute.current = route;
+    if (route === 'demo' && open && (!demoRef.current || (demoRef.current.sim.phase === 'closed' && prev === 'lobby'))) {
+      demoRef.current?.dispose();
+      const s = new MatchStore(DEMO90, new McClient(boot.mc ?? 'auto'));
+      demoRef.current = s;
       s.demo = true;
       s.segments = demoSegments();
       s.start();
@@ -59,8 +67,14 @@ export default function App() {
       };
     }
     if (route === 'kamp') setActive('derby');
+    if (route === 'demo-hallen' && open) {
+      const h = new HallenStore(derby.book, { demo: true });
+      h.start();
+      setHallDemo(h);
+      return () => h.stop();
+    }
     return undefined;
-  }, [route, open, boot.mc]);
+  }, [route, open, boot.mc, derby]);
 
   useEffect(() => () => {
     derby.dispose();
@@ -76,11 +90,12 @@ export default function App() {
       {route === 'spike' && <Spike />}
       {route === 'kamp' && <Kampen store={derby} onLogoLong={toggleHud} />}
       {route === 'demo' && demo && <Kampen store={demo} onLogoLong={toggleHud} />}
-      {route === 'demo' && demo && <DemoThumb store={demo} />}
+      {demo && active === 'demo' && demo.sim.phase !== 'closed' && <DemoThumb store={demo} />}
       {route === 'byg' && <Byg store={store} />}
       {route === 'portefolje' && <Portefolje store={store} />}
       {route === 'afregning' && <Afregning store={store} />}
-      {(route === 'hallen' || route === 'demo-hallen') && <HallenScreen store={hallen} demo={route === 'demo-hallen'} />}
+      {route === 'hallen' && <HallenScreen store={hallen} demo={false} />}
+      {route === 'demo-hallen' && hallDemo && <HallenScreen store={hallDemo} demo />}
       {hud && <Hud extra={isMatch || route === 'demo' ? `${store.mc.mode} · MC ${store.mc.lastMs.toFixed(0)} ms` : undefined} />}
       {!open && <Gate demo={route === 'demo' || route === 'demo-hallen'} onOpen={() => setOpen(true)} />}
     </>

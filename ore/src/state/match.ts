@@ -6,9 +6,10 @@
  */
 import { FootballSim, type MatchEvent } from '../engine/football/sim';
 import { display, goalsOf, minuteLabel, type Display, type Quote } from '../engine/football/display';
-import { price1x2 } from '../engine/football/dp';
+import { price1x2, windowGoal } from '../engine/football/dp';
 import { Book, MAX_STAKE, type BookEvent, type LimitOrder, type Position } from '../engine/book/portfolio';
-import { McClient, type McMode } from '../engine/mc/client';
+import type { McMode } from '../engine/mc/client';
+import type { McRequest } from '../engine/mc/paths';
 import { largestRemainder, powerAsks } from '../engine/lib/quote';
 import type { Leg, McResult } from '../engine/mc/paths';
 import { FREE_PLAY, minuteOf, type Timeline } from '../engine/director/timeline';
@@ -64,12 +65,17 @@ export interface MatchView {
 
 export interface Ghost { contract: string; t: Float32Array; v: Float32Array }
 
+/** What the store needs from a Monte Carlo runner (worker client in the app, direct in tests). */
+export interface McLike { mode: McMode; lastMs: number; run(req: McRequest): Promise<McResult | null>; dispose(): void }
+
 type Listener = () => void;
 
 export class MatchStore {
   sim: FootballSim;
   book = new Book();
-  mc: McClient;
+  mc: McLike;
+  /** Clock (ms). Tests replace it with a virtual clock. */
+  clock: () => number = () => performance.now();
   tl: Timeline;
   focus: Focus = 0;
   speed = 1;
@@ -103,10 +109,10 @@ export class MatchStore {
   private toasts: Toast[] = [];
   private settledWindows = new Set<string>();
 
-  constructor(tl: Timeline = FREE_PLAY, opts: { mc?: 'auto' | 'main' } = {}) {
+  constructor(tl: Timeline = FREE_PLAY, mc: McLike) {
     this.tl = tl;
     this.sim = new FootballSim(tl);
-    this.mc = new McClient(opts.mc ?? 'auto');
+    this.mc = mc;
     this.disp = display(this.sim, this.focus);
     this.view = this.buildView();
   }
@@ -168,10 +174,10 @@ export class MatchStore {
 
   /** Suspends fast-forward for `ms` (gestures, trays, big moments). */
   holdSpeed(ms: number): void {
-    this.holdUntil = Math.max(this.holdUntil, performance.now() + ms);
+    this.holdUntil = Math.max(this.holdUntil, this.clock() + ms);
   }
 
-  tick(now = performance.now()): void {
+  tick(now = this.clock()): void {
     const sp = this.effectiveSpeed(now);
     for (let i = 0; i < sp; i++) {
       this.sim.step();
@@ -219,6 +225,12 @@ export class MatchStore {
           this.settle(w.nej.id, 100);
         }
       }
+    }
+    // Dragged (multi-bar) windows that ended without a goal.
+    for (const p of this.book.positions.values()) {
+      const m = /^w:(\d+)-(\d+):([JN])$/.exec(p.id);
+      if (!m || p.settled || sim.t < Number(m[2])) continue;
+      if (!goalsOf(sim.events).some((g) => g.t >= Number(m[1]) && g.t < Number(m[2]))) this.settle(p.id, m[3] === 'N' ? 100 : 0);
     }
     const ag = this.disp.afterGoal;
     if (ag && sim.t >= ag.b && !this.settledWindows.has(ag.ja.id)) {
@@ -307,7 +319,7 @@ export class MatchStore {
     });
   }
 
-  mcRequest(focus: Focus, legs: Leg[] | undefined): import('../engine/mc/paths').McRequest {
+  mcRequest(focus: Focus, legs: Leg[] | undefined): McRequest {
     const sim = this.sim;
     return {
       id: this.ticks,
@@ -340,6 +352,19 @@ export class MatchStore {
     if (q) return q;
     const b = this.buildQuotes.get(contract);
     if (b) return { id: b.id, label: b.label, ask: b.ask, bid: b.bid, p: b.joint };
+    // Any goal window [a, b) dragged across several bars in Målvejret.
+    const m = /^w:(\d+)-(\d+):([JN])$/.exec(contract);
+    if (m) {
+      const a = Number(m[1]);
+      const bb = Number(m[2]);
+      const sim = this.sim;
+      const scored = goalsOf(sim.events).some((g) => g.t >= a && g.t < bb);
+      const pr = scored ? 1 : sim.t >= bb ? 0 : windowGoal(sim.p, sim.priceState(), Math.max(a, sim.t), bb);
+      const pc = Math.min(0.995, Math.max(0.005, pr));
+      const [ja, nej] = powerAsks([pc, 1 - pc], 0.09).map((x) => Math.max(1, Math.min(99, Math.round(x * 100))));
+      const label = `Mål ${a}–${bb >= 90 ? '90+' : bb}′`;
+      return m[3] === 'J' ? { id: contract, label, ask: ja, bid: Math.max(1, ja - 3), p: pc } : { id: contract, label: `Tørvejr ${a}–${bb >= 90 ? '90+' : bb}′`, ask: nej, bid: Math.max(1, nej - 3), p: 1 - pc };
+    }
     return null;
   }
 
@@ -350,6 +375,8 @@ export class MatchStore {
     if (sim.halt) return false;
     const w = this.disp.windows.find((x) => x.ja.id === contract || x.nej.id === contract);
     if (w) return w.open;
+    const m = /^w:(\d+)-(\d+):[JN]$/.exec(contract);
+    if (m) return sim.t < Number(m[2]) - 1 && !goalsOf(sim.events).some((g) => g.t >= Number(m[1]) && g.t < Number(m[2]));
     const ag = this.disp.afterGoal;
     if (ag && (ag.ja.id === contract || ag.nej.id === contract)) return ag.open;
     return true;
@@ -374,7 +401,7 @@ export class MatchStore {
     }
     if (kr > MAX_STAKE) kr = MAX_STAKE;
     this.contracts.set(contract, { label: q.label });
-    this.pending = { contract, label: this.labelOf(contract, q.label), kr, lockedAsk: q.ask, startMs: performance.now(), state: 'lock' };
+    this.pending = { contract, label: this.labelOf(contract, q.label), kr, lockedAsk: q.ask, startMs: this.clock(), state: 'lock' };
     this.publish();
   }
 
@@ -593,7 +620,7 @@ export class MatchStore {
       limits: this.book.limits.slice(),
       pending: this.pending,
       toasts: this.toasts,
-      speed: this.effectiveSpeed(performance.now()),
+      speed: this.effectiveSpeed(this.clock()),
       mcMode: this.mc.mode,
       mcMs: this.mc.lastMs,
       lastEventId: sim.events.length ? sim.events[sim.events.length - 1].id : 0,

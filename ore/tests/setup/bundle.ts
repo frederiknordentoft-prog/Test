@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 export default async function setup(): Promise<void> {
   const root = fileURLToPath(new URL('../..', import.meta.url));
   await build({
-    input: `${root}src/engine/index.ts`,
+    input: `${root}tests/setup/entry.ts`,
     output: { file: `${root}tests/.cache/engine.mjs`, format: 'esm' },
     logLevel: 'silent',
   });

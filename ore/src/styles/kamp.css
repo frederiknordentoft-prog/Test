@@ -234,3 +234,24 @@
   .mv { flex-basis: 60px; }
   .mv-axis { display: none; }
 }
+
+/* Hallen */
+.hallen .mono.aah, .aah { color: #f4ede4; }
+.hallen .mono.gog, .gog { color: #7fa0ff; }
+.atk { flex: 0 0 34px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 14px; font-size: 12.5px; color: var(--udsigt); border-bottom: 1px solid var(--hairline); }
+.pips { display: inline-flex; gap: 4px; }
+.pips i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid #ff8fd6; }
+.pips i.on { background: #ff8fd6; }
+.scope { flex: 1 1 auto; min-height: 200px; position: relative; background: radial-gradient(120% 90% at 50% 50%, #0c1210 0%, var(--bg) 70%); }
+.scope canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.trig { flex: 0 0 auto; padding: 8px 14px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--hairline); }
+.trig-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.trig-q { font-size: 15px; }
+.trig-p { font-size: 13px; color: var(--text-2); }
+.trig-p b { font-size: 22px; color: var(--text); }
+.ab.hb .h0 { background: rgba(244, 237, 228, 0.07); }
+.ab.hb .h0 .ab-v { color: #f4ede4; }
+.ab.hb .h2 { background: rgba(127, 160, 255, 0.08); }
+.ab.hb .h2 .ab-v { color: #7fa0ff; }
+.hb-pos { flex: 0 0 auto; padding: 4px 14px 10px; font-size: 12.5px; color: var(--udsigt); }
+.hb-pos p { margin: 2px 0; }
