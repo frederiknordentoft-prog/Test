@@ -68,7 +68,7 @@ describe('demo90', () => {
       seconds: vt / 1000,
       marks: Object.fromEntries(Object.entries(marks).map(([k, v]) => [k, v / 1000])),
       score: `${store.sim.h}-${store.sim.a}`,
-      log: log.map((e) => `${e.kind} ${e.contract} ${'shares' in e ? e.shares : ''}@${'price' in e ? e.price : 'value' in e ? e.value : ''} ${'kr' in e ? e.kr.toFixed(2) : 'payout' in e ? e.payout.toFixed(2) : ''}`),
+      log: log.map((e) => `${e.kind} ${'contract' in e ? e.contract : ''} ${'shares' in e ? e.shares : ''}@${'price' in e ? e.price : 'value' in e ? e.value : ''} ${'kr' in e ? e.kr.toFixed(2) : 'payout' in e ? e.payout.toFixed(2) : ''}`),
       staked: tot.staked,
       paidOut: tot.paidOut,
       saldo: store.book.saldo,
@@ -80,7 +80,7 @@ describe('demo90', () => {
     expect(store.sim.a).toBe(1);
     expect(rejections).toEqual([]);
     expect(requotes).toBe(0);
-    const kinds = log.map((e) => `${e.kind}:${e.contract.replace(/[0-9.-]+/g, '#')}`);
+    const kinds = log.map((e) => `${e.kind}:${('contract' in e ? e.contract : '').replace(/[0-9.-]+/g, '#')}`);
     expect(kinds).toContain('buy:#x#:F');
     expect(kinds).toContain('limit-fill:#x#:F');
     expect(kinds.some((k) => k.startsWith('buy:byg:'))).toBe(true);

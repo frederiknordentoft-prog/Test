@@ -3,8 +3,15 @@
  * the simulation state. Nothing here feeds back into the state, so it cannot break determinism.
  */
 import { powerAsks } from '../lib/quote';
-import { nextGoal, price1x2, rateGrid, windowGoal, windowShare, type PriceState } from './dp';
-import type { FootballSim, MatchEvent } from './sim';
+import { fromGrid, nextGoal, price1x2, rateGrid, scoreGrid, totalsBack, windowGoal, windowShare, type PriceState } from './dp';
+import { O25_LINE, O25_MARGIN, type FootballSim, type MatchEvent } from './sim';
+
+/** What the fan, head and tray follow: one of the 1X2 outcomes, or Over 2.5 goals. */
+export type Focus = 0 | 1 | 2 | 'o25';
+/** Total-goals lines on offer. */
+export const TOT_LINES = [0.5, 1.5, 2.5, 3.5, 4.5];
+/** Final-score map: 0..5 per team, where 5 means "5 or more". */
+export const CS_N = 6;
 
 export interface Quote { id: string; label: string; ask: number; bid: number; p: number }
 export interface WindowQuote { a: number; b: number; p: number; share: number; ja: Quote; nej: Quote; open: boolean; settled: null | 'ja' | 'nej'; running: boolean }
@@ -21,6 +28,13 @@ export interface Display {
   horizon: number;
   headline: string;
   cause: { text: string; key: string } | null;
+  focus: Focus;
+  /** Over/Under quotes per line (tot:{L}:O, tot:{L}:U); 2.5 is the simulation's own quote. */
+  totals: Quote[];
+  /** Final-score probabilities, CS_N × CS_N, index h * CS_N + a (5 = 5+), from the score grid. */
+  cells: number[];
+  /** Confirmed goals so far (h + a). */
+  goalsNow: number;
 }
 
 const NAMES = ['FCK', 'X', 'BIF'];
@@ -48,11 +62,29 @@ export function goalsOf(events: MatchEvent[]): { t: number; team: 0 | 1; n: numb
   return events.filter((e) => e.kind === 'goal').map((e) => ({ t: e.t, team: e.team as 0 | 1, n: e.goalNo ?? 0 }));
 }
 
-export function display(sim: FootballSim, focus: 0 | 1 | 2): Display {
+export function display(sim: FootballSim, focus: Focus): Display {
   const s: PriceState = sim.priceState();
   const p = sim.p;
   const grid = rateGrid(p, s, true);
   const goals = goalsOf(sim.events);
+  const goalsNow = sim.h + sim.a;
+  const isO25 = focus === 'o25';
+
+  // One forward pass over the final scores; totals and the score map are read off it.
+  const sg = fromGrid(scoreGrid(p, s, sim.h, sim.a, grid), sim.h, sim.a);
+  const cells: number[] = [];
+  for (let h = 0; h < CS_N; h++) for (let a = 0; a < CS_N; a++) cells.push(sg.cell(h, a));
+  const totals: Quote[] = [];
+  for (const L of TOT_LINES) {
+    if (L === O25_LINE) {
+      totals.push({ id: `tot:${L}:O`, label: `Over ${fmtLine(L)}`, ask: sim.o25Ask[0], bid: sim.o25Bid[0], p: sim.o25Mid });
+      totals.push({ id: `tot:${L}:U`, label: `Under ${fmtLine(L)}`, ask: sim.o25Ask[1], bid: sim.o25Bid[1], p: 1 - sim.o25Mid });
+      continue;
+    }
+    const po = goalsNow > L ? 1 : Math.min(0.995, Math.max(0.005, sg.over(L)));
+    const [o, u] = binary(`tot:${L}`, '', po, O25_MARGIN, 3);
+    totals.push({ ...o, id: `tot:${L}:O`, label: `Over ${fmtLine(L)}` }, { ...u, id: `tot:${L}:U`, label: `Under ${fmtLine(L)}` });
+  }
   const outcomes: Quote[] = [0, 1, 2].map((i) => ({ id: `1x2:${'FXB'[i]}`, label: NAMES[i], ask: sim.ask[i], bid: sim.bid[i], p: sim.mid[i] }));
 
   const dcDefs: [string, string, number, number][] = [['dc:1X', 'FCK eller X', 0, 1], ['dc:X2', 'X eller BIF', 1, 2]];
@@ -99,10 +131,13 @@ export function display(sim: FootballSim, focus: 0 | 1 | 2): Display {
   if (vs) {
     const [ja, nej] = binary(`var${sim.events.filter((e) => e.kind === 'var-start').length}`, 'Målet står?', vs.p, 0.08, 4);
     const dOk = s.d + (vs.goalTeam === 0 ? 1 : -1);
-    const ok = price1x2(p, { ...s, d: dOk, excite: [s.excite[0] + p.kappa, s.excite[1] + p.kappa], pi: s.pi * 0.3 });
-    const no = price1x2(p, s);
-    const askOf = (pp: number[]) => Math.round(powerAsks(pp, 0.03)[focus] * 100);
-    varQuote = { ja, nej, ghosts: [askOf(ok), askOf(no)] };
+    const sOk: PriceState = { ...s, d: dOk, excite: [s.excite[0] + p.kappa, s.excite[1] + p.kappa], pi: s.pi * 0.3 };
+    if (isO25) {
+      varQuote = { ja, nej, ghosts: [Math.round(overAsk(totalsBack(p, sOk, goalsNow + 1, O25_LINE))), Math.round(overAsk(sim.o25Fair))] };
+    } else {
+      const askOf = (pp: number[]) => Math.round(powerAsks(pp, 0.03)[focus] * 100);
+      varQuote = { ja, nej, ghosts: [askOf(price1x2(p, sOk)), askOf(price1x2(p, s))] };
+    }
   }
 
   // Branches for the focused outcome: the price right after each first event within the horizon.
@@ -119,13 +154,14 @@ export function display(sim: FootballSim, focus: 0 | 1 | 2): Display {
     lb += surv * aa;
     surv *= 1 - hh - aa;
   }
-  const after = (d: number, exc: boolean, dt: number) =>
-    price1x2(p, { ...s, t: Math.min(sim.end, s.t + dt), d, pi: exc ? s.pi * 0.3 : s.pi * Math.exp(-p.theta * dt), excite: exc ? [s.excite[0] + p.kappa, s.excite[1] + p.kappa] : [s.excite[0] * Math.exp(-dt / p.tauE), s.excite[1] * Math.exp(-dt / p.tauE)] });
-  const bAsk = (pp: number[]) => powerAsks(pp, 0.03)[focus] * 100;
+  const stAfter = (d: number, exc: boolean, dt: number): PriceState => ({ ...s, t: Math.min(sim.end, s.t + dt), d, pi: exc ? s.pi * 0.3 : s.pi * Math.exp(-p.theta * dt), excite: exc ? [s.excite[0] + p.kappa, s.excite[1] + p.kappa] : [s.excite[0] * Math.exp(-dt / p.tauE), s.excite[1] * Math.exp(-dt / p.tauE)] });
+  // Branch price of the focused contract after each first event (Over 2.5: one more goal either way).
+  const bPrice = (d: number, exc: boolean, dt: number, extra: number) =>
+    isO25 ? overAsk(totalsBack(p, stAfter(d, exc, dt), goalsNow + extra, O25_LINE)) : powerAsks(price1x2(p, stAfter(d, exc, dt)), 0.03)[focus] * 100;
   const branches: Branch[] = [
-    { label: 'Mål FCK', price: bAsk(after(s.d + 1, true, 0)), weight: lf, team: 0 },
-    { label: `Intet mål ${Math.round(horizon)}′`, price: bAsk(after(s.d, false, horizon)), weight: surv, team: null },
-    { label: 'Mål BIF', price: bAsk(after(s.d - 1, true, 0)), weight: lb, team: 1 },
+    { label: 'Mål FCK', price: bPrice(s.d + 1, true, 0, 1), weight: lf, team: 0 },
+    { label: `Intet mål ${Math.round(horizon)}′`, price: bPrice(s.d, false, horizon, 0), weight: surv, team: null },
+    { label: 'Mål BIF', price: bPrice(s.d - 1, true, 0, 1), weight: lb, team: 1 },
   ];
 
   // Målvejret headline: the first window end by which a goal is more likely than not.
@@ -144,13 +180,48 @@ export function display(sim: FootballSim, focus: 0 | 1 | 2): Display {
   }
   if (sim.phase === 'FT' || sim.phase === 'closed') headline = `Slutfløjt · ${sim.h}–${sim.a}`;
 
-  return { outcomes, dc, next, nextIndex, windows, afterGoal, varQuote, branches, horizon, headline, cause: cause(sim, focus) };
+  return { outcomes, dc, next, nextIndex, windows, afterGoal, varQuote, branches, horizon, headline, cause: isO25 ? causeO25(sim) : cause(sim, focus as 0 | 1 | 2), focus, totals, cells, goalsNow };
+}
+
+/** Over ask (0..100) for a fair Over probability, with the Over/Under margin. */
+export function overAsk(pOver: number): number {
+  if (pOver >= 1 - 1e-9) return 100;
+  const q = Math.max(1e-6, Math.min(1 - 1e-6, pOver));
+  return Math.min(99, powerAsks([q, 1 - q], O25_MARGIN)[0] * 100);
+}
+
+/** 2.5 → "2,5". */
+export function fmtLine(L: number): string {
+  return String(L).replace('.', ',');
+}
+
+const arrow = (v: number) => `${v >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(v))} point`;
+
+/**
+ * Over 2.5 moves for two reasons only: a goal (or VAR verdict / red card) jumps it, otherwise time
+ * drains it and pressure or chances lift it. Read off the price history over 2 game minutes.
+ */
+export function causeO25(sim: FootballSim): { text: string; key: string } | null {
+  const H = sim.hist;
+  if (H.n === 0) return null;
+  let j = H.n - 1;
+  while (j > 0 && H.t[j - 1] > sim.t - 2) j--;
+  const move = (H.o25Mid[H.n - 1] - H.o25Mid[Math.max(0, j - 1)]) * 100;
+  if (sim.h + sim.a > O25_LINE) return { text: `Over 2,5 er afgjort · ${sim.h + sim.a} mål`, key: 'o25-done' };
+  const e = [...sim.events].reverse().find((x) => sim.t - x.t <= 2 && (x.kind === 'goal' || x.kind === 'red' || x.kind === 'var-verdict'));
+  if (e && Math.abs(move) >= 1) {
+    const who = e.team === 0 ? 'FCK' : 'BIF';
+    const what = e.kind === 'goal' ? `mål ${who} ${minuteLabel(e.t)}` : e.kind === 'red' ? `rødt kort ${who}` : e.varOk ? 'VAR: målet står' : 'VAR: målet annulleret';
+    return { text: `${arrow(move)}: ${what}`, key: `o25-ev-${e.id}` };
+  }
+  if (Math.abs(move) < 1) return { text: 'Rolig handel · under 1 point på 2 kampmin', key: 'calm' };
+  if (move < 0) return { text: `${arrow(move)}: tiden løber (${sim.h + sim.a} mål)`, key: 'o25-time' };
+  return { text: `${arrow(move)}: pres og chancer giver flere mål`, key: 'o25-press' };
 }
 
 /** Explains the focused price move over the last 2 game minutes in plain Danish. */
 export function cause(sim: FootballSim, focus: 0 | 1 | 2): { text: string; key: string } | null {
   const [ev, tm, pr, fl] = sim.attribution(focus);
-  const arrow = (v: number) => `${v >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(v))} point`;
   const recent = sim.events.filter((e) => sim.t - e.t <= 2 && (sim.k - e.k) <= 80 * 3);
   const score = `${sim.h}–${sim.a}`;
   if (Math.abs(ev) >= 1) {

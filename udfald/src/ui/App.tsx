@@ -8,6 +8,8 @@ import { Kampen } from './kamp/Kampen';
 import { Byg } from './byg/Byg';
 import { Portefolje } from './portefolje/Portefolje';
 import { Afregning } from './afregning/Afregning';
+import { Maal } from './maal/Maal';
+import { Pulje } from './pulje/Pulje';
 import { MatchStore } from '../state/match';
 import { McClient } from '../engine/mc/client';
 import { FREE_PLAY } from '../engine/director/timeline';
@@ -23,7 +25,7 @@ declare global {
   }
 }
 
-const MATCH_ROUTES: Route[] = ['kamp', 'byg', 'portefolje', 'afregning'];
+const MATCH_ROUTES: Route[] = ['kamp', 'byg', 'maal', 'pulje', 'portefolje', 'afregning'];
 
 export default function App() {
   const route = useRoute();
@@ -92,6 +94,8 @@ export default function App() {
       {route === 'demo' && demo && <Kampen store={demo} onLogoLong={toggleHud} />}
       {demo && active === 'demo' && demo.sim.phase !== 'closed' && <DemoThumb store={demo} />}
       {route === 'byg' && <Byg store={store} />}
+      {route === 'maal' && <Maal store={store} />}
+      {route === 'pulje' && <Pulje store={store} />}
       {route === 'portefolje' && <Portefolje store={store} />}
       {route === 'afregning' && <Afregning store={store} />}
       {route === 'hallen' && <HallenScreen store={hallen} demo={false} />}

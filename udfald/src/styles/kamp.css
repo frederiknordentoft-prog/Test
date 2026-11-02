@@ -183,7 +183,7 @@
 
 /* Byg */
 .bar-meta { font-size: 12px; color: var(--text-2); }
-.byg-body, .pf, .af { padding: 12px 16px 28px; display: flex; flex-direction: column; gap: 12px; }
+.byg-body, .pf, .af, .maal-body, .pulje-body { padding: 12px 16px 28px; display: flex; flex-direction: column; gap: 12px; }
 .byg-count { font-size: 15px; color: var(--udsigt); }
 .byg-count b { font-family: var(--font-num); font-size: 32px; color: var(--text); margin-right: 4px; }
 .byg-canvas { width: 100%; height: 230px; display: block; background: var(--surface-1); border: 1px solid var(--hairline); border-radius: var(--radius-card); }
@@ -194,7 +194,7 @@
 .byg-ticker { margin: 0; font-size: 14px; }
 
 /* Portfolio */
-.pf h2, .af h2 { margin: 8px 0 0; font-size: 15px; }
+.pf h2, .af h2, .maal-h { margin: 8px 0 0; font-size: 15px; }
 .pf-sum, .af-sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .pf-sum div, .af-sum div { background: var(--surface-1); border: 1px solid var(--hairline); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
 .pf-sum span, .af-sum span { font-size: 11px; color: var(--text-2); }
@@ -256,3 +256,101 @@
 .ab.hb .h2 .ab-v { color: #7fa0ff; }
 .hb-pos { flex: 0 0 auto; padding: 4px 14px 10px; font-size: 12.5px; color: var(--udsigt); }
 .hb-pos p { margin: 2px 0; }
+
+/* --- Over 2,5 as a focus ---------------------------------------------------------------------- */
+.fo25 { color: var(--goals); }
+.fan-head[data-focus='o25'] { background: var(--goals); }
+.ab-seg.so { background: rgba(255, 95, 162, 0.09); }
+.ab-seg.so .ab-v { color: var(--goals); }
+.ab-seg.su .ab-v { color: #c8ced8; }
+.mv-o25 { border-color: rgba(255, 95, 162, 0.55); color: #ffd3e6; }
+.mv-o25.on { background: rgba(255, 95, 162, 0.14); }
+
+/* --- Sikring: chip on the position card, tray rows --------------------------------------------- */
+.pc-sikring { align-self: flex-start; min-height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--hairline); font-size: 12.5px; color: var(--udsigt); display: inline-flex; gap: 8px; align-items: center; }
+.pc-sikring.on { border-color: rgba(232, 237, 242, 0.45); color: var(--text); }
+.sk-stop { color: var(--down); }
+.sk-take { color: var(--up); }
+.ex-row { border: 1px solid var(--hairline); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.ex-row.stop { border-left: 3px solid var(--down); }
+.ex-row.take { border-left: 3px solid var(--up); }
+.ex-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; }
+.ex-on { font-size: 12px; color: var(--text-2); }
+.ex-ctl { display: flex; align-items: center; gap: 10px; }
+.ex-ctl button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--hairline); font-size: 20px; background: var(--bg); }
+.ex-level { font-family: var(--font-num); font-size: 24px; font-weight: 650; min-width: 96px; text-align: center; }
+.ex-pay { margin: 0; font-size: 12.5px; color: var(--udsigt); }
+.ex-actions { display: flex; gap: 8px; }
+.ex-actions .tray-buy { min-height: 48px; font-size: 14.5px; }
+.ex-actions .tray-cancel { min-height: 48px; }
+
+/* --- Bottom bar: four two-line buttons -------------------------------------------------------- */
+.bb.bb4 { flex: 0 0 52px; }
+.bb4 button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; line-height: 1.15; min-width: 0; padding: 0 2px; }
+.bb-l { font-size: 13px; color: var(--text); font-weight: 600; }
+.bb4 small { font-size: 10.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; font-variant-numeric: tabular-nums; }
+.bb4 small.up { color: var(--up); }
+.bb4 small.down { color: var(--down); }
+
+/* --- Mål og slutresultat ---------------------------------------------------------------------- */
+.sm { display: grid; grid-template-columns: 30px repeat(6, minmax(0, 1fr)); gap: 4px; }
+.sm-row { display: contents; }
+.sm-corner { display: flex; flex-direction: column; justify-content: flex-end; font-size: 8.5px; color: var(--text-2); line-height: 1.1; }
+.sm-head { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; min-height: 22px; }
+.sm-head.fck { color: var(--fck); }
+.sm-head.bif { color: var(--bif); }
+.sm-cell { --a: 0.1; position: relative; min-height: 48px; border-radius: 8px; border: 1px solid var(--hairline); background: rgba(255, 95, 162, calc(var(--a) * 0.42)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 0; }
+.sm-s { font-size: 12px; font-weight: 650; }
+.sm-p { font-size: 10.5px; color: var(--udsigt); }
+.sm-cell.thin .sm-p { color: var(--text-2); }
+.sm-cell.burnt { background: repeating-linear-gradient(135deg, #10141a 0 5px, #0b0e12 5px 10px); color: #3b4350; border-color: #161b22; }
+.sm-cell.burnt .sm-p { color: #3b4350; }
+.sm-cell.now { outline: 2px solid var(--text); outline-offset: 1px; }
+.sm-cell.sel { box-shadow: inset 0 0 0 2px var(--goals); }
+.sm-cell.up::after, .sm-cell.down::after { content: ''; position: absolute; left: 6px; right: 6px; bottom: 3px; height: 3px; border-radius: 2px; background: var(--up); }
+.sm-cell.down::after { background: var(--down); }
+.sm-legend { margin: 0; font-size: 11.5px; color: var(--text-2); }
+.sm-legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 2px; }
+.sm-legend i.up { background: var(--up); }
+.sm-legend i.down { background: var(--down); }
+.ou { display: flex; flex-direction: column; gap: 6px; }
+.ou-line { display: grid; grid-template-columns: 44px 1fr 1fr; gap: 6px; align-items: center; }
+.ou-l { font-size: 15px; font-weight: 650; text-align: center; }
+.ou-line button { min-height: 44px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--surface-1); font-size: 14px; }
+.ou-line button.on { border-color: var(--goals); background: rgba(255, 95, 162, 0.12); }
+.ou-done { grid-column: 2 / 4; font-size: 13px; color: var(--up); padding-left: 8px; }
+.ou-line.crossed .ou-l { color: var(--text-2); }
+.maal-quote { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--hairline); padding-top: 12px; }
+.maal-fut { margin: 0; font-size: 13px; color: var(--udsigt); }
+.maal-fut b { font-size: 22px; color: var(--goals); font-family: var(--font-num); }
+
+/* --- Parken-puljen ---------------------------------------------------------------------------- */
+.pj-head { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pj-head div { background: var(--surface-1); border: 1px solid var(--hairline); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+.pj-head span { font-size: 11px; color: var(--text-2); }
+.pj-head b { font-size: 18px; }
+.pj-status { margin: 0; font-size: 12.5px; color: var(--text-2); }
+.pj-status.open { color: var(--text); }
+.pj-status.open::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--up); margin-right: 6px; vertical-align: 1px; }
+.pj-bars { display: flex; flex-direction: column; gap: 8px; }
+.pj-bar { display: grid; grid-template-columns: 38px 1fr auto; grid-template-areas: 'l t kr' 'l o mine'; gap: 4px 10px; align-items: center; text-align: left; padding: 10px 12px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--surface-1); }
+.pj-bar.on { border-color: rgba(232, 237, 242, 0.7); }
+.pj-bar.won { box-shadow: inset 0 0 0 1px var(--up); }
+.pj-l { grid-area: l; font-weight: 700; font-size: 14px; }
+.pj-track { grid-area: t; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.pj-fill { display: block; height: 100%; border-radius: 4px; transition: width 600ms var(--ease-out); }
+.pj-bar.fck .pj-fill { background: var(--fck); }
+.pj-bar.x .pj-fill { background: var(--draw); }
+.pj-bar.bif .pj-fill { background: var(--bif); }
+.pj-bar.fck .pj-l { color: var(--fck); }
+.pj-bar.bif .pj-l { color: var(--bif); }
+.pj-kr { grid-area: kr; font-size: 14px; font-weight: 600; text-align: right; }
+.pj-odds { grid-area: o; font-size: 12px; color: var(--udsigt); }
+.pj-mine { grid-area: mine; font-size: 11.5px; color: var(--goals); text-align: right; }
+.pj-stake { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--hairline); padding-top: 12px; }
+.pj-stake small { color: var(--text-2); }
+.pj-result { font-size: 18px; font-weight: 650; padding: 12px; border-radius: 12px; background: var(--surface-1); border: 1px solid var(--hairline); }
+.pj-result.up { color: var(--up); }
+.pj-result.down { color: var(--down); }
+.pj-locked { margin: 0; font-size: 13.5px; color: var(--udsigt); }
+@media (prefers-reduced-motion: reduce) { .pj-fill { transition: none; } }

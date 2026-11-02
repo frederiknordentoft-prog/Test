@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import type { MatchStore, Focus } from '../../state/match';
-import { OUTCOME_ID } from '../../state/match';
 import { makeGeo, pOfY, tOfX, type Geo } from '../../render/fan/geometry';
 import { drawStrands } from '../../render/fan/strands';
 import { drawLive } from '../../render/fan/live';
@@ -40,7 +39,7 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
     let w = 0;
     let h = 0;
     let dpr = Math.min(window.devicePixelRatio || 1, 2);
-    let center = store.sim.askRaw[store.focus];
+    let center = store.spec().askRaw;
     let front = 0;
     let lastMcEvent = -1;
     let lastFocus = store.focus;
@@ -59,7 +58,7 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
       if (!geo) return;
       const back = front === 0 ? b : a;
       // The strand layer is soft light: drawn at 1× and scaled by CSS (a quarter of the pixels at 2×).
-      drawStrands(back, 1, geo, store.mcResult, { ...opts, focus: store.focus });
+      drawStrands(back, 1, geo, store.mcFor(), { ...opts, spec: store.spec() });
       back.classList.add('on');
       (front === 0 ? a : b).classList.remove('on');
       front = 1 - front;
@@ -70,8 +69,9 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
       if (w < 2) return;
       const sim = store.sim;
       const now = performance.now();
+      const spec = store.spec();
       // Recentre the fisheye only between events, when the price has drifted away.
-      const ask = sim.askRaw[store.focus];
+      const ask = spec.askRaw;
       const recentre = store.focus !== lastFocus || (Math.abs(ask - center) > 6 && now > quietUntil);
       if (recentre) center = ask;
       geo = geoNow();
@@ -87,14 +87,15 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
       const out = drawLive(lv, dpr, geo, {
         sim,
         d: store.view.d,
-        focus: store.focus,
-        limits: store.limitsFor(store.focus),
-        entries: (store.book.positions.get(OUTCOME_ID[store.focus])?.lots ?? []).map((l) => ({ t: l.t, price: l.price })),
-        ghost: store.ghost && store.ghost.contract === OUTCOME_ID[store.focus] ? store.ghost : null,
+        spec,
+        limits: spec.canLimit ? store.limitsFor(store.focus) : [],
+        exits: store.exitsFor(spec.contract),
+        entries: (store.book.positions.get(spec.contract)?.lots ?? []).map((l) => ({ t: l.t, price: l.price })),
+        ghost: spec.canGhost && store.ghost && store.ghost.contract === spec.contract ? store.ghost : null,
         showGhost: now < showGhostUntil || store.view.ghostStatus !== null,
         draftLevel,
         scrubT,
-        counts: store.mcResult?.counts ?? null,
+        counts: store.mcFor()?.counts ?? null,
       });
       tags = out.tags;
       hd.style.transform = `translate(${geo.nowX}px, ${out.headY}px)`;
@@ -123,7 +124,6 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
       if (reduced || !geo) return;
       const g = geo;
       const x0 = g.nowX;
-      const y0 = store.sim.askRaw[store.focus];
       const yy = parseFloat(hd.style.transform.split(',')[1] ?? '0') || 0;
       const col = team === 0 ? '92,225,255' : team === 1 ? '255,210,0' : '232,237,242';
       const t0 = performance.now();
@@ -134,7 +134,6 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
       fxc.style.display = 'block';
       const c = fxc.getContext('2d');
       if (!c) return;
-      void y0;
       const frame = () => {
         const dt = (performance.now() - t0) / 1000;
         c.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -178,7 +177,7 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
         setTimeout(() => el.classList.remove('hitstop'), 80);
         setTimeout(() => ring(e.team ?? null, true), 80);
         burnUntil = now + 1300;
-        if (geo && store.mcResult) swapStrands({ burnTeam: e.team ?? null });
+        if (geo && store.mcFor()) swapStrands({ burnTeam: e.team ?? null });
         sound.goal(e.team ?? 0);
         const root = el.closest('.kamp');
         root?.classList.remove('pump');
@@ -217,10 +216,10 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
       el.setPointerCapture(ev.pointerId);
       store.holdSpeed(4000);
       window.clearTimeout(timer);
-      if (geo && p.x < geo.right && store.sim.phase !== 'FT' && store.sim.phase !== 'closed') {
+      if (geo && p.x < geo.right && store.sim.phase !== 'FT' && store.sim.phase !== 'closed' && store.spec().canLimit) {
         timer = window.setTimeout(() => {
           if (!down || !geo) return;
-          const ask = store.sim.ask[store.focus];
+          const ask = store.spec().ask;
           draftLevel = Math.max(1, Math.min(ask - 1, Math.round(pOfY(geo, down.y))));
           now0();
         }, 450);
@@ -231,7 +230,7 @@ export function Fan({ store, onLimitDraft, onBranchTap }: Props) {
       const p = local(ev);
       const moved = Math.hypot(p.x - down.x, p.y - down.y);
       if (draftLevel !== null) {
-        const ask = store.sim.ask[store.focus];
+        const ask = store.spec().ask;
         draftLevel = Math.max(1, Math.min(ask - 1, Math.round(pOfY(geo, p.y))));
         schedule();
         return;

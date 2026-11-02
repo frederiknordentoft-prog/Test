@@ -5,9 +5,10 @@
  *  - `frame`: every tick, for canvas layers that draw imperatively.
  */
 import { FootballSim, type MatchEvent } from '../engine/football/sim';
-import { display, goalsOf, minuteLabel, type Display, type Quote } from '../engine/football/display';
+import { CS_N, display, fmtLine, goalsOf, minuteLabel, type Display, type Quote } from '../engine/football/display';
 import { price1x2, windowGoal } from '../engine/football/dp';
-import { Book, MAX_STAKE, type BookEvent, type LimitOrder, type Position } from '../engine/book/portfolio';
+import { Book, MAX_STAKE, POOL_TAKE, type BookEvent, type ExitKind, type ExitOrder, type LimitOrder, type PoolResult, type Position } from '../engine/book/portfolio';
+import { SUB } from '../engine/football/params';
 import type { McMode } from '../engine/mc/client';
 import type { McRequest } from '../engine/mc/paths';
 import { largestRemainder, powerAsks } from '../engine/lib/quote';
@@ -15,10 +16,39 @@ import type { Leg, McResult } from '../engine/mc/paths';
 import { FREE_PLAY, minuteOf, type Timeline } from '../engine/director/timeline';
 import { hashSeed } from '../engine/lib/rng';
 
-export type Focus = 0 | 1 | 2;
-export const OUTCOME_ID = ['1x2:F', '1x2:X', '1x2:B'] as const;
-export const OUTCOME_LABEL = ['FCK vinder', 'Uafgjort', 'BIF vinder'] as const;
-export const OUTCOME_SHORT = ['FCK', 'X', 'BIF'] as const;
+import { cellLabel, cellOf, cellPossible, csCells, focusSpec, isOutcome, O25_ID, OUTCOME_ID, OUTCOME_LABEL, OUTCOME_SHORT, type Focus, type FocusSpec, type Outcome } from './focus';
+
+export { csCells, csId, cellLabel, cellPossible, focusSpec, nextFocus, O25_ID, U25_ID, OUTCOME_ID, OUTCOME_LABEL, OUTCOME_SHORT, RGB_O25, RGB_OUTCOME, HEX_FOCUS } from './focus';
+export type { Focus, FocusSpec, Outcome } from './focus';
+
+/** Score-map cells under this probability are closed ("for usandsynligt"). */
+export const CS_MIN_P = 0.03;
+/** Contracts that can carry a stop-loss or take-profit: a quote every substep and a line in the fan. */
+export const EXIT_CONTRACTS = ['1x2:F', '1x2:X', '1x2:B', O25_ID] as const;
+
+// The Parken pool: a simulated crowd on 1X2 until halftime. Money grows with the crowd's order flow.
+export const POOL_P0 = 180000;
+const POOL_PER_KR = 4;
+const POOL_WHALE_CAP = 2000;
+const POOL_N0 = 3100;
+const POOL_N_PER_TRADE = 9;
+/** The crowd leans home: FCK money is overweight against the model price. */
+const POOL_BIAS = [1.035, 0.985, 0.985];
+const POOL_TAU = 1; // game minutes
+
+export interface PoolView {
+  open: boolean;
+  closed: boolean; // locked at halftime
+  total: number; // crowd + yours
+  n: number; // number of stakes in the pool
+  sides: number[]; // crowd + yours, per side
+  user: number[];
+  /** Pool odds right now for one more krone on each side, after the house take. */
+  odds: number[];
+  take: number;
+  result: PoolResult | null;
+  winner: Outcome | null;
+}
 
 export interface Pending {
   contract: string;
@@ -44,13 +74,17 @@ export interface MatchView {
   halted: boolean;
   haltKind: 'goal' | 'red' | 'var' | null;
   focus: Focus;
+  spec: FocusSpec;
   d: Display;
-  counts: [number, number, number] | null;
+  /** Monte Carlo tally per stratum of the focus (null until a result of the right kind arrives). */
+  counts: number[] | null;
   saldo: number;
   available: number;
   value: number;
   positions: PositionView[];
   limits: LimitOrder[];
+  exits: ExitOrder[];
+  pool: PoolView;
   pending: Pending | null;
   toasts: Toast[];
   speed: number;
@@ -109,11 +143,17 @@ export class MatchStore {
   private toasts: Toast[] = [];
   private settledWindows = new Set<string>();
   private eventDirty = true;
+  /** Pool state, advanced every substep from the crowd's trades (deterministic). */
+  private poolP = POOL_P0;
+  private poolN = POOL_N0;
+  private poolW: number[] = [1 / 3, 1 / 3, 1 / 3];
+  private poolCrowdAtClose: number[] | null = null;
 
   constructor(tl: Timeline = FREE_PLAY, mc: McLike) {
     this.tl = tl;
     this.sim = new FootballSim(tl);
     this.mc = mc;
+    this.poolW = this.poolTarget();
     this.disp = display(this.sim, this.focus);
     this.view = this.buildView();
   }
@@ -191,7 +231,13 @@ export class MatchStore {
       this.disp = display(this.sim, this.focus);
       this.eventDirty = false;
     } else {
-      this.disp = { ...this.disp, outcomes: this.disp.outcomes.map((q, i) => ({ ...q, ask: this.sim.ask[i], bid: this.sim.bid[i], p: this.sim.mid[i] })) };
+      const sim = this.sim;
+      this.disp = {
+        ...this.disp,
+        outcomes: this.disp.outcomes.map((q, i) => ({ ...q, ask: sim.ask[i], bid: sim.bid[i], p: sim.mid[i] })),
+        // Over/Under 2.5 is the simulation's own quote: buying reads it fresh, like 1X2.
+        totals: this.disp.totals.map((q) => (q.id === O25_ID ? { ...q, ask: sim.o25Ask[0], bid: sim.o25Bid[0], p: sim.o25Mid } : q.id === 'tot:2.5:U' ? { ...q, ask: sim.o25Ask[1], bid: sim.o25Bid[1], p: 1 - sim.o25Mid } : q)),
+      };
     }
     this.processPending(now);
     this.maybeMc(sp);
@@ -199,8 +245,25 @@ export class MatchStore {
     this.frameL.forEach((l) => l());
   }
 
+  /** Live quote of a contract that can carry exits (1X2 and Over/Under 2.5), straight from the sim. */
+  private liveQuote(c: string): { ask: number; bid: number; mid: number } | null {
+    const sim = this.sim;
+    const i = OUTCOME_ID.indexOf(c as (typeof OUTCOME_ID)[number]);
+    if (i >= 0) return { ask: sim.ask[i], bid: sim.bid[i], mid: sim.mid[i] };
+    if (c === O25_ID) return { ask: sim.o25Ask[0], bid: sim.o25Bid[0], mid: sim.o25Mid };
+    if (c === 'tot:2.5:U') return { ask: sim.o25Ask[1], bid: sim.o25Bid[1], mid: 1 - sim.o25Mid };
+    return null;
+  }
+
   private afterStep(): void {
     const sim = this.sim;
+    // Exits first: a stop that fires frees the position before any buy limit looks at the price.
+    const fired = this.book.checkExits((c) => this.liveQuote(c), sim.halted, sim.k, sim.t, sim.reopenK);
+    for (const x of fired) {
+      const f = x.fill!;
+      this.toast(x.kind === 'stop' ? `Stop-loss udløst: solgt ${f.shares} @ kurs ${f.price}` : `Gevinst sikret: solgt ${f.shares} @ kurs ${f.price} · ${fmtKr(f.kr)}`, x.kind === 'stop' ? 'bad' : 'good');
+    }
+    this.advancePool();
     // Buy limits on 1X2 (the fan's price traps).
     const fills = this.book.checkLimits(
       (c) => {
@@ -214,7 +277,7 @@ export class MatchStore {
     for (const f of fills) {
       const oi = OUTCOME_ID.indexOf(f.contract as (typeof OUTCOME_ID)[number]);
       const lots = this.book.positions.get(f.contract)?.lots;
-      if (oi >= 0 && lots?.length) lots[lots.length - 1].baseline = this.baseline(oi as Focus);
+      if (oi >= 0 && lots?.length) lots[lots.length - 1].baseline = this.baseline(oi as Outcome);
     }
     for (const f of fills) this.toast(`Købsgrænse fyldt: ${f.fill?.shares} andele @ kurs ${f.fill?.price}${f.fill && f.fill.gapBetter > 0 ? ` · ${f.fill.gapBetter} point bedre` : ''}`, 'good');
     // New events: settlement and listeners.
@@ -261,14 +324,37 @@ export class MatchStore {
     if (p && p.shares > 0) this.toast(value === 100 ? `${p.label}: +${fmtKr(p.settled?.payout ?? 0)}` : `${p.label}: afregnet til 0`, value === 100 ? 'good' : 'bad');
   }
 
+  /** Confirmed goals up to and including event `e` (VAR-annulled goals never emit a goal event). */
+  private confirmedThrough(e: MatchEvent): number {
+    let n = 0;
+    for (const x of this.sim.events) {
+      if (x.id > e.id) break;
+      if (x.kind === 'goal') n++;
+    }
+    return n;
+  }
+
   private settleOn(e: MatchEvent): void {
     const sim = this.sim;
     if (e.kind === 'goal') {
-      const n = e.goalNo ?? 0;
+      const n = e.goalNo ?? 0; // includes annulled goals: the key of "after the goal" windows
       const team = e.team as 0 | 1;
-      this.settle(`ng${n}:F`, team === 0 ? 100 : 0);
-      this.settle(`ng${n}:B`, team === 1 ? 100 : 0);
-      this.settle(`ng${n}:N`, 0);
+      // Next goal is keyed by confirmed goals, exactly as the display names it.
+      const total = this.confirmedThrough(e);
+      this.settle(`ng${total}:F`, team === 0 ? 100 : 0);
+      this.settle(`ng${total}:B`, team === 1 ? 100 : 0);
+      this.settle(`ng${total}:N`, 0);
+      // Over a line settles at the confirmed goal that crosses it; Under goes to 0 at the same moment.
+      for (const id of [...this.book.positions.keys()]) {
+        const tm = /^tot:([\d.]+):([OU])$/.exec(id);
+        if (tm && total > Number(tm[1])) this.settle(id, tm[2] === 'O' ? 100 : 0);
+        const cells = csCells(id);
+        if (cells && !cells.some(([h, a]) => cellPossible(h, a, sim.h, sim.a))) this.settle(id, 0);
+      }
+      if (this.focus === 'o25' && total > 2.5) {
+        this.focus = 0;
+        this.lastMcTick = -999;
+      }
       for (const id of this.book.positions.keys()) {
         const m = /^w:(\d+)-(\d+):([JN])$/.exec(id);
         if (m && e.t >= Number(m[1]) && e.t < Number(m[2])) {
@@ -294,11 +380,93 @@ export class MatchStore {
       this.settle(`ng${n}:N`, 100);
       this.settle(`ng${n}:F`, 0);
       this.settle(`ng${n}:B`, 0);
+      const [ch, ca] = cellOf(sim.h, sim.a);
       for (const id of [...this.book.positions.keys()]) {
         if (id.startsWith('byg:')) this.settle(id, this.buildHits(id) ? 100 : 0);
         else if (/^(w:|ag)/.test(id)) this.settle(id, id.endsWith(':N') ? 100 : 0);
+        const tm = /^tot:([\d.]+):([OU])$/.exec(id);
+        if (tm) this.settle(id, (sim.h + sim.a > Number(tm[1])) === (tm[2] === 'O') ? 100 : 0);
+        const cells = csCells(id);
+        if (cells) this.settle(id, cells.some(([h, a]) => h === ch && a === ca) ? 100 : 0);
       }
+      if (this.poolCrowdAtClose) {
+        const r = this.book.settlePool(res as Outcome, this.poolCrowdAtClose, sim.k, sim.t, 'Parken-puljen');
+        if (r) this.toast(r.refund ? `Puljen refunderet: ${fmtKr(r.payout)}` : r.payout > 0 ? `Puljen udbetalt: +${fmtKr(r.payout)}` : 'Puljen: din side tabte', r.payout > 0 ? 'good' : 'bad');
+      }
+    } else if (e.kind === 'half') {
+      this.closePool();
     }
+  }
+
+  // --- the Parken pool ---
+
+  /** Crowd weights: the model's fair 1X2 with a home lean (not the market mid, so whales cannot be faded). */
+  private poolTarget(): number[] {
+    const f = this.sim.fair.map((x, i) => x * POOL_BIAS[i]);
+    const s = f[0] + f[1] + f[2];
+    return f.map((x) => x / s);
+  }
+
+  get poolOpen(): boolean {
+    const sim = this.sim;
+    return !this.poolCrowdAtClose && (sim.phase === 'pre' || sim.phase === '1H') && !sim.halted;
+  }
+
+  private advancePool(): void {
+    const sim = this.sim;
+    if (this.poolCrowdAtClose) return;
+    // Trades of this substep, read from the end (the list is trimmed, so never by index).
+    for (let i = sim.trades.length - 1; i >= 0 && sim.trades[i].k === sim.k; i--) {
+      const tr = sim.trades[i];
+      if (tr.side < 0) continue;
+      this.poolP += Math.min(tr.kr, tr.whale ? POOL_WHALE_CAP : tr.kr) * POOL_PER_KR;
+      this.poolN += POOL_N_PER_TRADE;
+    }
+    // The crowd re-bets while trading is halted, so a goal is priced in before the pool reopens.
+    const target = this.poolTarget();
+    const al = sim.halted ? 1 : 1 - Math.exp(-SUB / POOL_TAU);
+    this.poolW = this.poolW.map((w, i) => w + al * (target[i] - w));
+  }
+
+  private crowdSides(): number[] {
+    return this.poolW.map((w) => this.poolP * w);
+  }
+
+  private closePool(): void {
+    if (this.poolCrowdAtClose) return;
+    this.poolW = this.poolTarget();
+    this.poolCrowdAtClose = this.crowdSides();
+  }
+
+  stakePool(side: Outcome, kr: number): void {
+    if (!this.poolOpen) {
+      this.toast(this.poolCrowdAtClose ? 'Puljen er lukket ved pausen' : 'Puljen åbner efter stoppet', 'bad');
+      return;
+    }
+    const r = this.book.stakePool({ side, kr, k: this.sim.k, t: this.sim.t, label: `Parken-puljen: ${OUTCOME_LABEL[side]}` });
+    this.toast(r.ok ? `I puljen: ${fmtKr(Math.round(kr))} på ${OUTCOME_SHORT[side]}` : r.reason, r.ok ? 'good' : 'bad');
+    this.publish();
+  }
+
+  poolView(): PoolView {
+    const crowd = this.poolCrowdAtClose ?? this.crowdSides();
+    const user = this.book.poolUser();
+    const sides = crowd.map((c, i) => c + user[i]);
+    const total = sides[0] + sides[1] + sides[2];
+    const sim = this.sim;
+    const res = sim.phase === 'FT' || sim.phase === 'closed' ? ((sim.h > sim.a ? 0 : sim.h === sim.a ? 1 : 2) as Outcome) : null;
+    return {
+      open: this.poolOpen,
+      closed: !!this.poolCrowdAtClose,
+      total,
+      n: this.poolN + this.book.poolStakes.length,
+      sides,
+      user,
+      odds: sides.map((sd) => (total * (1 - POOL_TAKE)) / Math.max(1, sd)),
+      take: POOL_TAKE,
+      result: this.book.poolResult,
+      winner: res,
+    };
   }
 
   private buildHits(id: string): boolean {
@@ -351,19 +519,34 @@ export class MatchStore {
         goals: goalsOf(sim.events).map((g) => ({ t: g.t, team: g.team })),
       },
       n: 5000,
-      probs: [sim.mid[0], sim.mid[1], sim.mid[2]],
-      focus,
-      askNow: sim.askRaw[focus],
+      kind: focus === 'o25' && !legs ? 'o25' : 'outcome',
+      probs: focus === 'o25' && !legs ? [sim.o25Mid, 1 - sim.o25Mid] : [sim.mid[0], sim.mid[1], sim.mid[2]],
+      focus: isOutcome(focus) ? focus : 0,
+      askNow: focus === 'o25' && !legs ? sim.o25AskRaw[0] : sim.askRaw[isOutcome(focus) ? focus : 0],
       legs,
     };
+  }
+
+  /** Focus spec for the current (or a given) focus. */
+  spec(f: Focus = this.focus): FocusSpec {
+    return focusSpec(this.sim, f);
+  }
+
+  /** The Monte Carlo result if it matches the focus kind (strands are in the focused contract's price). */
+  mcFor(f: Focus = this.focus): McResult | null {
+    const r = this.mcResult;
+    if (!r) return null;
+    return (r.kind === 'o25') === (f === 'o25') ? r : null;
   }
 
   // --- quotes for any contract ---
   quote(contract: string): Quote | null {
     const d = this.disp;
     const all = [...d.outcomes, ...d.dc, ...d.next, ...d.windows.flatMap((w) => [w.ja, w.nej]), ...(d.afterGoal ? [d.afterGoal.ja, d.afterGoal.nej] : []), ...(d.varQuote ? [d.varQuote.ja, d.varQuote.nej] : [])];
-    const q = all.find((x) => x.id === contract);
+    const q = all.find((x) => x.id === contract) ?? d.totals.find((x) => x.id === contract);
     if (q) return q;
+    const cells = csCells(contract);
+    if (cells) return this.csQuote(contract, cells);
     const b = this.buildQuotes.get(contract);
     if (b) return { id: b.id, label: b.label, ask: b.ask, bid: b.bid, p: b.joint };
     // Any goal window [a, b) dragged across several bars in Målvejret.
@@ -382,6 +565,39 @@ export class MatchStore {
     return null;
   }
 
+  /**
+   * Final score: one cell has a multiplicative 15 % margin; a region takes 10 % on the sum, capped by
+   * the sum of its cell asks less (n − 1), as double chance is capped by its legs.
+   */
+  private csQuote(contract: string, cells: [number, number][]): Quote {
+    const cp = cells.map(([h, a]) => this.disp.cells[h * CS_N + a]);
+    const ps = cp.reduce((x, y) => x + y, 0);
+    const cellAsk = (p: number) => Math.max(1, Math.min(99, Math.ceil(100 * p * 1.15 - 1e-9)));
+    let ask: number;
+    if (cells.length === 1) ask = cellAsk(ps);
+    else ask = Math.max(1, Math.min(99, Math.ceil(100 * ps * 1.1 - 1e-9), cp.reduce((x, p) => x + cellAsk(p), 0) - (cells.length - 1)));
+    const bid = Math.max(1, Math.min(ask - 2, Math.floor(100 * ps * 0.92)));
+    const label = cells.length === 1 ? `Slutresultat ${cellLabel(cells[0][0], cells[0][1])}` : `Slutresultat: ${cells.map(([h, a]) => cellLabel(h, a)).join(', ')}`;
+    return { id: contract, label, ask, bid, p: ps };
+  }
+
+  /** Why a contract cannot be bought right now, or null when it is open. */
+  closedReason(contract: string): string | null {
+    const sim = this.sim;
+    if (sim.phase === 'FT' || sim.phase === 'closed') return 'Kampen er slut';
+    if (sim.halt?.kind === 'var') return contract.startsWith('var') ? null : 'Kun "Målet står?" er åben under VAR';
+    if (sim.halt) return 'Handlen er stoppet';
+    const tm = /^tot:([\d.]+):[OU]$/.exec(contract);
+    if (tm) return sim.h + sim.a > Number(tm[1]) ? `Linjen ${fmtLine(Number(tm[1]))} er allerede passeret` : this.quote(contract) ? null : 'Ukendt kontrakt';
+    const cells = csCells(contract);
+    if (cells) {
+      const live = cells.filter(([h, a]) => cellPossible(h, a, sim.h, sim.a));
+      if (!live.length) return 'Resultatet er ikke længere muligt';
+      return this.quote(contract)!.p < CS_MIN_P ? 'For usandsynligt (under 3 %)' : null;
+    }
+    return this.isOpen(contract) ? null : 'Handlen er stoppet';
+  }
+
   isOpen(contract: string): boolean {
     const sim = this.sim;
     if (sim.phase === 'FT' || sim.phase === 'closed') return false;
@@ -393,12 +609,15 @@ export class MatchStore {
     if (m) return sim.t < Number(m[2]) - 1 && !goalsOf(sim.events).some((g) => g.t >= Number(m[1]) && g.t < Number(m[2]));
     const ag = this.disp.afterGoal;
     if (ag && (ag.ja.id === contract || ag.nej.id === contract)) return ag.open;
-    return true;
+    if (contract.startsWith('tot:') || contract.startsWith('cs:')) return this.closedReason(contract) === null;
+    // Unknown or stale contracts (an old next-goal number) are never open.
+    return this.quote(contract) !== null;
   }
 
   // --- actions ---
   setFocus(f: Focus): void {
     if (this.focus === f) return;
+    if (f === 'o25' && this.sim.h + this.sim.a > 2.5) return;
     this.focus = f;
     this.disp = display(this.sim, f);
     this.lastMcTick = -999;
@@ -410,7 +629,7 @@ export class MatchStore {
     const q = this.quote(contract);
     if (!q) return;
     if (!this.isOpen(contract)) {
-      this.toast(this.sim.halt?.kind === 'var' ? 'Kun "Målet står?" er åben under VAR' : 'Handlen er stoppet', 'bad');
+      this.toast(this.closedReason(contract) ?? 'Handlen er stoppet', 'bad');
       return;
     }
     if (kr > MAX_STAKE) kr = MAX_STAKE;
@@ -460,19 +679,19 @@ export class MatchStore {
     const sim = this.sim;
     const oi = OUTCOME_ID.indexOf(contract as (typeof OUTCOME_ID)[number]);
     const mid = oi >= 0 ? sim.mid[oi] : (this.quote(contract)?.p ?? ask / 100);
-    const baseline = oi >= 0 ? this.baseline(oi as Focus) : undefined;
+    const baseline = oi >= 0 ? this.baseline(oi as Outcome) : undefined;
     const r = this.book.buy({ contract, label, kr, ask, k: sim.k, t: sim.t, mid, baseline });
     if (!r.ok) {
       this.toast(r.reason, 'bad');
       return;
     }
     this.toast(`Købt ${r.shares} andele @ kurs ${ask} · ved sejr ${fmtKr(r.shares)}`, 'good');
-    if (oi >= 0) this.freezeGhost(contract, oi as Focus);
+    if (oi >= 0) this.freezeGhost(contract, oi as Outcome);
     this.holdSpeed(1500);
   }
 
   /** Baseline for the move grade: the fair price now and 10 game minutes later with no events. */
-  private baseline(oi: Focus): [number, number] {
+  private baseline(oi: Outcome): [number, number] {
     const sim = this.sim;
     const s = sim.priceState();
     const dt = Math.min(10, Math.max(0, sim.end - sim.t));
@@ -494,6 +713,7 @@ export class MatchStore {
   }
 
   placeLimit(focus: Focus, level: number, kr: number): void {
+    if (!isOutcome(focus)) return;
     const r = this.book.placeLimit({ contract: OUTCOME_ID[focus], label: OUTCOME_LABEL[focus], level, kr, k: this.sim.k, ask: this.sim.ask[focus] });
     this.toast(r.ok ? `Købsgrænse sat: ${OUTCOME_SHORT[focus]} ved kurs ${Math.round(level)} · ${kr} kr` : r.reason, r.ok ? 'info' : 'bad');
     this.publish();
@@ -504,9 +724,31 @@ export class MatchStore {
     this.publish();
   }
 
+  /** Stop-loss or take-profit on a held position (1X2 or Over/Under 2.5). */
+  placeExit(contract: string, kind: ExitKind, level: number): boolean {
+    const q = this.liveQuote(contract);
+    if (!q) {
+      this.toast('Sikring findes kun på 1X2 og Over/Under 2,5', 'bad');
+      return false;
+    }
+    const r = this.book.placeExit({ contract, kind, level, bid: q.bid, k: this.sim.k });
+    this.toast(r.ok ? (kind === 'stop' ? `Stop-loss sat ved kurs ${r.order.level}` : `Sikr gevinst sat ved kurs ${r.order.level}`) : r.reason, r.ok ? 'info' : 'bad');
+    this.publish();
+    return r.ok;
+  }
+
+  cancelExit(id: number): void {
+    this.book.cancelExit(id);
+    this.publish();
+  }
+
+  exitsFor(contract: string): ExitOrder[] {
+    return this.book.exits.filter((x) => x.status === 'aktiv' && x.contract === contract);
+  }
+
   /** Spøgelseslinjen: median of the winning strands for this outcome, frozen at purchase. */
-  private freezeGhost(contract: string, o: Focus): void {
-    const r = this.mcResult;
+  private freezeGhost(contract: string, o: Outcome): void {
+    const r = this.mcFor(o);
     if (!r || this.focus !== o) return;
     const win = r.strands.filter((s) => s.outcome === o);
     if (win.length < 3) return;
@@ -524,14 +766,15 @@ export class MatchStore {
 
   ghostStatus(): string | null {
     const g = this.ghost;
-    if (!g || g.contract !== OUTCOME_ID[this.focus]) return null;
+    const f = this.focus;
+    if (!g || !isOutcome(f) || g.contract !== OUTCOME_ID[f]) return null;
     const pos = this.book.positions.get(g.contract);
     if (!pos || pos.shares === 0 || pos.settled) return null;
     const t = this.sim.t;
     let k = 0;
     while (k < g.t.length - 1 && g.t[k + 1] <= t) k++;
     const pace = g.v[k];
-    const diff = Math.round(this.sim.askRaw[this.focus] - pace);
+    const diff = Math.round(this.sim.askRaw[f] - pace);
     return diff >= 0 ? `Foran vindertempo · +${diff} point` : `Bag vindertempo · ${diff} point`;
   }
 
@@ -596,6 +839,8 @@ export class MatchStore {
   private labelOf(contract: string, fallback: string): string {
     const i = OUTCOME_ID.indexOf(contract as (typeof OUTCOME_ID)[number]);
     if (i >= 0) return OUTCOME_LABEL[i];
+    const tm = /^tot:([\d.]+):([OU])$/.exec(contract);
+    if (tm) return `${tm[2] === 'O' ? 'Over' : 'Under'} ${fmtLine(Number(tm[1]))} mål`;
     if (contract.endsWith(':N') && contract.startsWith('w:')) return `Tørvejr ${fallback.replace(/^Mål /, '')}`;
     if (contract.endsWith(':N') && contract.startsWith('var')) return 'Målet annulleres';
     if (contract.endsWith(':N') && contract.startsWith('ag')) return 'Efter målet: intet nyt mål';
@@ -627,13 +872,16 @@ export class MatchStore {
       halted: sim.halted,
       haltKind: sim.halt?.kind ?? null,
       focus: this.focus,
+      spec: this.spec(),
       d: this.disp,
-      counts: this.mcResult?.counts ?? null,
+      counts: this.mcFor()?.counts ?? null,
       saldo: this.book.saldo,
       available: this.book.available,
       value,
       positions,
       limits: this.book.limits.slice(),
+      exits: this.book.exits.slice(),
+      pool: this.poolView(),
       pending: this.pending,
       toasts: this.toasts,
       speed: this.effectiveSpeed(this.clock()),
@@ -663,11 +911,12 @@ export class MatchStore {
   }
 
   limitsFor(f: Focus): LimitOrder[] {
-    return this.book.limits.filter((l) => l.status === 'aktiv' && l.contract === OUTCOME_ID[f]);
+    const c = this.spec(f).contract;
+    return this.book.limits.filter((l) => l.status === 'aktiv' && l.contract === c);
   }
 
   entryFor(f: Focus): number | null {
-    const p = this.book.positions.get(OUTCOME_ID[f]);
+    const p = this.book.positions.get(this.spec(f).contract);
     if (!p || !p.lots.length || p.shares === 0) return null;
     return p.lots[p.lots.length - 1].price;
   }

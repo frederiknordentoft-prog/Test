@@ -12,12 +12,12 @@ import { powerAsks } from '../lib/quote';
 import { DERBY_PARAMS, SUB as SUB_, baseRate, zoneFactor, type FootballParams } from './params';
 
 const SUB = SUB_;
-import { price1x2, type PriceState } from './dp';
+import { price1x2, rateGrid, totalsBack, type PriceState } from './dp';
 import { minuteOf, type Timeline, type TLEvent } from '../director/timeline';
 
 export type Phase = 'pre' | '1H' | 'HT' | '2H' | 'FT' | 'closed';
 export type EventKind = 'kickoff' | 'goal' | 'var-start' | 'var-verdict' | 'corner' | 'chance' | 'shot' | 'red' | 'half' | 'second-half' | 'fulltime' | 'whale' | 'reopen' | 'open';
-export interface MatchEvent { id: number; k: number; t: number; kind: EventKind; team?: 0 | 1; text?: string; gap?: number[]; varOk?: boolean; goalNo?: number }
+export interface MatchEvent { id: number; k: number; t: number; kind: EventKind; team?: 0 | 1; text?: string; gap?: number[]; gapO25?: number; varOk?: boolean; goalNo?: number }
 export interface Trade { k: number; t: number; o: 0 | 1 | 2; side: 1 | -1; kr: number; price: number; whale: boolean; informed: boolean }
 
 export const PRE_SUBS = 30; // opening auction, 3 s at ×1
@@ -37,7 +37,10 @@ const OVERSHOOT_TAU = 0.125;
 const HYST = 0.6; // øre
 const ATTR_LEN = 80; // 2 game minutes of substeps
 
-const S = { goal: 1, var: 2, zone: 3, corner: 4, chance: 5, shot: 6, press: 7, crowd: 8, size: 9, side: 10, noise: 11, whale: 12, red: 13 } as const;
+const S = { goal: 1, var: 2, zone: 3, corner: 4, chance: 5, shot: 6, press: 7, crowd: 8, size: 9, side: 10, noise: 11, whale: 12, red: 13, o25noise: 14 } as const;
+/** Over 2.5: power margin on the two-way book (Over + Under ≈ 106). */
+export const O25_MARGIN = 0.06;
+export const O25_LINE = 2.5;
 
 interface Halt { kind: 'goal' | 'red' | 'var'; until: number; before: number[]; team?: 0 | 1; pendingGoal?: { team: 0 | 1; var: NonNullable<Extract<TLEvent, { type: 'goal' }>['var']> } }
 interface VarState { goalNo: number; team: 0 | 1; start: number; end: number; z0: number; salt: number; p0: number }
@@ -81,8 +84,22 @@ export class FootballSim {
   events: MatchEvent[] = [];
   trades: Trade[] = [];
   turnover = 0;
-  /** Price history (per substep while the clock or price moves): t, mid F/X/B, ask F/X/B. */
-  hist = { n: 0, t: new Float32Array(6000), mid: new Float32Array(18000), ask: new Float32Array(18000) };
+  /**
+   * Over 2.5 goals, the second quote. Fair from the same rate grid as 1X2; the mid adds clipped
+   * noise and a reopen overshoot; it is frozen while trading is halted. Index 0 = Over, 1 = Under.
+   */
+  o25Fair = 0;
+  o25Mid = 0;
+  o25AskRaw = [0, 0];
+  o25Ask = [0, 0];
+  o25Bid = [0, 0];
+  private o25Eps = 0;
+  private o25Ov = 0;
+  /** Over ask while trading was last open; the reference for the reopen gap. */
+  private o25AskOpen = 0;
+  private lastReopen: MatchEvent | null = null;
+  /** Price history (per substep while the clock or price moves): t, mid F/X/B, ask F/X/B; Over 2.5 mid and ask. */
+  hist = { n: 0, t: new Float32Array(6000), mid: new Float32Array(18000), ask: new Float32Array(18000), o25Mid: new Float32Array(6000), o25Ask: new Float32Array(6000) };
   /** Attribution ring: per substep, per outcome, contributions in øre [event, time, pressure, flow, noise]. */
   attr = new Float32Array(ATTR_LEN * 3 * 5);
   attrK = new Int32Array(ATTR_LEN).fill(-1);
@@ -106,6 +123,12 @@ export class FootballSim {
     const off = [0.06, -0.02, -0.04];
     this.mid = softmax(this.fair.map((f, i) => Math.log(f) + off[i]));
     this.requote(true);
+    if (this.pricing) {
+      this.o25Fair = totalsBack(this.p, this.priceState(), 0, O25_LINE);
+      this.o25Mid = this.o25Fair;
+      this.requoteO25(true);
+      this.o25AskOpen = this.o25Ask[0];
+    }
     this.record();
   }
 
@@ -183,8 +206,11 @@ export class FootballSim {
       return;
     }
 
-    // --- fair price ---
-    const tFair = price1x2(this.p, this.priceState());
+    // --- fair price (1X2 and Over 2.5 share one rate grid) ---
+    const st = this.priceState();
+    const grid = rateGrid(this.p, st);
+    const tFair = price1x2(this.p, st, grid);
+    this.o25Fair = totalsBack(this.p, st, this.h + this.a, O25_LINE, grid);
     // Attribution helper: what the fair price would be if only time had passed.
     let timeOnly = tFair;
     if (!eventJump && this.clockRunning) {
@@ -195,8 +221,10 @@ export class FootballSim {
 
     // --- market ---
     this.market();
+    this.lastReopen = null;
     this.closeHaltIfDue();
     this.requote(false);
+    this.marketO25();
     this.attribute(oldFair, timeOnly, oldMidLogit, eventJump);
     this.lastPi = this.pi;
     this.lastZone = this.zone;
@@ -393,7 +421,53 @@ export class FootballSim {
     this.hawkes += 14;
     this.mid = this.computeMid();
     this.requote(true);
-    this.emit('reopen', { gap: this.ask.map((v, i) => Math.round(v) - Math.round(before[i])) });
+    this.lastReopen = this.emit('reopen', { gap: this.ask.map((v, i) => Math.round(v) - Math.round(before[i])) });
+  }
+
+  /** Over 2.5: frozen during halts; at a reopen it jumps to the new fair price (gap on the event). */
+  private marketO25(): void {
+    const dt = SUB;
+    const nd = Math.exp(-NOISE_THETA * dt);
+    this.o25Eps = Math.max(-NOISE_CLIP, Math.min(NOISE_CLIP, this.o25Eps * nd + NOISE_SD * Math.sqrt(1 - nd * nd) * this.gauss(S.o25noise)));
+    this.o25Ov *= Math.exp(-dt / OVERSHOOT_TAU);
+    const crossed = this.h + this.a > O25_LINE;
+    if (crossed) {
+      // Settled at the confirmed goal; the reopen shows the jump to 100 once.
+      this.o25Mid = 1;
+      this.requoteO25(true);
+      if (this.lastReopen && this.o25AskOpen < 100) {
+        this.lastReopen.gapO25 = 100 - Math.round(this.o25AskOpen);
+        this.o25AskOpen = 100;
+      }
+      return;
+    }
+    if (this.halted && !this.lastReopen) return;
+    const fl = logit(this.o25Fair);
+    if (this.lastReopen) {
+      this.o25Ov = 0.1 * (fl - logit(this.o25Mid));
+      this.o25Mid = sigmoid(fl + this.o25Ov + this.o25Eps);
+      this.requoteO25(true);
+      this.lastReopen.gapO25 = Math.round(this.o25Ask[0]) - Math.round(this.o25AskOpen);
+    } else {
+      this.o25Mid = sigmoid(fl + this.o25Ov + this.o25Eps);
+      this.requoteO25(false);
+    }
+    this.o25AskOpen = this.o25Ask[0];
+  }
+
+  private requoteO25(force: boolean): void {
+    const m = Math.max(1e-6, Math.min(1 - 1e-6, this.o25Mid));
+    const raw = powerAsks([m, 1 - m], O25_MARGIN).map((v) => v * 100);
+    this.o25AskRaw = raw;
+    const danger = this.zone >= 5.5 || this.zone <= 1.5 || Math.abs(this.pi) > 0.5;
+    const sinceReopen = this.k - this.reopenK;
+    for (let i = 0; i < 2; i++) {
+      if (force || Math.abs(raw[i] - this.o25Ask[i]) >= HYST) this.o25Ask[i] = Math.max(1, Math.min(99, Math.round(raw[i])));
+      let spread = danger ? 4 : 2;
+      if (sinceReopen <= 7) spread = 6;
+      spread = Math.max(spread, Math.ceil(Math.abs(this.o25Ov) * 100 * (i === 0 ? m : 1 - m) + 1));
+      this.o25Bid[i] = Math.max(1, this.o25Ask[i] - spread);
+    }
   }
 
   private midLogitsFrom(m: number[]): number[] {
@@ -513,6 +587,8 @@ export class FootballSim {
         H.mid[i * 3 + o] = this.mid[o];
         H.ask[i * 3 + o] = this.askRaw[o];
       }
+      H.o25Mid[i] = this.o25Mid;
+      H.o25Ask[i] = this.o25AskRaw[0];
       return;
     }
     if (H.n >= H.t.length) return;
@@ -522,6 +598,8 @@ export class FootballSim {
       H.mid[i * 3 + o] = this.mid[o];
       H.ask[i * 3 + o] = this.askRaw[o];
     }
+    H.o25Mid[i] = this.o25Mid;
+    H.o25Ask[i] = this.o25AskRaw[0];
   }
 
   snapshot(): SimSnapshotCore {
@@ -550,6 +628,14 @@ export class FootballSim {
 
 function clamp(x: number, c: number): number {
   return Math.max(-c, Math.min(c, x));
+}
+
+function logit(p: number): number {
+  const q = Math.max(1e-6, Math.min(1 - 1e-6, p));
+  return Math.log(q / (1 - q));
+}
+function sigmoid(z: number): number {
+  return 1 / (1 + Math.exp(-z));
 }
 
 function softmax(l: number[]): number[] {

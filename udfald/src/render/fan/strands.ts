@@ -3,11 +3,11 @@
  * faint threads) plus the tally at full time. Drawn only when a new Monte Carlo result arrives.
  */
 import type { McResult } from '../../engine/mc/paths';
+import type { FocusSpec } from '../../state/focus';
 import { xOf, yOf, type Geo } from './geometry';
 
-const RGB: [number, number, number][] = [[92, 225, 255], [150, 158, 172], [255, 210, 0]];
-
-export interface StrandOpts { burnTeam?: 0 | 1 | null; dim?: boolean; focus: 0 | 1 | 2 }
+/** Strands are coloured by the stratum they were drawn for (final result, or Over / Under). */
+export interface StrandOpts { burnTeam?: 0 | 1 | null; dim?: boolean; spec: FocusSpec }
 
 export function drawStrands(canvas: HTMLCanvasElement, dpr: number, g: Geo, r: McResult | null, opts: StrandOpts): number {
   const t0 = performance.now();
@@ -38,11 +38,12 @@ export function drawStrands(canvas: HTMLCanvasElement, dpr: number, g: Geo, r: M
   c.globalCompositeOperation = 'lighter';
   c.lineJoin = 'round';
   c.lineCap = 'round';
-  const jumps = [new Path2D(), new Path2D(), new Path2D()];
+  const RGB = opts.spec.strata.map((st) => st.rgb.split(',').map(Number) as [number, number, number]);
+  const jumps = RGB.map(() => new Path2D());
   const xs = new Float32Array(r.tPts.length);
   for (let k = 0; k < r.tPts.length; k++) xs[k] = xOf(g, r.tPts[k]);
   for (const s of r.strands) {
-    let [cr, cg, cb] = RGB[s.outcome];
+    let [cr, cg, cb] = RGB[s.stratum] ?? RGB[0];
     let alpha = opts.dim ? 0.035 : 0.11;
     if (opts.burnTeam !== undefined && opts.burnTeam !== null) {
       // Goal moment: futures whose next goal was this team's light up, the rest turn to ash.
@@ -63,8 +64,8 @@ export function drawStrands(canvas: HTMLCanvasElement, dpr: number, g: Geo, r: M
       const x = xs[k];
       const y = yOf(g, s.v[k]);
       if (k > 0 && s.d[k] !== s.d[k - 1]) {
-        jumps[s.outcome].moveTo(xs[k - 1], yOf(g, s.v[k - 1]));
-        jumps[s.outcome].lineTo(x, y);
+        (jumps[s.stratum] ?? jumps[0]).moveTo(xs[k - 1], yOf(g, s.v[k - 1]));
+        (jumps[s.stratum] ?? jumps[0]).lineTo(x, y);
         c.moveTo(x, y);
         lastX = x;
         continue;

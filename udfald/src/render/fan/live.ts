@@ -1,11 +1,13 @@
 /**
  * Live layer, redrawn every tick: the price line so far, NU, pins, halts and gaps, limit lines,
- * entry, ghost (pace) line, branch tags with leader lines, VAR ghost prices and the cause chip.
+ * exit lines (stop-loss, take-profit), entry, ghost (pace) line, branch tags with leader lines,
+ * VAR ghost prices and the cause chip. Everything about the focused contract comes from its spec.
  */
 import type { FootballSim } from '../../engine/football/sim';
 import type { Display } from '../../engine/football/display';
-import type { LimitOrder } from '../../engine/book/portfolio';
+import type { ExitOrder, LimitOrder } from '../../engine/book/portfolio';
 import type { Ghost } from '../../state/match';
+import type { FocusSpec } from '../../state/focus';
 import { xOf, yOf, type Geo } from './geometry';
 
 const FONT_NUM = '"UDF Flex", "Roboto Flex", Arial, sans-serif';
@@ -15,14 +17,15 @@ const TEAM = ['#5ce1ff', '#ffd200'];
 export interface LiveInput {
   sim: FootballSim;
   d: Display;
-  focus: 0 | 1 | 2;
+  spec: FocusSpec;
   limits: LimitOrder[];
+  exits: ExitOrder[];
   entries: { t: number; price: number }[];
   ghost: Ghost | null;
   showGhost: boolean;
   draftLevel: number | null;
   scrubT: number | null;
-  counts: [number, number, number] | null;
+  counts: number[] | null;
 }
 
 export interface LiveOut { headY: number; tags: { y: number; idx: number }[] }
@@ -43,10 +46,10 @@ export function drawLive(canvas: HTMLCanvasElement, dpr: number, g: Geo, inp: Li
   const c = canvas.getContext('2d') as CanvasRenderingContext2D;
   c.setTransform(dpr, 0, 0, dpr, 0, 0);
   c.clearRect(0, 0, g.w, g.h);
-  const { sim, d, focus } = inp;
+  const { sim, d, spec } = inp;
   const hist = sim.hist;
-  const col = focus === 0 ? '92,225,255' : focus === 2 ? '255,210,0' : '200,206,216';
-  const colHex = focus === 0 ? '#5ce1ff' : focus === 2 ? '#ffd200' : '#c8ced8';
+  const col = spec.focus === 1 ? '200,206,216' : spec.rgb;
+  const colHex = spec.hex;
 
   // Pressure tint at NU.
   const pi = sim.pi;
@@ -94,7 +97,7 @@ export function drawLive(canvas: HTMLCanvasElement, dpr: number, g: Geo, inp: Li
     for (let i = 0; i < hist.n; i++) {
       const x = xOf(g, hist.t[i]);
       if (x - lastX < 0.6 && i !== hist.n - 1) continue;
-      const y = yOf(g, hist.ask[i * 3 + focus]);
+      const y = yOf(g, spec.hist(i));
       if (first) c.moveTo(x, y);
       else c.lineTo(x, y);
       first = false;
@@ -115,16 +118,17 @@ export function drawLive(canvas: HTMLCanvasElement, dpr: number, g: Geo, inp: Li
   c.font = `700 10.5px ${FONT_NUM}`;
   c.textAlign = 'left';
   for (const e of sim.events) {
-    if (e.kind !== 'reopen' || !e.gap || Math.abs(e.gap[focus]) < 2) continue;
+    if (e.kind !== 'reopen') continue;
+    const v = spec.gapOf(e);
+    if (v === undefined || Math.abs(v) < 2) continue;
     const x = xOf(g, e.t);
     if (x < g.left + 8) continue;
-    const v = e.gap[focus];
     c.fillStyle = 'rgba(232,237,242,0.75)';
     c.fillText(`${v > 0 ? '+' : '−'}${Math.abs(v)} point`, x + 4, g.top + 10);
   }
 
   // Halt band at NU.
-  const askNow = sim.askRaw[focus];
+  const askNow = spec.askRaw;
   const headY = yOf(g, askNow);
   if (sim.halt) {
     const x0 = g.nowX - 2;
@@ -194,6 +198,24 @@ export function drawLive(canvas: HTMLCanvasElement, dpr: number, g: Geo, inp: Li
   }
   c.setLineDash([]);
 
+  // Exit lines: stop-loss (coral) and take-profit (mint), where they fire.
+  for (const x of inp.exits) {
+    const y = yOf(g, x.level);
+    const stop = x.kind === 'stop';
+    c.setLineDash(stop ? [2, 4] : [7, 4]);
+    c.strokeStyle = stop ? 'rgba(255,107,94,0.85)' : 'rgba(61,220,151,0.85)';
+    c.beginPath();
+    c.moveTo(g.left, y);
+    c.lineTo(g.right, y);
+    c.stroke();
+    c.setLineDash([]);
+    c.fillStyle = stop ? '#ff6b5e' : '#3ddc97';
+    c.font = `600 10.5px ${FONT_UI}`;
+    c.textAlign = 'right';
+    c.fillText(stop ? `Stop ${x.level}` : `Sikr gevinst ${x.level}`, g.nowX - 6, stop ? y + 12 : y - 4);
+    c.textAlign = 'left';
+  }
+
   // Ghost line (pace to win), from purchase to full time.
   if (inp.ghost && inp.showGhost) {
     const gh = inp.ghost;
@@ -247,25 +269,24 @@ export function drawLive(canvas: HTMLCanvasElement, dpr: number, g: Geo, inp: Li
   c.fillText('90+', g.right, g.h - 6);
 
   // Tally at full time: the price, counted in futures (crisp, so it lives on this layer).
-  if (inp.counts && inp.counts[0] + inp.counts[1] + inp.counts[2] === 100) {
+  if (inp.counts && inp.counts.length === spec.strata.length && inp.counts.reduce((x, y) => x + y, 0) === 100) {
     const counts = inp.counts;
     const gx = g.right + 8;
-    const top = counts[focus];
-    const names = ['FCK', 'X', 'BIF'];
-    const cols = ['#5ce1ff', '#9aa3b2', '#ffd200'];
+    const top = counts[spec.stratum];
+    const cols = spec.strata.map((st, i) => (spec.isO25 || i !== 1 ? `rgb(${st.rgb})` : '#9aa3b2'));
     c.textAlign = 'left';
-    c.fillStyle = cols[focus];
+    c.fillStyle = cols[spec.stratum];
     c.font = `700 20px ${FONT_NUM}`;
     c.fillText(String(top), gx, g.top + 14);
     c.font = `600 10px ${FONT_UI}`;
-    c.fillText(names[focus], gx + (top >= 10 ? 26 : 16), g.top + 13);
-    [0, 1, 2].filter((i) => i !== focus).forEach((o, i) => {
+    c.fillText(spec.strata[spec.stratum].label, gx + (top >= 10 ? 26 : 16), g.top + 13);
+    spec.strata.map((_, i) => i).filter((i) => i !== spec.stratum).forEach((o, i) => {
       c.font = `700 14px ${FONT_NUM}`;
       c.fillStyle = cols[o];
       const y = g.bottom - 14 + i * 16;
       c.fillText(String(counts[o]), gx, y);
       c.font = `600 10px ${FONT_UI}`;
-      c.fillText(names[o], gx + (counts[o] >= 10 ? 20 : 12), y - 1);
+      c.fillText(spec.strata[o].label, gx + (counts[o] >= 10 ? 20 : 12), y - 1);
     });
   }
 
@@ -312,7 +333,7 @@ export function drawLive(canvas: HTMLCanvasElement, dpr: number, g: Geo, inp: Li
     const x = xOf(g, inp.scrubT);
     let i = 0;
     while (i < hist.n - 1 && hist.t[i + 1] <= inp.scrubT) i++;
-    const p = hist.ask[i * 3 + focus];
+    const p = spec.hist(i);
     c.strokeStyle = 'rgba(232,237,242,0.6)';
     c.beginPath();
     c.moveTo(x + 0.5, g.top);

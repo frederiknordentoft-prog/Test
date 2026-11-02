@@ -472,3 +472,34 @@ Navnet ØRE hang sammen med prisenheden øre. Da prisen blev til kurs, valgte br
 - **Familienavn:** markedsfamilien FCK / X / BIF hedder nu **Resultat**, så navnet ikke får dobbeltbetydning. Brugen som navneord ("et udfald") er uændret.
 - **Interne navne:** mappen er `udfald/`, pakken er `udfald`, globalerne er `__UDFALD_BOOT` og `__udfald`, og fontfamilierne er "UDF …".
 - **Historiske dokumenter:** KONCEPT.md, KRITIK.md og RESEARCH.md er bevaret som besluttet, med en note øverst.
+
+## 19. Tre nye funktioner: mål i alt + slutresultat, sikring, Parken-puljen (2. nov. 2026)
+
+Brugeren valgte tre funktioner fra fase 2-listen. Planen blev gennemgået af en arkitekt, der målte mod den bundtede motor; hans fund er rettet før bygning.
+
+**Mål i alt og slutresultat**
+- **Én model:** `scoreGrid` (fremad-DP over manglende mål pr. hold, masse over 10 samlet i 10) giver 1X2, Over/Under og alle celler. Gitterets 1X2 er lig `price1x2` til 1e-11, Over er lig `totalsBack`.
+- **Over 2,5 er simulationens anden kurs:** fair pr. substep fra samme rate-gitter som 1X2, 6 % power-margin, hysterese 0,6 point, frosset under handelsstop og med eget gab ved genåbning (`gapO25`). Historikken ligger i egne arrays, så 1X2-historikken er uændret. Golden hashes for tre kampe er bit for bit de samme som før.
+- **Pris:** Over/Under-linjer 0,5–4,5 har 6 % margin. Én celle har ⌈100·p·1,15⌉, en region min(⌈100·Σp·1,10⌉, Σ celle-kurser − (n − 1)). Celler under 3 % og umulige celler er lukkede.
+- **Afregning:** Over afregnes ved det godkendte mål, der krydser linjen (annullerede VAR-mål tæller ikke). Et slutresultat afregnes til 0, så snart alle dets celler er umulige. Ved slutfløjt fejes resten.
+- **Rettet samtidig:** næste mål afregnes nu efter antal godkendte mål, som visningen navngiver det (før blev annullerede mål talt med). Ukendte kontrakter er aldrig åbne.
+- **Viften kan følge Over 2,5:** fokus er `0 | 1 | 2 | 'o25'`, og alt læser én `FocusSpec`. Stierne stratificeres efter Over/Under, så tally = pris ("35 Over · 65 Under").
+- **Kalibrering:** in-play inden for 1,3 pp pr. decil; DP'en ligger 0,8 pp lavt ved kickoff (arkitekten målte 2,4 pp i et mindre udsnit).
+- **Pris for præcisionen:** Over 2,5 koster cirka 0,1 ms pr. substep (tre lag i DP'en mod 1X2's to), cirka 1 % CPU ved ×8.
+
+**Sikring**
+- Højst ét stop-loss og én "Sikr gevinst" pr. position, kun på 1X2 og Over/Under 2,5. Den ene annullerer den anden.
+- **Stop:** udløses, når ask − 2 ≤ niveau og markedet har været åbent mere end 7 substeps efter genåbning. Spread-udvidelse og overshoot kan altså ikke udløse det. Det sælger alt til aktuelt bid, "til første kurs efter stoppet".
+- **Sikr gevinst:** udløses, når bid ≥ niveau, så fill aldrig ligger under niveauet.
+- Aldrig under handelsstop. Ryddes, når andelene når 0. Et stop ved eller over en aktiv købsgrænse afvises (og omvendt).
+- Viften viser koral "Stop 30" og mint "Sikr gevinst 80". Bakken viser den præcise udbetaling ved udløsning.
+
+**Parken-puljen**
+- Pulje på 1X2, lukker ved pausen. Udbetaling = indsats ÷ vindersidens sum × pulje × 0,90. Refusion, hvis vindersiden er tom.
+- Publikum er simuleret og deterministisk: puljen vokser med crowd-købsvolumen (hvaler kappet), og siderne følger **modellens fair pris** med en lille hjemmebias (1,035 / 0,985 / 0,985).
+- **Afvigelse fra planen:** planen sagde "den viste mid, glattet". Mid'en bærer hvalernes persistente flow, så man kunne handle mod en hval og få over 0,95 igen. Fair pris er en martingal, så forventet udbytte pr. krone er strukturelt ≤ 0,9 · 1,035 / 0,985 ≈ 0,946 på enhver side i ethvert minut. Visningen glattes over 1 kampminut, men siderne snappes til fair ved lukning og under handelsstop.
+- **Afvigelse i testen:** planen sagde 300 kampe med realiseret udfald. Udbetalingen afgøres ved lukning, så minuttet for indsatsen betyder intet; testen måler den betingede forventning ved lukning over 20 kampe gennem den rigtige store (realiseret udfald over 300 kampe har en standardfejl på cirka 0,08 og kan ikke skelne 0,90 fra 0,95).
+
+**Navigation:** bundbjælken er Byg · Mål · Pulje · Portefølje med to linjer pr. knap. Lobbyen nås via chevronen.
+
+**Verifikation:** 64 tests (49 uændrede), heriblandt `tests/totals.test.ts` og `tests/features.test.ts`. QA kører de nye flows gennem UI'et, chrome-still med begge fokus og axe på `#maal`, `#pulje` og sikringsbakken.

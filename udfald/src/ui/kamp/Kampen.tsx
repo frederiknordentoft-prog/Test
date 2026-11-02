@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { MatchStore, MatchView, Focus } from '../../state/match';
-import { fmtKr, OUTCOME_ID, OUTCOME_LABEL, OUTCOME_SHORT } from '../../state/match';
+import { EXIT_CONTRACTS, fmtKr, nextFocus, O25_ID, OUTCOME_ID, OUTCOME_LABEL, OUTCOME_SHORT, U25_ID } from '../../state/match';
 import { Fan } from './Fan';
 import { Tray, type TrayTarget } from './Tray';
 import { HoldOverlay, STEPS, type HoldState } from './HoldToStake';
@@ -32,9 +32,14 @@ export function Kampen({ store, onLogoLong }: { store: MatchStore; onLogoLong: (
     }
   }, [v, store]);
 
-  const openOutcome = (f: Focus) => {
+  const openOutcome = (f: Focus, side = 0) => {
     store.setFocus(f);
     store.holdSpeed(8000);
+    if (f === 'o25') {
+      const both = [{ id: O25_ID, label: 'Over 2,5 mål', side: 'Over 2,5' }, { id: U25_ID, label: 'Under 2,5 mål', side: 'Under 2,5' }];
+      setTray({ kind: 'buy', contracts: side ? both.reverse() : both, title: 'Mål i alt · 2,5', note: '3 eller flere mål i kampen: Over udbetaler 100. Afregnes i det øjeblik, det 3. mål er godkendt.' });
+      return;
+    }
     setTray({ kind: 'buy', contracts: [{ id: OUTCOME_ID[f], label: OUTCOME_LABEL[f], side: OUTCOME_SHORT[f] }], title: `${OUTCOME_LABEL[f]}` });
   };
 
@@ -58,7 +63,7 @@ export function Kampen({ store, onLogoLong }: { store: MatchStore; onLogoLong: (
             setTray({
               kind: 'buy',
               title: 'Næste mål',
-              note: `${v.d.branches[idx]?.label ?? ''}: sker det, går ${OUTCOME_LABEL[v.focus]} til ≈ kurs ${Math.round(v.d.branches[idx]?.price ?? 0)}.`,
+              note: `${v.d.branches[idx]?.label ?? ''}: sker det, går ${v.spec.label} til ≈ kurs ${Math.round(v.d.branches[idx]?.price ?? 0)}.`,
               contracts: [
                 { id: ng[0].id, label: 'Næste mål FCK', side: 'FCK' },
                 { id: ng[1].id, label: 'Ingen flere mål', side: 'Ingen' },
@@ -80,17 +85,16 @@ export function Kampen({ store, onLogoLong }: { store: MatchStore; onLogoLong: (
         const id = `w:${a}-${Math.round(b)}`;
         const label = `Mål ${a}–${b >= 90 ? '90+' : b}′`;
         setTray({ kind: 'buy', title: label, contracts: [{ id: `${id}:J`, label, side: 'Ja · mål' }, { id: `${id}:N`, label: `Tørvejr ${a}–${b >= 90 ? '90+' : b}′`, side: 'Tørvejr' }] });
-      }} onAfterGoal={() => {
+      }} onOver={() => openOutcome('o25')} onAfterGoal={() => {
         const ag = v.d.afterGoal;
         if (!ag) return;
         setTray({ kind: 'buy', title: ag.ja.label, contracts: [{ id: ag.ja.id, label: ag.ja.label, side: 'Ja' }, { id: ag.nej.id, label: 'Efter målet: intet nyt mål', side: 'Nej' }] });
       }} />}
-      <PositionCard v={v} store={store} />
-      <nav className="bb" aria-label="Hovednavigation">
-        <button onClick={() => go('lobby')}>Lobby</button>
-        <button onClick={() => go('byg')}>Byg</button>
-        <button onClick={() => go('portefolje')}>Portefølje <span className={`num ${pnlOf(v) >= 0 ? 'up' : 'down'}`}>{pnlOf(v) >= 0 ? '+' : '−'}{fmtKr(Math.abs(pnlOf(v)))}</span></button>
-      </nav>
+      <PositionCard v={v} store={store} onSikring={(contract) => {
+        store.holdSpeed(10000);
+        setTray({ kind: 'exit', contract });
+      }} />
+      <BottomBar v={v} />
       {tray && <div className="scrim" onClick={() => setTray(null)} aria-hidden="true" />}
       {tray && <Tray store={store} view={v} target={tray} onClose={() => setTray(null)} lastStake={lastStake} setLastStake={setLastStake} />}
       {hold && <HoldOverlay h={hold} />}
@@ -101,7 +105,29 @@ export function Kampen({ store, onLogoLong }: { store: MatchStore; onLogoLong: (
 }
 
 export function pnlOf(v: MatchView): number {
-  return v.positions.reduce((s, p) => s + p.pnl, 0);
+  return v.positions.reduce((s, p) => s + p.pnl, 0) + poolPnl(v);
+}
+
+/** The pool's part of the result: payout (once settled) minus your stakes. */
+export function poolPnl(v: MatchView): number {
+  const staked = v.pool.user[0] + v.pool.user[1] + v.pool.user[2];
+  return (v.pool.result?.payout ?? 0) - (v.pool.result || v.phase === 'FT' || v.phase === 'closed' ? staked : 0);
+}
+
+/** Byg · Mål · Pulje · Portefølje, two lines each; the lobby is behind the back chevron. */
+export function BottomBar({ v }: { v: MatchView }) {
+  const pnl = pnlOf(v);
+  const over = v.d.totals.find((q) => q.id === O25_ID);
+  const crossed = v.d.goalsNow > 2.5;
+  const myPool = v.pool.user[0] + v.pool.user[1] + v.pool.user[2];
+  return (
+    <nav className="bb bb4" aria-label="Hovednavigation">
+      <button onClick={() => go('byg')}><span className="bb-l">Byg</span><small>en fremtid</small></button>
+      <button onClick={() => go('maal')}><span className="bb-l">Mål</span><small className="num">{crossed ? `${v.d.goalsNow} mål · Over ✓` : `Over 2,5 · ${over?.ask ?? '–'}`}</small></button>
+      <button onClick={() => go('pulje')}><span className="bb-l">Pulje</span><small className="num">{v.pool.closed ? (myPool ? `${fmtKr(myPool)} inde` : 'lukket') : v.pool.open ? 'åben til pausen' : 'stoppet'}</small></button>
+      <button onClick={() => go('portefolje')}><span className="bb-l">Portefølje</span><small className={`num ${pnl >= 0 ? 'up' : 'down'}`}>{pnl >= 0 ? '+' : '−'}{fmtKr(Math.abs(pnl))}</small></button>
+    </nav>
+  );
 }
 
 function Kampbaand({ v, onLogoLong, muted, toggleMute }: { v: MatchView; onLogoLong: () => void; muted: boolean; toggleMute: () => void }) {
@@ -125,28 +151,35 @@ function Kampbaand({ v, onLogoLong, muted, toggleMute }: { v: MatchView; onLogoL
 
 function Instrumenthoved({ v, store }: { v: MatchView; store: MatchStore }) {
   const f = v.focus;
-  const q = v.d.outcomes[f];
+  const sp = v.spec;
   const counts = v.counts;
   const early = v.t < 8 && v.phase !== 'FT' && v.phase !== 'closed';
+  const next = nextFocus(f, v.d.goalsNow < 3);
   return (
     <section className="ih" aria-label="Pris">
       <div className="ih-left">
-        <button className="ih-label" onClick={() => store.setFocus(((f + 1) % 3) as Focus)} aria-label={`${OUTCOME_LABEL[f]}. Tryk for næste udfald`}>{OUTCOME_LABEL[f]} ▾</button>
-        <span className={`ih-price num f${f}`}><small className="ih-unit">kurs</small><Roller value={q.ask} /></span>
+        <button className="ih-label" onClick={() => store.setFocus(next)} aria-label={`${sp.label}. Tryk for ${next === 'o25' ? 'Over 2,5 mål' : OUTCOME_LABEL[next]}`}>{sp.label} ▾</button>
+        <span className={`ih-price num f${f}`}><small className="ih-unit">kurs</small><Roller value={sp.ask} /></span>
       </div>
       <div className="ih-right">
-        <span className="ih-futures"><b className={`num f${f}`}>{counts ? counts[f] : Math.round(q.p * 100)} %</b> chance</span>
-        <span className="ih-sub">{early ? `udbetaler 100 hvis ${OUTCOME_SHORT[f] === 'X' ? 'uafgjort' : `${OUTCOME_SHORT[f]} vinder`}` : `odds ${(100 / q.ask).toFixed(2).replace('.', ',')} · sælg kurs ${q.bid}`}</span>
+        <span className="ih-futures"><b className={`num f${f}`}>{counts ? counts[sp.stratum] : Math.round(sp.p * 100)} %</b> chance</span>
+        <span className="ih-sub">{early ? sp.payoff : `odds ${(100 / sp.ask).toFixed(2).replace('.', ',')} · sælg kurs ${sp.bid}`}</span>
         {v.ghostStatus && <span className="ih-ghost">{v.ghostStatus}</span>}
       </div>
     </section>
   );
 }
 
-function Andelsbar({ v, store, onTap, onDouble, setHold }: { v: MatchView; store: MatchStore; onTap: (f: Focus) => void; onDouble: (id: string, label: string) => void; setHold: (h: HoldState | null) => void }) {
+function Andelsbar({ v, store, onTap, onDouble, setHold }: { v: MatchView; store: MatchStore; onTap: (f: Focus, side?: number) => void; onDouble: (id: string, label: string) => void; setHold: (h: HoldState | null) => void }) {
   const ref = useRef<HTMLDivElement>(null);
-  const g = useRef<{ f: Focus; x: number; y: number; t: number; timer: number; step: number; holding: boolean; dx: number; dy: number; over: Focus } | null>(null);
-  const segAt = (x: number): Focus => {
+  const g = useRef<{ f: number; x: number; y: number; t: number; timer: number; step: number; holding: boolean; dx: number; dy: number; over: number } | null>(null);
+  // With Over 2,5 in focus the bar is Over | Under; otherwise the three results.
+  const o25 = v.spec.isO25;
+  const segs = o25
+    ? [O25_ID, U25_ID].map((id, i) => ({ id, q: v.d.totals.find((x) => x.id === id)!, short: i ? 'Under 2,5' : 'Over 2,5', label: i ? 'Under 2,5 mål' : 'Over 2,5 mål', cls: i ? 'su' : 'so', on: false }))
+    : v.d.outcomes.map((q, i) => ({ id: OUTCOME_ID[i], q, short: OUTCOME_SHORT[i] as string, label: OUTCOME_LABEL[i] as string, cls: `s${i}`, on: v.focus === i }));
+  const tapSeg = (i: number) => (o25 ? onTap('o25', i) : onTap(i as Focus));
+  const segAt = (x: number): number => {
     const el = ref.current;
     if (!el) return 0;
     const kids = Array.from(el.querySelectorAll<HTMLElement>('.ab-seg'));
@@ -154,9 +187,9 @@ function Andelsbar({ v, store, onTap, onDouble, setHold }: { v: MatchView; store
       const r = k.getBoundingClientRect();
       return x >= r.left && x <= r.right;
     });
-    return (i < 0 ? 0 : i) as Focus;
+    return i < 0 ? 0 : i;
   };
-  const down = (e: React.PointerEvent, f: Focus) => {
+  const down = (e: React.PointerEvent, f: number) => {
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     store.holdSpeed(6000);
     const st = { f, x: e.clientX, y: e.clientY, t: performance.now(), timer: 0, step: -1, holding: false, dx: 0, dy: 0, over: f };
@@ -167,7 +200,7 @@ function Andelsbar({ v, store, onTap, onDouble, setHold }: { v: MatchView; store
       if (!s || s.over !== s.f) return;
       s.holding = true;
       s.step = Math.min(STEPS.length - 1, s.step + 1);
-      setHold({ x: s.x, y: s.y, step: s.step, dx: s.dx, dy: s.dy, label: OUTCOME_SHORT[s.f], ask: v.d.outcomes[s.f].ask });
+      setHold({ x: s.x, y: s.y, step: s.step, dx: s.dx, dy: s.dy, label: segs[s.f].short, ask: segs[s.f].q.ask });
       s.timer = window.setTimeout(tick, 280);
     }, 250);
   };
@@ -180,7 +213,7 @@ function Andelsbar({ v, store, onTap, onDouble, setHold }: { v: MatchView; store
       window.clearTimeout(s.timer);
       s.over = segAt(e.clientX);
     } else if (!s.holding) s.over = segAt(e.clientX);
-    if (s.holding) setHold({ x: s.x, y: s.y, step: s.step, dx: s.dx, dy: s.dy, label: OUTCOME_SHORT[s.f], ask: v.d.outcomes[s.f].ask });
+    if (s.holding) setHold({ x: s.x, y: s.y, step: s.step, dx: s.dx, dy: s.dy, label: segs[s.f].short, ask: segs[s.f].q.ask });
   };
   const up = () => {
     const s = g.current;
@@ -191,28 +224,29 @@ function Andelsbar({ v, store, onTap, onDouble, setHold }: { v: MatchView; store
     if (s.holding) {
       const kr = STEPS[Math.max(0, s.step)];
       if (s.dx < -40) return;
-      store.setFocus(s.f);
-      if (s.dy < -40) store.requestBuy(OUTCOME_ID[s.f], kr);
-      else onTap(s.f);
+      if (!o25) store.setFocus(s.f as Focus);
+      if (s.dy < -40) store.requestBuy(segs[s.f].id, kr);
+      else tapSeg(s.f);
       return;
     }
     if (s.over !== s.f) {
+      if (o25) return;
       const pair = [s.f, s.over].sort();
       const dc = pair[0] === 0 && pair[1] === 1 ? v.d.dc[0] : pair[0] === 1 && pair[1] === 2 ? v.d.dc[1] : null;
       if (dc) onDouble(dc.id, dc.label);
       return;
     }
-    onTap(s.f);
+    tapSeg(s.f);
   };
   return (
-    <div ref={ref} className="ab no-touch-ui" role="group" aria-label="Andelsbar: pris pr. udfald">
-      {v.d.outcomes.map((q, i) => (
+    <div ref={ref} className={`ab no-touch-ui ${o25 ? 'ab-o25' : ''}`} role="group" aria-label={o25 ? 'Andelsbar: Over eller Under 2,5 mål' : 'Andelsbar: pris pr. udfald'}>
+      {segs.map(({ id, q, short, label, cls, on }, i) => (
         <button
-          key={q.id}
-          className={`ab-seg s${i} ${v.focus === i ? 'on' : ''}`}
+          key={id}
+          className={`ab-seg ${cls} ${on ? 'on' : ''}`}
           style={{ flexGrow: q.ask }}
-          aria-label={`${OUTCOME_LABEL[i]} kurs ${q.ask}. Tryk for at købe, hold for hurtigkøb`}
-          onPointerDown={(e) => down(e, i as Focus)}
+          aria-label={`${label} kurs ${q.ask}. Tryk for at købe, hold for hurtigkøb`}
+          onPointerDown={(e) => down(e, i)}
           onPointerMove={move}
           onPointerUp={up}
           onPointerCancel={() => {
@@ -222,10 +256,10 @@ function Andelsbar({ v, store, onTap, onDouble, setHold }: { v: MatchView; store
             setHold(null);
           }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') onTap(i as Focus);
+            if (e.key === 'Enter' || e.key === ' ') tapSeg(i);
           }}
         >
-          <span className="ab-l">{OUTCOME_SHORT[i]}</span>
+          <span className="ab-l">{short}</span>
           <span className="ab-v num"><Roller value={q.ask} /></span>
         </button>
       ))}
@@ -233,7 +267,8 @@ function Andelsbar({ v, store, onTap, onDouble, setHold }: { v: MatchView; store
   );
 }
 
-function Maalvejret({ v, store, onWindow, onAfterGoal }: { v: MatchView; store: MatchStore; onWindow: (a: number, b: number) => void; onAfterGoal: () => void }) {
+function Maalvejret({ v, store, onWindow, onAfterGoal, onOver }: { v: MatchView; store: MatchStore; onWindow: (a: number, b: number) => void; onAfterGoal: () => void; onOver: () => void }) {
+  const over = v.d.totals.find((q) => q.id === O25_ID);
   const rows = v.d.windows;
   const drag = useRef<{ a: number; b: number } | null>(null);
   const [sel, setSel] = useState<{ a: number; b: number } | null>(null);
@@ -243,7 +278,8 @@ function Maalvejret({ v, store, onWindow, onAfterGoal }: { v: MatchView; store: 
     <section className="mv" aria-label="Målvejret">
       <div className="mv-head">
         <p className="mv-h" aria-live="polite">{v.d.headline}</p>
-        {ag && ag.open && <button className="mv-ag num" onClick={onAfterGoal}>Efter målet {ag.ja.ask}</button>}
+        {ag && ag.open ? <button className="mv-ag num" onClick={onAfterGoal}>Efter målet {ag.ja.ask}</button>
+          : over && v.d.goalsNow < 3 && v.phase !== 'FT' && v.phase !== 'closed' && <button className={`mv-ag mv-o25 num ${v.focus === 'o25' ? 'on' : ''}`} onClick={onOver} aria-label={`Over 2,5 mål, kurs ${over.ask}`}>Over 2,5 · kurs {over.ask}</button>}
       </div>
       <div
         className="mv-bars no-touch-ui"
@@ -308,8 +344,8 @@ function VarStrip({ v, onPick }: { v: MatchView; onPick: (i: number) => void }) 
   );
 }
 
-function PositionCard({ v, store }: { v: MatchView; store: MatchStore }) {
-  const pos = v.positions.find((p) => p.id === OUTCOME_ID[v.focus] && p.shares > 0 && !p.settled);
+function PositionCard({ v, store, onSikring }: { v: MatchView; store: MatchStore; onSikring: (contract: string) => void }) {
+  const pos = v.positions.find((p) => p.id === v.spec.contract && p.shares > 0 && !p.settled);
   const any = v.positions.filter((p) => p.shares > 0 && !p.settled);
   if (!pos) {
     return (
@@ -326,15 +362,28 @@ function PositionCard({ v, store }: { v: MatchView; store: MatchStore }) {
     <section className="pc" aria-label="Din position">
       <div className="pc-top">
         <span className="pc-what">{pos.label} · <span className="num">{pos.shares}</span> andele @ kurs <span className="num">{Math.round(pos.avg)}</span></span>
-        <span className="pc-win">Ved sejr <b className="num">{fmtKr(pos.atWin)}</b></span>
+        <span className="pc-win">{v.spec.isO25 ? 'Ved 3+ mål' : 'Ved sejr'} <b className="num">{fmtKr(pos.atWin)}</b></span>
       </div>
       <div className="pc-mid">
         <span className="pc-val">Værdi nu <b className="num">{fmtKr(pos.value)}</b></span>
         {Math.abs(pos.pnl) < 0.5 ? <span className="pc-pnl num">± 0 kr</span> : <span className={`pc-pnl num ${pos.pnl >= 0 ? 'up' : 'down'}`}>{pos.pnl >= 0 ? '▲' : '▼'} {fmtKr(Math.abs(pos.pnl))}</span>}
         <span className="pc-bid">sælg til kurs <span className="num">{pos.bid}</span></span>
       </div>
+      {(EXIT_CONTRACTS as readonly string[]).includes(pos.id) && <SikringChip v={v} contract={pos.id} onOpen={() => onSikring(pos.id)} />}
       <Fader pos={pos} store={store} halted={v.halted} />
     </section>
+  );
+}
+
+/** One chip on the position card: "Sikring", or the active levels. */
+function SikringChip({ v, contract, onOpen }: { v: MatchView; contract: string; onOpen: () => void }) {
+  const ex = v.exits.filter((x) => x.contract === contract && x.status === 'aktiv');
+  const stop = ex.find((x) => x.kind === 'stop');
+  const take = ex.find((x) => x.kind === 'take');
+  return (
+    <button className={`pc-sikring num ${ex.length ? 'on' : ''}`} onClick={onOpen} aria-label={ex.length ? `Sikring aktiv${stop ? `, stop-loss ${stop.level}` : ''}${take ? `, sikr gevinst ${take.level}` : ''}. Tryk for at ændre` : 'Sikring: sæt stop-loss eller sikr gevinst'}>
+      {ex.length ? <>{stop && <span className="sk-stop">Stop {stop.level}</span>}{take && <span className="sk-take">Sikr {take.level}</span>}</> : 'Sikring'}
+    </button>
   );
 }
 
@@ -343,6 +392,11 @@ function Fader({ pos, store, halted }: { pos: MatchView['positions'][number]; st
   const track = useRef<HTMLDivElement>(null);
   const [frac, setFrac] = useState(1); // share of the position kept (1 = all held)
   const [confirm, setConfirm] = useState<number | null>(null);
+  // A confirm chip never survives a change in the position (a fill, an exit, a sale elsewhere).
+  useEffect(() => {
+    setConfirm(null);
+    setFrac(1);
+  }, [pos.shares]);
   const stakeBack = pos.bid > 0 ? Math.min(pos.shares, Math.ceil((100 * pos.stake) / pos.bid)) : pos.shares;
   const notches: { at: number; label: string }[] = [{ at: 0, label: 'Alt' }, { at: 0.5, label: '½' }];
   if (pos.value > pos.stake && stakeBack < pos.shares) {

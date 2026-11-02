@@ -96,18 +96,63 @@ const ff = (m) => `(async () => { const st = window.__udfald.derby; st.stop(); s
     await ctx.close();
   }
 
-  // 4) Chrome stays still through a goal, and the score updates.
-  {
+  // 4) Chrome stays still through a goal, and the score updates (1X2 focus and Over 2,5 focus).
+  for (const focus of [0, 'o25']) {
     const { ctx, f } = await open(browser, 'kamp');
     await f.evaluate(ff(30));
+    await f.evaluate((fc) => { const st = window.__udfald.derby; if (st.sim.h + st.sim.a < 3) st.setFocus(fc); st.flushNow(); }, focus);
+    await f.waitForTimeout(400);
     const boxes = () => f.evaluate(() => ['.kb', '.ab', '.bb', '.ih'].map((s) => { const r = document.querySelector(s).getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map(Math.round).join(','); }));
     const before = await boxes();
     await f.evaluate(() => window.__udfald.derby.fire('goalB'));
     const samples = [];
     for (let i = 0; i < 12; i++) { await f.waitForTimeout(100); samples.push((await boxes()).join('|')); }
-    check('chrome still during goal', samples.every((s) => s === before.join('|')), samples.find((s) => s !== before.join('|')) || '');
+    check(`chrome still during goal (focus ${focus})`, samples.every((s) => s === before.join('|')), samples.find((s) => s !== before.join('|')) || '');
     const score = await f.evaluate(() => window.__udfald.derby.sim.a);
-    check('goal registered', score >= 1, `BIF ${score}`);
+    check(`goal registered (focus ${focus})`, score >= 1, `BIF ${score}`);
+    await ctx.close();
+  }
+
+  // 5b) New features through the UI: Over 2,5 from the chip, Sikring on the position, the pool, the score map.
+  {
+    const { ctx, page, f, errors } = await open(browser, 'kamp');
+    await f.evaluate(ff(6));
+    await f.click('.mv-o25');
+    await f.waitForSelector('.tray');
+    const focus = await f.evaluate(() => window.__udfald.derby.focus);
+    check('Over 2,5 chip focuses the fan on Over 2,5', focus === 'o25', String(focus));
+    await f.click('.tray-buy');
+    await f.waitForTimeout(2300);
+    const over = await f.evaluate(() => window.__udfald.derby.book.positions.get('tot:2.5:O')?.shares ?? 0);
+    check('Over 2,5 buy fills', over > 0, `${over} shares`);
+    const bar = await f.evaluate(() => !!document.querySelector('.ab.ab-o25 .ab-seg.so'));
+    check('share bar shows Over | Under', bar, '');
+    await f.evaluate(() => { document.querySelector('.scrim')?.click(); });
+    await f.waitForSelector('.pc-sikring');
+    await f.click('.pc-sikring');
+    await f.waitForSelector('.ex-row.stop');
+    await f.click('.ex-row.stop .tray-buy');
+    await f.click('.ex-row.take .tray-buy');
+    await f.waitForTimeout(300);
+    const ex = await f.evaluate(() => window.__udfald.derby.book.exits.filter((x) => x.status === 'aktiv').map((x) => `${x.kind}@${x.level}`));
+    check('Sikring sets a stop-loss and a take-profit', ex.length === 2, ex.join(' '));
+    await (await page.$('#app')).screenshot({ path: path.join(OUT, 'sikring-tray.png') });
+    report.shots.push('sikring-tray.png');
+    await f.evaluate(() => { location.hash = 'pulje'; });
+    await f.waitForSelector('.pj-bar.x');
+    await f.click('.pj-bar.x');
+    await f.click('.pj-stake .tray-buy');
+    await f.waitForTimeout(300);
+    const pool = await f.evaluate(() => window.__udfald.derby.book.poolStakes.map((x) => `${x.side}:${x.kr}`));
+    check('pool takes a stake on X', pool.length === 1 && pool[0].startsWith('1:'), pool.join(' '));
+    await f.evaluate(() => { location.hash = 'maal'; });
+    await f.waitForSelector('.sm-cell');
+    await f.click('.sm-cell[aria-label^="1–1"]');
+    await f.click('.maal-quote .tray-buy');
+    await f.waitForTimeout(2300);
+    const cs = await f.evaluate(() => [...window.__udfald.derby.book.positions.keys()].filter((k) => k.startsWith('cs:')));
+    check('score map buys a final score', cs.includes('cs:1-1'), cs.join(' '));
+    check('new features: no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
     await ctx.close();
   }
 
@@ -143,9 +188,16 @@ const ff = (m) => `(async () => { const st = window.__udfald.derby; st.stop(); s
   }
 
   // 7) axe on each screen.
-  for (const route of ['lobby', 'kamp', 'byg', 'portefolje', 'afregning', 'hallen']) {
-    const { ctx, f } = await open(browser, route);
-    await f.waitForTimeout(2500);
+  for (const route of ['lobby', 'kamp', 'byg', 'maal', 'pulje', 'portefolje', 'afregning', 'hallen', 'kamp+sikring']) {
+    const { ctx, f } = await open(browser, route.split('+')[0]);
+    await f.waitForTimeout(1500);
+    if (['maal', 'pulje', 'kamp'].includes(route.split('+')[0])) {
+      // Fast-forward so the screens have content: a position, exits, a pool stake.
+      await f.evaluate(ff(20));
+      await f.evaluate(() => { const st = window.__udfald.derby; st.book.buy({ contract: '1x2:F', label: 'FCK vinder', kr: 200, ask: st.sim.ask[0], k: st.sim.k, t: st.sim.t, mid: st.sim.mid[0] }); st.placeExit('1x2:F', 'stop', st.sim.bid[0] - 10); st.stakePool(0, 100); st.setFocus(0); st.flushNow(); });
+    }
+    if (route === 'kamp+sikring') { await f.click('.pc-sikring'); await f.waitForSelector('.ex-row'); }
+    await f.waitForTimeout(1000);
     await f.evaluate(AXE);
     const res = await f.evaluate(() => window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] } }));
     const crit = res.violations.filter((v) => v.impact === 'critical');
@@ -163,6 +215,19 @@ const ff = (m) => `(async () => { const st = window.__udfald.derby; st.stop(); s
     await (await page.$('#app')).screenshot({ path: file });
     report.shots.push(path.basename(file));
     await ctx.close();
+  }
+  // 8b) The new screens and the Over 2,5 fan at the smallest and largest heights.
+  for (const h of [664, 844]) {
+    for (const shot of ['o25', 'maal', 'pulje']) {
+      const { ctx, page, f } = await open(browser, shot === 'o25' ? 'kamp' : shot, { h });
+      await f.evaluate(ff(24));
+      await f.evaluate((sh) => { const st = window.__udfald.derby; if (sh === 'o25' && st.sim.h + st.sim.a < 3) st.setFocus('o25'); if (sh === 'pulje') st.stakePool(2, 150); st.flushNow(); }, shot);
+      await f.waitForTimeout(2200);
+      const file = path.join(OUT, `${shot}-${h}.png`);
+      await (await page.$('#app')).screenshot({ path: file });
+      report.shots.push(path.basename(file));
+      await ctx.close();
+    }
   }
 
   // 9) The demo, in real time: ghost thumb, Byg at halftime, Afregning at the end.

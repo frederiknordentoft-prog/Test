@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { MatchStore, MatchView, Focus } from '../../state/match';
-import { fmtKr, OUTCOME_ID, OUTCOME_SHORT } from '../../state/match';
-import { Book } from '../../engine/book/portfolio';
+import { fmtKr, OUTCOME_ID } from '../../state/match';
+import { Book, type ExitKind } from '../../engine/book/portfolio';
 
 export type TrayTarget =
   | { kind: 'buy'; contracts: { id: string; label: string; side: string }[]; title: string; note?: string; stake?: number }
-  | { kind: 'limit'; focus: Focus; level: number; stake?: number };
+  | { kind: 'limit'; focus: Focus; level: number; stake?: number }
+  | { kind: 'exit'; contract: string; stake?: number };
 
 const CHIPS = [25, 50, 100, 250, 500];
 
@@ -25,13 +26,16 @@ export function Tray({ store, view, target, onClose, lastStake, setLastStake }: 
     </div>
   );
 
+  if (target.kind === 'exit') return <ExitTray store={store} view={view} contract={target.contract} onClose={onClose} header={header} />;
+
   if (target.kind === 'limit') {
-    const ask = view.d.outcomes[target.focus].ask;
+    const sp = store.spec(target.focus);
+    const ask = sp.ask;
     const { shares } = Book.sharesFor(stake, target.level);
     return (
       <div className="tray" role="dialog" aria-label="Købsgrænse">
         {header}
-        <h2 className="tray-title">Købsgrænse · {OUTCOME_SHORT[target.focus]} ved kurs {target.level}</h2>
+        <h2 className="tray-title">Købsgrænse · {sp.short} ved kurs {target.level}</h2>
         <p className="tray-note">Fyldes automatisk, når kursen rammer {target.level} (nu {ask}). Under et handelsstop fyldes den til første pris efter stoppet.</p>
         <Chips stake={stake} setStake={setStake} lastStake={lastStake} />
         <div className="tray-pay"><span>Udbetaling ved sejr</span><b className="num">{fmtKr(shares)}</b></div>
@@ -99,11 +103,73 @@ export function Tray({ store, view, target, onClose, lastStake, setLastStake }: 
               setLastStake(stake);
             }}
           >
-            {open ? `Køb ${stake} kr` : view.haltKind === 'var' ? 'Kun VAR-markedet er åbent' : 'Handlen er stoppet'}
+            {open ? `Køb ${stake} kr` : (store.closedReason(c.id) ?? 'Handlen er stoppet')}
           </button>
         </div>
       )}
       {OUTCOME_ID.includes(c.id as (typeof OUTCOME_ID)[number]) && <p className="tray-foot">Hold på en resultatflise for at købe hurtigt.</p>}
+    </div>
+  );
+}
+
+/**
+ * Sikring: stop-loss and take-profit on one position, in whole points, with the exact payout if it
+ * fires, computed from the shares held now. A stop sells at the first price after it is hit.
+ */
+function ExitTray({ store, view, contract, onClose, header }: { store: MatchStore; view: MatchView; contract: string; onClose: () => void; header: React.ReactNode }) {
+  const pos = view.positions.find((p) => p.id === contract && p.shares > 0 && !p.settled);
+  const active = view.exits.filter((x) => x.contract === contract && x.status === 'aktiv');
+  const cur = (k: ExitKind) => active.find((x) => x.kind === k);
+  const sug = Book.exitSuggestion(pos?.avg ?? 50, pos?.bid ?? 50);
+  const [stop, setStop] = useState(cur('stop')?.level ?? sug.stop);
+  const [take, setTake] = useState(cur('take')?.level ?? sug.take);
+  if (!pos) {
+    return (
+      <div className="tray" role="dialog" aria-label="Sikring">
+        {header}
+        <h2 className="tray-title">Sikring</h2>
+        <p className="tray-note">Ingen åben position at sikre.</p>
+        <div className="tray-actions"><button className="tray-cancel" onClick={onClose}>Luk</button></div>
+      </div>
+    );
+  }
+  const row = (kind: ExitKind, level: number, set: (n: number) => void) => {
+    const on = cur(kind);
+    const valid = kind === 'stop' ? level < pos.bid : level > pos.bid;
+    const kr = (pos.shares * level) / 100;
+    return (
+      <div className={`ex-row ${kind}`}>
+        <div className="ex-head">
+          <b>{kind === 'stop' ? 'Stop-loss' : 'Sikr gevinst'}</b>
+          {on && <span className="ex-on num">aktiv ved {on.level}</span>}
+        </div>
+        <div className="ex-ctl">
+          <button aria-label={`${kind === 'stop' ? 'Stop-loss' : 'Sikr gevinst'} ét point ned`} onClick={() => set(Math.max(1, level - 1))}>−</button>
+          <span className="ex-level num">kurs {level}</span>
+          <button aria-label={`${kind === 'stop' ? 'Stop-loss' : 'Sikr gevinst'} ét point op`} onClick={() => set(Math.min(99, level + 1))}>+</button>
+        </div>
+        <p className="ex-pay num">
+          {kind === 'stop'
+            ? `Rammer kursen ${level}, sælges ${pos.shares} andele ≈ ${fmtKr(kr)}, til første kurs efter stoppet.`
+            : `Når salgskursen når ${level}, sælges ${pos.shares} andele for mindst ${fmtKr(kr)}.`}
+        </p>
+        <div className="ex-actions">
+          {on && <button className="tray-cancel" onClick={() => store.cancelExit(on.id)}>Fjern</button>}
+          <button className="tray-buy" disabled={!valid || on?.level === level} onClick={() => store.placeExit(contract, kind, level)}>
+            {!valid ? (kind === 'stop' ? `Skal under ${pos.bid}` : `Skal over ${pos.bid}`) : on?.level === level ? `Aktiv ved ${level}` : on ? `Flyt til ${level}` : `Sæt ${kind === 'stop' ? 'stop-loss' : 'Sikr gevinst'}`}
+          </button>
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div className="tray" role="dialog" aria-label="Sikring">
+      {header}
+      <h2 className="tray-title">Sikring · {pos.label}</h2>
+      <p className="tray-note num">{pos.shares} andele @ kurs {Math.round(pos.avg)} · sælg nu til kurs {pos.bid}. Den ene annullerer den anden.</p>
+      {row('stop', stop, setStop)}
+      {row('take', take, setTake)}
+      <div className="tray-actions"><button className="tray-cancel" onClick={onClose}>Færdig</button></div>
     </div>
   );
 }

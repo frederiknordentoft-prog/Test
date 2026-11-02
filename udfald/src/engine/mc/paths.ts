@@ -8,7 +8,7 @@
 import { hash01, hash32 } from '../lib/rng';
 import { largestRemainder } from '../lib/quote';
 import { baseRate, D as D_, DP_STEP as STEP_, zoneFactor, type FootballParams } from '../football/params';
-import { baseTable, type BaseTable } from '../football/dp';
+import { baseTable, strandOver, totalsTable, type BaseTable, type TotalsTable } from '../football/dp';
 
 const D = D_;
 const STEP = STEP_;
@@ -26,10 +26,15 @@ export interface McRequest {
   params: FootballParams;
   state: McState;
   n: number;
-  /** Displayed 1X2 probabilities (mid), used to stratify 100 strands so the tally equals the price. */
-  probs: [number, number, number];
+  /**
+   * What the strands follow. 'outcome': the focused 1X2 outcome, stratified by final result.
+   * 'o25': Over 2.5 goals, stratified Over / Under. Default 'outcome'.
+   */
+  kind?: 'outcome' | 'o25';
+  /** Displayed probabilities per stratum (1X2 mid, or [Over, Under]); the tally equals the price. */
+  probs: number[];
   focus: 0 | 1 | 2;
-  /** Focused ask (raw, øre) right now; strands start exactly there. */
+  /** Focused ask (raw, kurs) right now; strands start exactly there. */
   askNow: number;
   legs?: Leg[];
 }
@@ -37,6 +42,8 @@ export interface McRequest {
 export interface Strand {
   id: number;
   outcome: 0 | 1 | 2;
+  /** Stratum the strand was drawn for: the 1X2 outcome, or 0 = Over / 1 = Under for 'o25'. */
+  stratum: number;
   v: Float32Array; // focused price (øre) per point
   d: Int8Array; // goal difference per point
   goalT: number[]; // future goal times on this path
@@ -46,11 +53,14 @@ export interface Strand {
 
 export interface McResult {
   id: number;
+  kind: 'outcome' | 'o25';
   t0: number; // time of the first point
   tPts: Float32Array; // time of every point (first point is t0, then the DP grid)
   strands: Strand[];
-  counts: [number, number, number];
-  mcShares: [number, number, number];
+  /** Strands per stratum (sums to 100). */
+  counts: number[];
+  /** Raw Monte Carlo shares per stratum, before stratification. */
+  mcShares: number[];
   byg: null | { legP: number[]; joint: number; cellCounts: number[] };
   ms: number;
 }
@@ -67,6 +77,20 @@ function base(p: FootballParams, end: number, red: [number, number]): BaseTable 
 }
 
 let permCache: { seed: number; n: number; perm: Uint32Array } | null = null;
+const totCache = new Map<string, TotalsTable>();
+function totals(p: FootballParams, end: number, red: [number, number], line: number): TotalsTable {
+  const key = `${p.lamF}|${p.lamB}|${end}|${red.join(',')}|${line}`;
+  let t = totCache.get(key);
+  if (!t) {
+    t = totalsTable(p, end, red, line);
+    totCache.set(key, t);
+  }
+  return t;
+}
+
+/** The Over 2.5 line the 'o25' strands follow. */
+export const MC_O25_LINE = 2.5;
+
 function permutation(seed: number, n: number): Uint32Array {
   if (permCache && permCache.seed === seed && permCache.n === n) return permCache.perm;
   const keys = Array.from({ length: n }, (_, j) => [hash32(seed, j, 0, 7), j] as const);
@@ -99,7 +123,7 @@ export function strandProbs(p: FootballParams, bt: BaseTable, t: number, end: nu
   return [w2, 1 - s, l2];
 }
 
-interface PathOut { h: number; a: number; goalT: number[]; goalTeam: (0 | 1)[]; d?: Int8Array; pi?: Float32Array }
+interface PathOut { h: number; a: number; goalT: number[]; goalTeam: (0 | 1)[]; d?: Int8Array; pi?: Float32Array; g?: Uint8Array }
 
 /** One path. Points: t0, then every DP grid time up to end. */
 function runPath(req: McRequest, j: number, record: boolean, nPts: number, firstDt: number, i0: number): PathOut {
@@ -114,9 +138,11 @@ function runPath(req: McRequest, j: number, record: boolean, nPts: number, first
   const goalTeam: (0 | 1)[] = [];
   const dArr = record ? new Int8Array(nPts) : undefined;
   const piArr = record ? new Float32Array(nPts) : undefined;
-  if (dArr && piArr) {
+  const gArr = record ? new Uint8Array(nPts) : undefined;
+  if (dArr && piArr && gArr) {
     dArr[0] = Math.max(-D, Math.min(D, h - a));
     piArr[0] = pi;
+    gArr[0] = Math.min(255, h + a);
   }
   const ouDecay = Math.exp(-p.theta);
   const ouSd = p.sigma * Math.sqrt((1 - Math.exp(-2 * p.theta)) / (2 * p.theta));
@@ -126,9 +152,10 @@ function runPath(req: McRequest, j: number, record: boolean, nPts: number, first
   for (let k = 1; k < nPts; k++) {
     const dt = (k === 1 ? Math.max(firstDt, 1e-6) : Math.min(STEP, s.end - t));
     if (dt <= 0) {
-      if (dArr && piArr) {
+      if (dArr && piArr && gArr) {
         dArr[k] = Math.max(-D, Math.min(D, h - a));
         piArr[k] = pi;
+        gArr[k] = Math.min(255, h + a);
       }
       continue;
     }
@@ -156,9 +183,10 @@ function runPath(req: McRequest, j: number, record: boolean, nPts: number, first
       eh = Math.exp(pi / 2);
       ea = 1 / eh;
     }
-    if (dArr && piArr) {
+    if (dArr && piArr && gArr) {
       dArr[k] = Math.max(-D, Math.min(D, h - a));
       piArr[k] = pi;
+      gArr[k] = Math.min(255, h + a);
     }
   }
   if (piArr) {
@@ -173,7 +201,7 @@ function runPath(req: McRequest, j: number, record: boolean, nPts: number, first
       }
     }
   }
-  return { h, a, goalT, goalTeam, d: dArr, pi: piArr };
+  return { h, a, goalT, goalTeam, d: dArr, pi: piArr, g: gArr };
 }
 
 function legHits(leg: Leg, s: McState, out: PathOut): boolean {
@@ -209,7 +237,9 @@ export async function runMc(req: McRequest, yieldFn?: () => Promise<void>): Prom
   const nPts = times.length;
   const tPts = Float32Array.from(times);
 
+  const o25 = req.kind === 'o25';
   const outcomes = new Uint8Array(req.n);
+  const strata = new Uint8Array(req.n);
   const legs = req.legs ?? [];
   const cells = new Uint16Array(req.n);
   const legHit = legs.map(() => 0);
@@ -217,6 +247,7 @@ export async function runMc(req: McRequest, yieldFn?: () => Promise<void>): Prom
   for (let j = 0; j < req.n; j++) {
     const out = runPath(req, j, false, nPts, firstDt, i0);
     outcomes[j] = out.h > out.a ? 0 : out.h === out.a ? 1 : 2;
+    strata[j] = o25 ? (out.h + out.a > MC_O25_LINE ? 0 : 1) : outcomes[j];
     if (legs.length) {
       let c = 0;
       legs.forEach((leg, li) => {
@@ -232,13 +263,14 @@ export async function runMc(req: McRequest, yieldFn?: () => Promise<void>): Prom
       slice = performance.now();
     }
   }
-  const mcCounts = [0, 0, 0];
-  outcomes.forEach((o) => mcCounts[o]++);
+  const nStrata = o25 ? 2 : 3;
+  const mcCounts = new Array(nStrata).fill(0);
+  strata.forEach((o) => mcCounts[o]++);
   const perm = permutation(req.seed, req.n);
 
   // Stratified selection: by 1X2 outcome normally, by leg cell when building.
   const strands: Strand[] = [];
-  let counts: [number, number, number] = [0, 0, 0];
+  let counts: number[] = new Array(nStrata).fill(0);
   let byg: McResult['byg'] = null;
   const bt = base(req.params, s.end, s.red);
   let pick: { j: number; cell: number }[] = [];
@@ -258,43 +290,50 @@ export async function runMc(req: McRequest, yieldFn?: () => Promise<void>): Prom
     const all = (1 << legs.length) - 1;
     byg = { legP: legHit.map((v) => v / req.n), joint: cellN[all] / req.n, cellCounts: want };
   } else {
-    const want = largestRemainder(req.probs, 100) as [number, number, number];
+    const want = largestRemainder(req.probs.slice(0, nStrata), 100);
     counts = want;
-    const got = [0, 0, 0];
+    const got = new Array(nStrata).fill(0);
     for (let q = 0; q < perm.length; q++) {
       const j = perm[q];
-      const o = outcomes[j];
+      const o = strata[j];
       if (got[o] < want[o]) {
         got[o]++;
         pick.push({ j, cell: 0 });
       }
     }
-    pick = pick.sort((x, y) => outcomes[x.j] - outcomes[y.j]);
+    pick = pick.sort((x, y) => strata[x.j] - strata[y.j]);
   }
 
-  const startProbs = strandProbs(req.params, bt, s.t, s.end, s.h - s.a, s.pi);
-  const delta = req.askNow - startProbs[req.focus] * 100;
+  // Each strand is priced along its own path; the start is shifted to the shown ask and the
+  // shift fades to zero at full time, so every strand starts at NU and ends at 0 or 100.
+  const tt = o25 ? totals(req.params, s.end, s.red, MC_O25_LINE) : null;
+  const priceAt = (t: number, d: number, g: number, pi: number): number =>
+    tt ? strandOver(req.params, tt, t, d, g, pi, s.end, s.red) * 100 : strandProbs(req.params, bt, t, s.end, d, pi)[req.focus] * 100;
+  const delta = req.askNow - priceAt(s.t, s.h - s.a, s.h + s.a, s.pi);
   for (const { j, cell } of pick) {
     const out = runPath(req, j, true, nPts, firstDt, i0);
     const v = new Float32Array(nPts);
     const dArr = out.d as Int8Array;
     const piArr = out.pi as Float32Array;
+    const gArr = out.g as Uint8Array;
     for (let k = 0; k < nPts; k++) {
       const t = tPts[k];
-      const pr = strandProbs(req.params, bt, t, s.end, dArr[k], piArr[k])[req.focus] * 100;
+      const pr = priceAt(t, dArr[k], gArr[k], piArr[k]);
       const fade = s.end - s.t > 1e-6 ? (s.end - t) / (s.end - s.t) : 0;
-      v[k] = k === nPts - 1 ? pr : Math.max(0, Math.min(100, pr + delta * fade));
+      // A crossed line is settled: exactly 100, no shift.
+      v[k] = k === nPts - 1 || pr >= 100 ? pr : Math.max(0, Math.min(100, pr + delta * fade));
     }
     const outcome = (out.h > out.a ? 0 : out.h === out.a ? 1 : 2) as 0 | 1 | 2;
-    strands.push({ id: j, outcome, v, d: dArr, goalT: out.goalT, goalTeam: out.goalTeam, cell });
+    strands.push({ id: j, outcome, stratum: strata[j], v, d: dArr, goalT: out.goalT, goalTeam: out.goalTeam, cell });
   }
   return {
     id: req.id,
+    kind: o25 ? 'o25' : 'outcome',
     t0: s.t,
     tPts,
     strands,
     counts,
-    mcShares: [mcCounts[0] / req.n, mcCounts[1] / req.n, mcCounts[2] / req.n],
+    mcShares: mcCounts.map((c) => c / req.n),
     byg,
     ms: performance.now() - t0,
   };

@@ -62,7 +62,7 @@ export function Afregning({ store }: { store: MatchStore }) {
     }
     // Your 1X2 trades as dots on the river.
     for (const e of log) {
-      if (e.kind === 'settle') continue;
+      if (e.kind === 'settle' || e.kind === 'pool-stake' || e.kind === 'pool-settle') continue;
       const o = OUTCOME_ID.indexOf(e.contract as (typeof OUTCOME_ID)[number]);
       if (o < 0) continue;
       g.fillStyle = e.kind === 'sell' ? '#ff6b5e' : '#ffffff';
@@ -97,7 +97,10 @@ export function Afregning({ store }: { store: MatchStore }) {
     }
   }
   const tot = store.book.totals();
-  const result = tot.paidOut - tot.staked + v.value;
+  // The pool counts at cost until it is paid out.
+  const poolIn = v.pool.result ? 0 : v.pool.user[0] + v.pool.user[1] + v.pool.user[2];
+  const result = tot.paidOut - tot.staked + v.value + poolIn;
+  const fired = v.exits.filter((x) => x.status === 'udløst');
   return (
     <div className="screen afregning">
       <div className="bar">
@@ -126,6 +129,27 @@ export function Afregning({ store }: { store: MatchStore }) {
               </li>
             ))}
           </ul>
+          {fired.length > 0 && (
+            <>
+              <h2>Sikring</h2>
+              <ul className="af-list">
+                {fired.map((x) => (
+                  <li key={x.id}><span className="af-what">{x.kind === 'stop' ? 'Stop-loss udløst' : 'Gevinst sikret'} · {x.label}<small className="num">{minuteLabel(x.fill!.t)} · niveau {x.level} · solgt {x.fill!.shares} @ kurs {x.fill!.price}</small></span><span className="num">{fmtKr(x.fill!.kr)}</span></li>
+                ))}
+              </ul>
+            </>
+          )}
+          {(v.pool.user[0] + v.pool.user[1] + v.pool.user[2]) > 0 && (
+            <>
+              <h2>Parken-puljen</h2>
+              <ul className="af-list">
+                {[0, 1, 2].filter((i) => v.pool.user[i] > 0).map((i) => (
+                  <li key={i}><span className="af-what">{['FCK vinder', 'Uafgjort', 'BIF vinder'][i]}<small className="num">indsat {fmtKr(v.pool.user[i])}</small></span><span className={`num ${v.pool.result ? (v.pool.result.winner === i ? 'up' : 'down') : ''}`}>{v.pool.result ? (v.pool.result.winner === i || v.pool.result.refund ? 'vandt' : '0 kr') : 'afventer'}</span></li>
+                ))}
+                {v.pool.result && <li><span className="af-what">Puljen udbetalt</span><span className={`num ${v.pool.result.payout > 0 ? 'up' : 'down'}`}>{v.pool.result.payout > 0 ? `+${fmtKr(v.pool.result.payout)}` : '0 kr'}</span></li>}
+              </ul>
+            </>
+          )}
           <ul className="af-list">
             {[...store.book.positions.values()].filter((p) => p.settled).map((p) => (
               <li key={p.id}><span className="af-what">{p.label}<small className="num">{p.lots.reduce((s, l) => s + l.shares, 0)} andele</small></span><span className={`num ${p.settled?.value === 100 ? 'up' : 'down'}`}>{p.settled?.value === 100 ? `+${fmtKr(p.settled.payout)}` : '0 kr'}</span></li>
