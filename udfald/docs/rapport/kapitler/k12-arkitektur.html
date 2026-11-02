@@ -1,0 +1,51 @@
+<div class="del" id="del2"><span>Del II</span><h1 class="delh">Maskinrummet</h1><p>Anden del forklarer motoren bag kurserne: målmodellen, prissætteren, Monte Carlo, markedslaget og reglerne for de tre nye funktioner. Afsnittene nævner de kildefiler og funktioner, de bygger på.</p></div>
+
+<h1 class="kapitel" id="k12" data-nr="12">Arkitektur: én deterministisk motor</h1>
+<p class="ingress">UDFALD har ingen server. Kampen, markedet og de 100 fremtider regnes i browseren af én motor, og dens tilstand afhænger kun af et seed, en tidslinje og et tælleskridt.</p>
+
+<h2 id="k12-lag">Lagene</h2>
+<p>Motoren i <code>src/engine/</code> er ren TypeScript uden React og DOM. Data løber én vej:</p>
+<ul>
+<li><b>Tidslinje:</b> et seed og en liste af hændelser. Instruktørpanelet tilføjer hændelser med <code>addEvent</code>.</li>
+<li><b>Simulation</b> (<code>FootballSim.step</code>): pres, boldzone, hjørnespark, chancer, mål, kort og VAR, ét substep ad gangen (kapitel 13).</li>
+<li><b>Prissætter</b> (<code>dp.ts</code>): fair chance for 1X2 og Over 2,5 fra ét rate-gitter (kapitel 14).</li>
+<li><b>Markedslag</b> (i <code>sim.ts</code>): ordreflow, hvaler, støj, handelsstop og heltalskurser (kapitel 15).</li>
+<li><b>Visningslag</b> (<code>display.ts</code>): næste mål, vinduer, grene, slutresultater og årsagschippen. Det skriver aldrig tilbage i tilstanden.</li>
+<li><b>Store</b> (<code>MatchStore</code>): realtidsløkken, bogen, købsgrænser, Sikring, puljen og afregningen.</li>
+<li><b>Monte Carlo</b> i en worker (en baggrundstråd i browseren): 5.000 simulerede forløb af resten af kampen, hvoraf 100 bliver til viftens stier.</li>
+</ul>
+<p>Simulationen læser aldrig bogen, puljen eller Monte Carlo, og et køb går gennem <code>fill</code> til <code>book.buy</code> uden at røre kurserne.</p>
+<!-- kilde: src/engine/football/sim.ts:1-9, 160-232, 616-620; src/engine/football/display.ts:1-4; src/state/match.ts:1-6, 681-694, 902-914; src/engine/mc/paths.ts:1-6 -->
+
+<figure class="fig" data-fig="system"><figcaption><b>Figur:</b> Systemets dele. Tidslinjen driver simulationen, prissætteren og markedslaget giver kurserne, storen holder bogen, Sikring og puljen, og Monte Carlo-workeren laver stierne. Pilene går kun én vej.</figcaption></figure>
+
+<h2 id="k12-determinisme">Determinisme</h2>
+<p>Alle tilfældige tal kommer fra en tællerbaseret hash. Seedets tekst bliver til et tal med FNV-1a (<code>hashSeed</code>), og hvert træk er en ren funktion af fire heltal. Ingen generator fører tilstand videre fra træk til træk.</p>
+<div class="formel"><i>u</i> = hash01(seed, <i>k</i>, strøm, <i>j</i>) ∈ [0; 1)<br>tilstand<sub><i>k</i></sub> = <i>f</i>(seed, tidslinje, <i>k</i>)<span class="hvor">hvor <i>k</i> er substeppets nummer, strøm er et fast nummer pr. slags tilfældighed (mål 1, zone 3, hjørne 4, chance 5, skud 6, pres 7, publikum 8, ordrestørrelse 9, side 10, støj 11, hval 12, Over 2,5-støj 14), og <i>j</i> skelner flere træk i samme substep.</span></div>
+<!-- kilde: src/engine/lib/rng.ts:20-51; src/engine/football/sim.ts:40, 118, 139-146 -->
+<p>Den samme tidslinje giver derfor den samme kamp, handel for handel, og en ny slags tilfældighed flytter ikke de andres træk. VAR-forløbet og Monte Carlo bruger samme princip (kapitel 14). Planen (§8) beskrev separate mulberry32-strømme; simulationen bruger dem ikke.</p>
+<!-- kilde: src/engine/football/sim.ts:10, 675-690; src/engine/mc/paths.ts:169-170; src/engine/lib/rng.ts:8-18; docs/PLAN.md:205 -->
+
+<h2 id="k12-tid">Tid</h2>
+<p>Alle konstanter i modellen er i kamptid. Ved ×1 kører én tick pr. 100 ms med ét substep:</p>
+<div class="formel">1 substep = 0,025 kampminutter = 1,5 kampsekunder = 100 ms ved ×1<br>1 kampminut = 40 substeps = 4 s ved ×1<br>1 DP-trin = 15 kampsekunder = 10 substeps</div>
+<!-- kilde: src/engine/football/params.ts:1-8; src/state/match.ts:1-6 -->
+<p>Uden for kamptiden ligger åbningsauktionen på {{k.PRE_SUBS}} substeps, pausen på 20 og lukningen efter slutfløjt på 20. Historiekampen med 3 minutters tillægstid sluttede ved substep 3.788, cirka 6 min 19 s ved ×1. Fart ændrer kun antallet af substeps pr. tick og falder til ×1 under handelsstop, før kampstart, i prislåsen og kort efter gestusser og køb. Løkken kører højst 3 ticks pr. frame og smider resten væk, så en langsom enhed kører langsommere i stedet for at indhente i ryk.</p>
+<!-- kilde: src/engine/football/sim.ts:23-25, 119, 170-197; src/state/match.ts:176-197, 209-219, 693; src/ui/kamp/Fan.tsx:187, 217 -->
+<!-- data: story.json final.k = 3788 -->
+
+<figure class="fig" data-fig="tidsskala"><figcaption><b>Figur:</b> Tidsskalaen. Et kampminut er 40 substeps på hver 1,5 kampsekunder og varer 4 s ved ×1. De lange streger er DP-trinene på 15 kampsekunder.</figcaption></figure>
+
+<h2 id="k12-opdatering">Opdatering af skærmen</h2>
+<p>Efter hvert substep tjekker storen Sikring, fører puljen frem, tjekker købsgrænser, afregner nye hændelser og afregner udløbne målvinduer, i den rækkefølge (kapitel 17). Visningslaget regnes helt hver 3. tick eller lige efter en hændelse; ellers kopieres kun 1X2- og Over 2,5-kurserne, fordi køb læser dem.</p>
+<!-- kilde: src/state/match.ts:221-246, 258-320 -->
+<p>Storen udgiver på to kanaler. <code>frame</code> går ud hver tick til canvas-lagene, som tegnes imperativt. <code>view</code> er de grove tal til React; den bygges højst 4 gange i sekundet (planen sagde 2), men straks ved en hændelse eller en handling. Viftens stier tegnes kun om, når et nyt Monte Carlo-resultat kommer, ved et mål, eller når viften centreres om efter et skift af fokus eller en stor kursbevægelse.</p>
+<!-- kilde: src/state/match.ts:1-6, 286-292, 823-834; src/ui/kamp/Kampen.tsx:14-15; src/ui/kamp/Fan.tsx:57-65, 104-116; docs/PLAN.md:449 -->
+
+<h2 id="k12-workere">Workere</h2>
+<p><code>McClient</code> prøver tre steder i rækkefølge: en worker fra sin egen fil, en klassisk blob-worker inlinet i bundtet og til sidst hovedtråden. En worker godkendes kun, hvis den svarer på et ping inden 1.500 ms. Workerne bygges som klassiske iife-filer, fordi kun klassiske blob-workere kører i en sandbox med opaque origin (PLAN §15). Hovedtråden kører den samme <code>runMc</code> og giver slip efter hver 4 ms. Der er højst én forespørgsel i gang. Storen beder om en ny kørsel hver 8. tick (hver 12. ved spoling; planen sagde hver 3.) og nulstiller ventetiden efter kampstart, mål, genåbning, VAR-dom og skift af fokus. En kørsel tog {{perf.mc}} i QA-målingen (kapitel 20).</p>
+<!-- kilde: src/engine/mc/client.ts:1-5, 11-31, 45-77, 96-123; src/engine/mc/paths.ts:261-264; vite.config.ts:8-9; src/state/match.ts:292, 486-502, 621-627; docs/PLAN.md:227, 417 -->
+
+<h2 id="k12-golden">Golden hashes</h2>
+<p><code>hash()</code> samler substep, kampur, fase, stilling, pres, zone, de tre kurser, de tre mid-chancer og antallet af hændelser og handler. Testen sammenligner tre kørsler med gemte fingeraftryk, golden hashes, fra commit 5d727d8, før Over 2,5 kom til: seed <code>det-1</code> i 1.500 substeps samt <code>golden-2</code> og demoen til ende. De er stadig ens. Over 2,5 ændrede altså ikke 1X2-simulationen: dens støj har sin egen strøm, dens fair pris læser rate-gitteret uden at ændre det, og dens gab gemmes på den eksisterende genåbningshændelse (<code>gapO25</code>). Hashes sammenlignes kun inden for samme JavaScript-motor (PLAN §8).</p>
+<!-- kilde: src/engine/football/sim.ts:209-213, 427-456, 622-626; tests/totals.test.ts:88-103; tests/football.test.ts:5-13; docs/PLAN.md:209 -->

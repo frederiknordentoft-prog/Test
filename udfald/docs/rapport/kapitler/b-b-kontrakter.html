@@ -1,0 +1,52 @@
+<h1 class="kapitel" id="bB" data-nr="B">Kontraktnøgler</h1>
+<p class="ingress">Hver kontrakt har en tekstnøgle, som prissætningen, bogen og afregningen bruger. Bilaget viser nøglerne for derbyet og Hallen, hvor kursen kommer fra, hvornår kontrakten kan handles, hvordan den afregnes, og om den kan få Sikring.</p>
+
+<h2 id="bB-derby">Derbyet</h2>
+<table class="t">
+  <thead><tr><th>Nøglemønster</th><th>Eksempel</th><th>Priskilde og margin</th><th>Åben</th><th>Afregning</th><th>Sikring</th></tr></thead>
+  <tbody>
+    <tr><td><code>1x2:F|X|B</code></td><td><code>1x2:F</code><br><span class="ui">FCK vinder</span></td><td>Simulationen: power på mid, 3 %, hysterese 0,6. Salgskurs − 2/4/6</td><td>Når handlen er åben</td><td>Slutfløjt: vinderen 100, de to andre 0</td><td>Ja</td></tr>
+    <tr><td><code>dc:1X|X2</code></td><td><code>dc:1X</code><br><span class="ui">FCK eller X</span></td><td>Visningen: power på summen af to mid, 4 %, højst de to kurser − 1. Salgskurs − 3</td><td>Som 1X2</td><td>Slutfløjt</td><td>Nej</td></tr>
+    <tr><td><code>ng{n}:F|N|B</code></td><td><code>ng2:B</code><br><span class="ui">Næste mål BIF</span></td><td><code>nextGoal</code> fra rate-gitteret, 5 %. Salgskurs − 3</td><td>Kun for <i>n</i> = godkendte mål + 1</td><td>Godkendt mål nr. <i>n</i>: holdet 100, resten 0. Slutfløjt: N 100</td><td>Nej</td></tr>
+    <tr><td><code>w:{a}-{b}:J|N</code></td><td><code>w:60-70:J</code><br><span class="ui">Mål 60–70′</span></td><td><code>windowGoal</code>, 9 %. Salgskurs − 3</td><td>Til 1 kampminut før <i>b</i>, og kun til der scores i vinduet</td><td>Godkendt mål i [<i>a</i>; <i>b</i>): J 100. Intet mål: N 100</td><td>Nej</td></tr>
+    <tr><td><code>ag{n}:J|N</code></td><td><code>ag1:J</code><br><span class="ui">Efter målet</span></td><td><code>windowGoal</code> over 5 kampminutter efter mål <i>n</i>, 10 %. Salgskurs − 3</td><td>Til 1 kampminut før vinduets slut, og kun til næste mål</td><td>Nyt godkendt mål i vinduet: J 100. Ellers N 100</td><td>Nej</td></tr>
+    <tr><td><code>var{n}:J|N</code></td><td><code>var1:J</code><br><span class="ui">Målet står?</span></td><td>VAR-chancen, 8 %. Salgskurs − 4</td><td>Kun under VAR-tjek nr. <i>n</i></td><td>Dommen: J 100 ved godkendt, N 100 ved annulleret</td><td>Nej</td></tr>
+    <tr><td><code>tot:{L}:O|U</code></td><td><code>tot:2.5:O</code><br><span class="ui">Over 2,5</span></td><td>2,5: simulationen, 6 %, hysterese 0,6, salgskurs − 2/4/6. Øvrige: gitteret, 6 %, salgskurs − 3</td><td>Til linjen er passeret</td><td>Godkendt mål, der krydser <i>L</i>: O 100, U 0. Ellers slutfløjt</td><td>Kun Over 2,5</td></tr>
+    <tr><td><code>cs:h-a[.h-a…]</code></td><td><code>cs:0-0.1-1</code><br><span class="ui">0–0, 1–1</span></td><td>Gitteret: én celle ⌈100 · <i>p</i> · 1,15⌉, en region ⌈100 · Σ<i>p</i> · 1,10⌉. Salgskurs ⌊100 · Σ<i>p</i> · 0,92⌋, højst kurs − 2</td><td>Mindst én celle kan nås, og chancen er mindst {{k.CS_MIN_P}}</td><td>0, så snart ingen celle kan nås. Ellers slutfløjt</td><td>Nej</td></tr>
+    <tr><td><code>byg:{ben}+…</code></td><td><code>byg:u0+m3</code><br><span class="ui">FCK vinder + Mindst 3 mål</span></td><td>Monte Carlo: fælles chance, 12 %. Salgskurs − 4. Regnes, når benene vælges</td><td>Som 1X2. Under 5 % kan den ikke købes i Byg</td><td>Kun slutfløjt: 100, hvis alle ben holdt</td><td>Nej</td></tr>
+  </tbody>
+</table>
+<!-- kilde: src/engine/football/sim.ts:42, 458-471, 534-547; src/engine/football/display.ts:12-14, 42-48, 77-132; src/state/match.ts:26-27, 337-391, 543-618, 785-810, 936-945; src/state/focus.ts:12-16, 112-147; src/ui/byg/Byg.tsx:147-148 -->
+<!-- eksempler: w:60-70:J og byg:u0+m3 er demoens køb (data/vitest.txt, demo90 log) -->
+
+<h3 id="bB-aaben">Åben og lukket</h3>
+<p><code>closedReason</code> tjekker de fælles regler først: kampen er slut, et VAR-tjek kører (så er kun <code>var{n}</code> åben), eller handlen er stoppet. Derefter kommer reglerne i tabellen. <code>isOpen</code> styrer både køb og salg, og en kontrakt, storen ikke kan prissætte, er aldrig åben. Det gælder også en forældet nøgle, fx <code>ng1:F</code> efter første mål. Undtagelsen er en <code>cs:</code>-nøgle med en celle uden for 0–5: <code>closedReason</code> og <code>isOpen</code> kalder hinanden i ring, til kaldstakken løber over. Brugerfladen danner aldrig sådan en nøgle. Når en kontrakt afregnes, betaler hver andel 1 kr eller 0, og købsgrænser og Sikring på kontrakten annulleres.</p>
+<!-- kilde: src/state/match.ts:587-618, 631-637, 705-711; src/state/focus.ts:122-134; src/engine/book/portfolio.ts:159-170; tests/features.test.ts:68-71 -->
+<!-- data: genskabt med tests/.cache/engine.mjs ved 5′: isOpen('cs:9-9') giver "Maximum call stack size exceeded"; isOpen('ng2:F') og isOpen('tot:7.5:O') giver false -->
+
+<h3 id="bB-tal">Tallene i nøglerne</h3>
+<ul>
+<li><b><code>ng{n}</code>:</b> <i>n</i> er nummeret på det næste mål, regnet i godkendte mål. Et annulleret VAR-mål tæller ikke.</li>
+<li><b><code>ag{n}</code>:</b> <i>n</i> er målets <code>goalNo</code>, der også tæller mål, som gik til VAR. Vinduet løber fra målet og 5 kampminutter frem, højst til slutfløjt.</li>
+<li><b><code>var{n}</code>:</b> <i>n</i> er antallet af VAR-tjek indtil nu.</li>
+<li><b><code>w:{a}-{b}</code>:</b> kampminutter. Målvejrets vinduer starter ved 0, 5, …, 85, og det sidste løber til slutfløjt, fx <code>w:85-93</code> med 3 minutters tillægstid. Et træk over flere søjler giver et vilkårligt vindue.</li>
+<li><b><code>tot:{L}</code>:</b> <i>L</i> er 0,5, 1,5, 2,5, 3,5 eller 4,5 og skrives med punktum i nøglen.</li>
+<li><b><code>cs:</code>:</b> celler <code>h-a</code> med 0–5 mål pr. hold, hvor 5 betyder 5+. Cellerne sorteres efter <i>h</i> og så <i>a</i>, dubletter fjernes, og de adskilles af punktum.</li>
+<li><b><code>byg:</code>:</b> benene er <code>u0</code>, <code>u1</code> og <code>u2</code> (FCK vinder, uafgjort, BIF vinder), <code>m{n}</code> (mindst <i>n</i> mål), <code>btts</code> (begge scorer) og <code>v{a}-{b}</code> (mål i vinduet), forbundet med +. Højst 3 ben, heraf højst ét resultatben og ét <code>m{n}</code>-ben.</li>
+</ul>
+<!-- kilde: src/engine/football/display.ts:60-63, 99-126, 132; src/state/match.ts:327-346, 364-373, 552-564, 936-938; src/engine/football/sim.ts:119, 312-323; src/state/focus.ts:112-134; src/ui/byg/Byg.tsx:29-30 -->
+
+<h3 id="bB-sikring">Sikring og købsgrænser</h3>
+<p>Sikring kan kun sættes på de fire kontrakter i <code>EXIT_CONTRACTS</code>: <code>1x2:F</code>, <code>1x2:X</code>, <code>1x2:B</code> og <code>tot:2.5:O</code>. Det er de kontrakter, der har en linje i viften, og der kræves en åben position. Købsgrænser findes kun på 1X2, højst {{k.MAX_LIMITS}} ad gangen.</p>
+<!-- kilde: src/state/match.ts:26-27, 718-741; src/engine/book/portfolio.ts:32, 116-125, 189-205; src/state/focus.ts:74, 96 -->
+
+<h2 id="bB-hallen">Hallen</h2>
+<p>Hallens kontrakter ligger i <code>src/state/hallen.ts</code> og bruger samme bog som derbyet, så der er én saldo. Der er hverken handelsstop, salg, købsgrænser eller Sikring: en kontrakt holdes til afregning.</p>
+<table class="t">
+  <thead><tr><th>Nøglemønster</th><th>Eksempel</th><th>Priskilde og margin</th><th>Åben</th><th>Afregning</th></tr></thead>
+  <tbody>
+    <tr><td><code>hb:1x2:A|X|G</code></td><td><code>hb:1x2:A</code><br><span class="ui">Aalborg vinder</span></td><td>Vinderchancer fra kædens drift og σ, 4 %. Heltal 0–100</td><td>Til kampen er slut</td><td>Slutfløjt: vinderen 100, resten 0</td></tr>
+    <tr><td><code>hb:trig:{N}:{M}</code></td><td><code>hb:trig:4:45</code><br><span class="ui">Aalborg +4 før 45′</span></td><td>Første passage af føringen <i>N</i> før minut <i>M</i>, 8 %. Kurs 100, når niveauet er nået</td><td>Til fristen, og så længe kursen er under 100</td><td>100 første gang føringen når <i>N</i>, 0 ved fristen</td></tr>
+  </tbody>
+</table>
+<!-- kilde: src/state/hallen.ts:1-5, 37-38, 152-212; src/engine/handball/pricing.ts:22-29, 542-556; src/ui/App.tsx:36, 73 -->

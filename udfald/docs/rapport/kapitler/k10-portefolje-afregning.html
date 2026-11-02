@@ -1,0 +1,60 @@
+<h1 class="kapitel" id="k10" data-nr="10">Portefølje og afregning</h1>
+<p class="ingress">Porteføljen samler alt, du ejer, mens kampen kører. Afregningen kommer efter slutfløjt og viser hele kampen som en flod, dit regnskab og karakterer for dine køb på FCK, X og BIF.</p>
+
+<h2 id="k10-portefolje">Porteføljen</h2>
+<section class="duo">
+  <div class="txt">
+    <p>Øverst står tre tal: <span class="ui">Saldo</span>, <span class="ui">Værdi af åbne</span> og <span class="ui">Resultat</span>. Værdien er dine andele ganget med salgskursen, altså hvad du ville få, hvis du solgte alt nu. Derunder kommer fem afsnit:</p>
+    <ul>
+      <li><span class="ui">Åbne positioner</span>: andele og gennemsnitskurs, værdi nu, udbetaling ved sejr, resultat og knappen <span class="ui">Sælg alt</span>. Har positionen Sikring, står niveauerne ved salgskursen.</li>
+      <li><span class="ui">Købsgrænser</span>: niveau, det reserverede beløb og <span class="ui">Annullér</span>.</li>
+      <li><span class="ui">Sikring</span>: aktive stop-loss og Sikr gevinst med en linje om, hvordan de sælger.</li>
+      <li><span class="ui">Parken-puljen</span>: dine indsatser og puljens status.</li>
+      <li><span class="ui">Afsluttet</span>: solgte og afregnede positioner med deres resultat.</li>
+    </ul>
+    <p>Resultater står altid med pil, ▲ for plus og ▼ for minus. Puljen tæller til kostpris i resultatet, indtil den er betalt ud. Nederst fører en knap til Afregningen.</p>
+  </div>
+  <figure class="phone" data-shot="18-portefolje"><figcaption><b>Porteføljen ved 50′, 1–0.</b> FCK, slutresultat 1–1 og 2–1 er åbne. Sikring er tom: BIF-stoppet og Over-gevinsten udløste ved 29′, og de to andre ordrer blev annulleret. Puljen står som <span class="ui">Lukket ved pausen · afgøres ved slutfløjt</span>, og BIF og Over 2,5 ligger under Afsluttet som <span class="ui">solgt</span>.</figcaption></figure>
+</section>
+<!-- kilde: src/ui/portefolje/Portefolje.tsx:8-71; src/ui/kamp/Kampen.tsx:107-115; src/state/match.ts:853-865; src/engine/book/portfolio.ts:112, 277-286 -->
+<!-- data: story.json traceLate[0].exits (BIF-stop udløst, BIF-gevinst annulleret, Over-stop annulleret, Over-gevinst udløst) -->
+
+<h2 id="k10-afregning">Afregningen</h2>
+<section class="duo">
+  <div class="txt">
+    <p>Efter slutfløjt viser <span class="ui">Afregning</span> hele kampen som en <b>flod</b>: tre bånd, der tilsammen fylder højden, med FCK's chance i cyan nederst, uafgjort i gråt og BIF i gult øverst. Lodrette streger med en prik i holdets farve markerer målene. Dine handler på FCK, X og BIF står som prikker, hvide for køb og røde for salg.</p>
+    <p>Under floden står regnskabet: <span class="ui">Udbetalt</span>, <span class="ui">Indsat</span> og <span class="ui">Resultat</span>. Derefter følger <span class="ui">Dine træk</span> med hvert køb og dets karakter eller en tankestreg, de Sikring-ordrer, der blev udløst, puljen og til sidst alle afregnede kontrakter. En kontrakt, du solgte, før den blev afregnet, står med <span class="ui">solgt før afregning</span> og salgsbeløbet.</p>
+    <p>Åbner du Afregningen før slutfløjt, står der, at kampen ikke er slut endnu, og tallene opdateres live.</p>
+  </div>
+  <figure class="phone" data-shot="20-afregning"><figcaption><b>Afregningen efter 1–1.</b> <span class="ui">Udbetalt {{slut.udbetalt}}</span>, <span class="ui">Indsat {{slut.indsat}}</span> og <span class="ui">Resultat {{slut.resultat}}</span>. FCK-købet fik <span class="ui">{{karakter.fck}}</span> og BIF-købet <span class="ui">{{karakter.bif}}</span>. Sikring viser stoppet på {{stop.bif.kr}} og gevinsten på {{take.over.kr}}, puljen gav <span class="ui">+{{pulje.udbetaling}}</span> og 1–1 <span class="ui">+{{slut.cs11.udbetaling}}</span>.</figcaption></figure>
+</section>
+<!-- kilde: src/ui/afregning/Afregning.tsx:18-76, 99-157 -->
+
+<h2 id="k10-regnskab">Regnskabet</h2>
+<p><span class="ui">Indsat</span> er alt, du har betalt: køb, fyldte købsgrænser og puljeindsatser. <span class="ui">Udbetalt</span> er alt, du har fået: salg, afregninger og puljens udbetaling.</p>
+<div class="formel">Resultat = Udbetalt − Indsat + værdi af åbne positioner + puljeindsatser, der ikke er betalt ud <span class="hvor">hvor værdien er andele · salgskurs/100. Efter slutfløjt er alt afregnet, og de to sidste led er 0.</span></div>
+<!-- kilde: src/engine/book/portfolio.ts:288-297; src/ui/afregning/Afregning.tsx:99-102 -->
+<p>I historien så det sådan ud:</p>
+<table class="t">
+  <thead><tr><th>Kontrakt</th><th>Sådan sluttede den</th><th class="n">Indsat</th><th class="n">Udbetalt</th></tr></thead>
+  <tbody>
+    <tr><td>FCK vinder</td><td>afregnet til 0</td><td class="n">{{koeb.fck.kr}}</td><td class="n">0 kr</td></tr>
+    <tr><td>BIF vinder</td><td>solgt af stop-loss</td><td class="n">{{koeb.bif.kr}}</td><td class="n">{{stop.bif.kr}}</td></tr>
+    <tr><td>Over 2,5 mål</td><td>solgt af Sikr gevinst</td><td class="n">{{koeb.over.kr}}</td><td class="n">{{take.over.kr}}</td></tr>
+    <tr><td>Slutresultat 1–1</td><td>afregnet til 1 kr pr. andel</td><td class="n">{{koeb.cs11.kr}}</td><td class="n">{{slut.cs11.udbetaling}}</td></tr>
+    <tr><td>Slutresultat 2–1</td><td>afregnet til 0</td><td class="n">{{koeb.cs21.kr}}</td><td class="n">0 kr</td></tr>
+    <tr><td>Parken-puljen, uafgjort</td><td>vandt</td><td class="n">{{pulje.indsats}}</td><td class="n">{{pulje.udbetaling}}</td></tr>
+    <tr><td><b>I alt</b></td><td></td><td class="n"><b>{{slut.indsat}}</b></td><td class="n"><b>{{slut.udbetalt}}</b></td></tr>
+  </tbody>
+</table>
+<p>Resultatet er {{slut.udbetalt}} − {{slut.indsat}} = {{slut.resultat}}, og saldoen endte på {{slut.saldo}}.</p>
+<!-- data: story.json final (staked, paidOut, saldo) og toasts k=3768 -->
+
+<h2 id="k10-karakterer">Træk-karakterer</h2>
+<p>Hvert køb på FCK, X eller BIF får en <b>træk-karakter</b>, lånt fra skakprogrammernes gennemgang af et parti. Karakteren måler købet, ikke udfaldet: hvor meget prisen flyttede sig i din retning de næste 10 kampminutter, eller til lige før næste mål, fratrukket det, tiden alene ville have gjort. Skalaen har fem trin:</p>
+<p><span class="ui">Brillant !!</span> · <span class="ui">Godt køb !</span> · <span class="ui">Præcist</span> · <span class="ui">Unøjagtigt ?!</span> · <span class="ui">Fejlkøb ??</span></p>
+<p>Andre køb, fx Over 2,5, slutresultater, vinduer og byggede fremtider, får en tankestreg. Karakteren flytter ingen penge. I historien fik FCK-købet {{karakter.fck}} og BIF-købet {{karakter.bif}}, selv om FCK-andelene endte på 0 og BIF-andelene blev solgt med tab. Regnestykket står i kapitel 19.</p>
+<!-- kilde: src/engine/book/portfolio.ts:300-310; src/ui/afregning/Afregning.tsx:78-98, 121-131 -->
+
+<div class="callout advarsel"><b>Prikkerne i floden.</b> Båndene tegnes med FCK nederst, men prikkerne placeres, som om FCK lå øverst: et FCK-køb tegnes højt oppe og et BIF-køb langt nede. Derfor ligger FCK-købet i billedet oppe i det grå bånd, mens BIF-købet og BIF-salget ligger nede i det cyan. Skærmlæserteksten siger også <span class="ui">FCK øverst</span>. Fejlen er fundet under arbejdet med rapporten og er ikke rettet.</div>
+<!-- kilde: src/ui/afregning/Afregning.tsx:32-51 (bånd: FCK fra 0 og op, Y(0) er bunden), 64-75 (prikker: FCK i højden 1 − kurs/200, BIF i kurs/200), 114 (aria-label) -->

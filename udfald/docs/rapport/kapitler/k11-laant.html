@@ -1,0 +1,35 @@
+<h1 class="kapitel" id="k11" data-nr="11">Lånt fra andre brancher</h1>
+<p class="ingress">Mange af UDFALDs mekanikker er hentet fra fag, der intet har med betting at gøre. Planen krævede mindst tre lån. Prototypen har seks signaturlån, to nye lån i denne version og to mindre støttelån.</p>
+
+<h2 id="k11-seks">Seks signaturlån</h2>
+<p>Tabellen viser, hvor hvert lån kommer fra, hvad det blev til i spillet, og hvilket problem det løser.</p>
+<table class="t">
+  <thead><tr><th></th><th>Branche og forbillede</th><th>I UDFALD</th><th>Hvad det løser</th></tr></thead>
+  <tbody>
+    <tr><td>S1</td><td><b>Finans og børs:</b> handelsstop på NYSE og Nasdaq, auktioner, limitordrer og prediction markets som Polymarket og Kalshi</td><td>Kursen 0–100, handelsstop med skraveret bånd, gab ved genåbning, købsgrænser, der fyldes i gabet, og auktionen før kampstart</td><td>Prisen får en fortid og en årsag, og et mål eller et VAR-tjek bliver et handelsøjeblik i stedet for død tid</td></tr>
+    <tr><td>S2</td><td><b>Meteorologi:</b> DMI, "næste time"-regn i vejrapps og ensembleprognoser fra ECMWF</td><td>Målvejret med målchance pr. 5 minutter og overskriften <span class="ui">Et mål er sandsynligt inden …</span>; fremtidsviften som ensemble</td><td>Hvornår målet falder, bliver ét greb, og sandsynligheden står på almindeligt dansk</td></tr>
+    <tr><td>S3</td><td><b>Musikproduktion:</b> mixerpultens fader og sidechain-kompression</td><td>Salgsfaderen med hakkene Alt, ½ og Indsats hjem; sidechain-pumpen ved mål</td><td>Delsalg og indsatsen hjem i ét træk; målet får tyngde, uden at rammerne rokker sig</td></tr>
+    <tr><td>S4</td><td><b>Sports-tv:</b> Orads virtuelle rekordlinje i svømning</td><td>Spøgelseslinjen: medianen af de vindende fremtider, frosset ved købet, med status som <span class="ui">Foran vindertempo</span></td><td>Hver position får en målestok undervejs</td></tr>
+    <tr><td>S5</td><td><b>Online-skak:</b> chess.com's partigennemgang og closing line value fra professionel trading</td><td>Træk-karakterer i Afregningen</td><td>Dømmekraft skilles fra held</td></tr>
+    <tr><td>S6</td><td><b>Elektronik:</b> oscilloskopets trigger</td><td>Hallen: målforskellen som signal og et triggerniveau, du selv trækker</td><td>Håndbold får sin egen grammatik</td></tr>
+  </tbody>
+</table>
+<!-- kilde: docs/KONCEPT.md:40-55 (§3); docs/PLAN.md:50-61 (§2); docs/RESEARCH.md:11, 23, 37-39, 49, 83, 91, 97 -->
+<p>Fire af lånene bor på kampskærmen: handelsstoppet (kapitel 5), Målvejret og spøgelseslinjen (kapitel 3) og faderen (kapitel 4). Træk-karaktererne hører til i Afregningen (kapitel 10), og triggeren i Hallen (kapitel 9). Før kampstart står kampbåndets pille på <span class="ui">AUKTION</span> i 30 substeps, mens de første ordrer mødes. Så starter kampen, og pillen skifter til <span class="ui">ÅBEN</span>.</p>
+<!-- kilde: src/ui/kamp/Kampen.tsx:135; src/engine/football/sim.ts:23, 171-174, 499-502 -->
+<p><b>Sidechain-pumpen</b> viser, hvordan et lån bliver oversat. I musikproduktion dykker et instrument i styrke, hver gang stortrommen slår. I UDFALD dykker dataelementerne ved et mål til 30 % synlighed og er tilbage efter 300 ms, forskudt efter afstanden fra prislinjens hoved: først stierne, så andelsbaren, Målvejret og tallene på positionskortet. Rammerne står stille, og med reduceret bevægelse slukkes pumpen helt.</p>
+<!-- kilde: src/ui/kamp/Fan.tsx:181-186; src/styles/kamp.css:55-61 -->
+
+<h2 id="k11-nye">To nye lån</h2>
+<p><b>Stop-loss og take-profit fra børshandel.</b> Aktiehandlere sætter et stop-loss for at begrænse et tab og en take-profit for at låse en gevinst. På en bettingbørs som Betfair hører det til at styre sin position: man kan låse en gevinst, uanset hvordan kampen ender. I UDFALD hedder funktionen <b>Sikring</b> og består af stop-loss og <span class="ui">Sikr gevinst</span>. Parret virker som en one-cancels-other-ordre fra trading: udløses den ene, annulleres den anden (kapitel 7).</p>
+<!-- kilde: docs/RESEARCH.md:27; docs/PLAN.md:489-496 (§19); src/engine/book/portfolio.ts:112, 178-244 -->
+<p><b>Totalisatoren fra hestevæddeløb og Tips.</b> I en totalisator spiller du mod de andre spillere, ikke mod bookmakeren. Alle indsatser lægges i én pulje, huset tager en fast andel, og resten deles mellem dem, der ramte rigtigt. Princippet kommer fra hestevæddeløb, og i Danmark kendes det fra Tips, hvis kuponer går tilbage til 1949. Parken-puljen bruger det på kampens 1X2: huset tager {{k.POOL_TAKE}}, og jo færre der står på din side, jo mere får du (kapitel 8).</p>
+<!-- kilde: docs/RESEARCH.md:97, 144, 228; src/engine/book/portfolio.ts:33-49 -->
+
+<h2 id="k11-stoette">Støttelån</h2>
+<p>To mindre lån har ingen skærm for sig selv:</p>
+<ul>
+  <li><b>Beskedapps:</b> hold-for-indsats virker som en talebesked. Du holder, indsatsen vokser, og du glider op for at sende eller til venstre for at fortryde (kapitel 4).</li>
+  <li><b>Fightingspil:</b> når et mål falder, fryser prislinjens hoved i 80 ms, før ringen sendes ud. Den korte pause, et hit-stop, giver øjeblikket vægt.</li>
+</ul>
+<!-- kilde: docs/KONCEPT.md:51-53; src/ui/kamp/HoldToStake.tsx:1-4; src/ui/kamp/Fan.tsx:173-178 -->

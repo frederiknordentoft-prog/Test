@@ -1,0 +1,126 @@
+<h1 class="kapitel" id="k17" data-nr="17">Sikring: regler, rækkefølge og kanttilfælde</h1>
+<p class="ingress">Kapitel 7 viste Sikring fra skærmen. Her er reglerne, som bogen og storen håndhæver dem: ordremodellen, valideringen ved placering, hvornår en ordre udløses i substeppet, og de tilfælde, hvor salget ender langt fra niveauet.</p>
+
+<h2 id="k17-model">Ordremodellen</h2>
+<p>En Sikring-ordre er en <code>ExitOrder</code> i bogens liste <code>exits</code>. Den slettes aldrig. Den skifter kun status fra <code>aktiv</code> til <code>udløst</code> eller <code>annulleret</code>, så Afregningen kan vise de udløste ordrer bagefter. Porteføljen viser kun de aktive.</p>
+<table class="t">
+  <thead><tr><th>Felt</th><th>Indhold</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>Løbenummer i bogen. En flyttet ordre får et nyt.</td></tr>
+    <tr><td><code>contract</code>, <code>label</code></td><td>Kontraktnøglen, fx <code>1x2:B</code>, og teksten <span class="ui">BIF vinder</span>.</td></tr>
+    <tr><td><code>kind</code></td><td><code>stop</code> for stop-loss eller <code>take</code> for Sikr gevinst.</td></tr>
+    <tr><td><code>level</code></td><td>Niveauet som heltalskurs fra 1 til 99.</td></tr>
+    <tr><td><code>k</code></td><td>Substeppet, hvor ordren blev sat.</td></tr>
+    <tr><td><code>status</code></td><td><code>aktiv</code>, <code>udløst</code> eller <code>annulleret</code>.</td></tr>
+    <tr><td><code>fill</code></td><td>Kun ved udløsning: salgskurs, andele, kroner, substep og kampur.</td></tr>
+  </tbody>
+</table>
+<!-- kilde: src/engine/book/portfolio.ts:18-19, 55, 207-214; src/ui/portefolje/Portefolje.tsx:13; src/ui/afregning/Afregning.tsx:103 -->
+<p>Sikring findes på fire kontrakter, <code>EXIT_CONTRACTS</code>: <code>1x2:F</code>, <code>1x2:X</code>, <code>1x2:B</code> og <code>tot:2.5:O</code>. Det er dem, der har en kurs fra simulationen i hvert substep og en linje i viften. Storen afviser alle andre med <span class="ui">Sikring findes kun på 1X2 og Over 2,5</span>. Kurserne læses med <code>liveQuote</code> direkte fra simulationen i hvert substep. Visningslaget opdateres kun én gang pr. tick, og ved spoling kører én tick flere substeps.</p>
+<!-- kilde: src/state/match.ts:26-27, 221-246, 248-256, 730-736 -->
+
+<h2 id="k17-placering">Placering og validering</h2>
+<p><code>placeExit</code> i bogen tjekker i denne rækkefølge og stopper ved første fejl:</p>
+<ol>
+<li><b>Positionen.</b> Der skal være mindst én andel, og kontrakten må ikke være afregnet: <span class="ui">Ingen åben position at sikre</span>.</li>
+<li><b>Niveauet.</b> Det rundes til et heltal og skal ligge fra 1 til 99: <span class="ui">Niveauet skal ligge mellem 1 og 99</span>.</li>
+<li><b>Siden af salgskursen.</b> Et stop skal ligge under salgskursen og en Sikr gevinst over: <span class="ui">Stop-loss skal ligge under salgskursen N</span> eller <span class="ui">Sikr gevinst skal ligge over salgskursen N</span>. Et niveau lig med salgskursen afvises i begge tilfælde.</li>
+<li><b>Købsgrænser.</b> Et stop afvises, hvis en aktiv købsgrænse på samme kontrakt ligger på eller under stoppets niveau: <span class="ui">Din købsgrænse på kurs N ville købe efter stoppet</span>. <code>placeLimit</code> har samme regel den anden vej: <span class="ui">Dit stop-loss på kurs N ville sælge før grænsen køber</span>.</li>
+<li><b>Flytning.</b> Findes der allerede en aktiv ordre af samme slags, annulleres den, og den nye lægges til listen. Derfor er der højst én af hver slags pr. position, og bakkens knap hedder <span class="ui">Flyt til N</span>.</li>
+</ol>
+<!-- kilde: src/engine/book/portfolio.ts:116-125, 174-176, 184-205; src/ui/kamp/Tray.tsx:156-160 -->
+<p>Bakken tjekker siden af salgskursen, før du trykker, og slår knappen fra med <span class="ui">Skal under N</span> eller <span class="ui">Skal over N</span>. Bogen tjekker igen med salgskursen i det øjeblik, ordren sættes. <code>tests/book.test.ts</code> dækker begge sider af salgskursen, en kontrakt uden position, flytningen og konflikten med en købsgrænse begge veje.</p>
+<!-- kilde: src/ui/kamp/Tray.tsx:136-138, 158-159; src/state/match.ts:737; tests/book.test.ts:55-66 -->
+<p>Hverken bogen eller storen tjekker, om handlen er stoppet. Sikring kan derfor sættes og flyttes under et handelsstop, og ordren valideres mod den salgskurs, der står under stoppet. Derefter venter den som alle andre på genåbningen og vagten. Det er genskabt med motoren på historiekampen: et BIF-stop på 21, sat tre substeps inde i stoppet efter FCK-målet, blev godtaget mod salgskurs 22 og solgte i substep {{stop.bif.k}} til salgskurs {{stop.bif.kurs}}.</p>
+<!-- kilde: src/engine/book/portfolio.ts:189-205; src/state/match.ts:730-741; src/ui/kamp/Kampen.tsx:372, 379-389 -->
+<!-- data: genskabt med motorbundtet (tests/.cache/engine.mjs), FREE_PLAY: placeExit('1x2:B', 'stop', 21) ved k 1183 (halted, BIF kurs 24 / salgskurs 22) → godtaget; udløst k 1200 @ 8 -->
+
+<h3 id="k17-forslag">Forslaget</h3>
+<p>Uden en aktiv ordre åbner bakken med et forslag fra <code>exitSuggestion</code>, regnet fra den gennemsnitlige købskurs <i>g</i> og salgskursen <i>b</i>:</p>
+<div class="formel">stop = klip(rund(min(<i>g</i> − 15; <i>b</i> − 1)); 1; 99)<br>Sikr gevinst = klip(rund(max(<i>g</i> + 25; <i>b</i> + 1)); 1; 99)</div>
+<!-- kilde: src/engine/book/portfolio.ts:178-182; src/ui/kamp/Tray.tsx:123-125 -->
+<p>Testen fastholder tre tilfælde:</p>
+<table class="t">
+  <thead><tr><th>Situation</th><th class="n"><i>g</i></th><th class="n"><i>b</i></th><th>Stop</th><th>Sikr gevinst</th></tr></thead>
+  <tbody>
+    <tr><td>Lige efter køb</td><td class="n">50</td><td class="n">48</td><td>min(35; 47) = 35</td><td>max(75; 49) = 75</td></tr>
+    <tr><td>Lang chance</td><td class="n">10</td><td class="n">4</td><td>min(−5; 3) → 1</td><td>max(35; 5) = 35</td></tr>
+    <tr><td>Langt i plus</td><td class="n">90</td><td class="n">95</td><td>min(75; 94) = 75</td><td>max(115; 96) → 99</td></tr>
+  </tbody>
+</table>
+<!-- kilde: tests/book.test.ts:106-110 -->
+<p>Klemningen til 1–99 kan gøre forslaget ugyldigt. Ved salgskurs 1 bliver stop-forslaget 1, som ikke ligger under salgskursen, og knappen viser <span class="ui">Skal under 1</span>. Ved salgskurs 99 findes der tilsvarende ingen gyldig Sikr gevinst.</p>
+<!-- kilde: src/engine/book/portfolio.ts:180-181, 194-195; src/ui/kamp/Tray.tsx:138, 159 -->
+
+<h2 id="k17-raekkefoelge">Rækkefølgen i et substep</h2>
+<p>Storens <code>tick</code> kører ét substep ved ×1 og flere ved spoling. Efter hvert <code>sim.step()</code> kører <code>afterStep</code>, så Sikring tjekkes i hvert substep uanset fart. Rækkefølgen er fast:</p>
+<ol>
+<li><b>Sikring</b> (<code>checkExits</code>) med substeppets kurser.</li>
+<li><b>Puljen</b> (<code>advancePool</code>) med substeppets handler fra publikum (kapitel 18).</li>
+<li><b>Købsgrænser</b> (<code>checkLimits</code>) på 1X2. En fyldt grænse får sin grundlinje til træk-karakteren (kapitel 19).</li>
+<li><b>Hændelser:</b> hver ny hændelse afregnes med <code>settleOn</code>, fx mål, VAR-dom, pause og slutfløjt.</li>
+<li><b>Vinduer:</b> målvinduer, der er udløbet uden mål, afregnes som tørvejr.</li>
+</ol>
+<!-- kilde: src/state/match.ts:221-226, 258-320 -->
+<p>Det vigtige er, at Sikring kommer før købsgrænserne. Kodens begrundelse er, at et stop, der udløses, frigør positionen, før nogen grænse ser på prisen. Rammer et stop og en grænse på samme kontrakt i samme substep, sælger stoppet kun de andele, der var der i forvejen, og grænsen køber bagefter. Med den omvendte rækkefølge ville stoppet sælge de netop købte andele med det samme og kun tabe spreadet.</p>
+<p>Puljen føres frem før hændelserne, så pausens eget substep tæller med, før <code>closePool</code> fryser siderne. Dens plads før købsgrænserne er uden betydning, for de to rører ikke hinanden. Vinduerne fejes sidst. Fejningen slår selv op i kampens mål, om der faldt et mål i vinduet, så resultatet afhænger ikke af, at hændelserne er afregnet først.</p>
+<!-- kilde: src/state/match.ts:260, 266, 284-305, 396-398, 415-417, 435-439 -->
+<p>Under et handelsstop gør <code>checkExits</code> og <code>checkLimits</code> ingenting. Det gælder også målets eget substep, fordi målet behandles i <code>sim.step()</code>, før <code>afterStep</code> kører. En ordre kan altså aldrig sælge til den frosne kurs fra før målet. Hændelserne afregnes derimod med det samme. Er en Over 2,5-position med Sikring stadig åben, når det 3. godkendte mål falder, afregnes den til 100 i målets substep, og <code>settle</code> annullerer begge ordrer.</p>
+<!-- kilde: src/engine/book/portfolio.ts:136-137, 159-170, 222-223; src/engine/football/sim.ts:156-158, 185-200, 323-330; src/state/match.ts:337-350 -->
+
+<h2 id="k17-udloesning">Udløsning</h2>
+<p><code>checkExits</code> gennemgår de aktive ordrer i den rækkefølge, de blev sat. En ordre, hvis position er solgt eller afregnet, annulleres. For de øvrige gælder:</p>
+<div class="formel">stop udløses, hvis <i>a</i> − {{k.STOP_ASK_OFFSET}} ≤ <i>L</i> og <i>k</i> − <i>k</i><sub>gen</sub> &gt; {{k.STOP_REOPEN_GUARD}}<br>Sikr gevinst udløses, hvis <i>b</i> ≥ <i>L</i><br>salg: alle andele til <i>b</i>, kr = andele · <i>b</i> / 100<span class="hvor">hvor <i>a</i> er kursen, <i>b</i> salgskursen, <i>L</i> niveauet, <i>k</i> substeppet og <i>k</i><sub>gen</sub> substeppet for seneste genåbning (<code>reopenK</code>, −10<sup>9</sup> før den første).</span></div>
+<!-- kilde: src/engine/book/portfolio.ts:35-38, 99-114, 216-244; src/engine/football/sim.ts:82, 411-425 -->
+<p>Stoppet måler på kursen minus 2, ikke på salgskursen. I roligt spil er spreadet 2, og de to tal er det samme. Et spread på 4 ved fare, på 6 efter en genåbning eller et bredere spread fra overshoot kan derfor ikke alene udløse et stop; kursen selv skal falde. Sikr gevinst måler på salgskursen og sælger derfor aldrig under sit niveau.</p>
+<!-- kilde: src/engine/football/sim.ts:463-469, 535-546; tests/book.test.ts:67-76, 89-95; docs/PLAN.md:492-493 -->
+
+<h3 id="k17-vagten">Vagten</h3>
+<p>Efter hver genåbning venter et stop, til <i>k</i> − <i>k</i><sub>gen</sub> = 8. Det er præcis de 8 substeps, hvor simulationen sætter spreadet til mindst 6 for både 1X2 og Over 2,5, så vagten slutter i det første substep uden det faste spread på 6. I samme tidsrum henfalder overshoot med τ = 0,125 kampminut, altså 5 substeps, og kun e<sup>−8/5</sup> ≈ 20 % af overshoot-leddet er tilbage, når stoppet må sælge. Genåbninger kommer efter et mål ({{k.GOAL_HALT}} substeps stop), et rødt kort ({{k.RED_HALT}} substeps) og en VAR-dom, som genåbner gennem et stop på ét substep.</p>
+<!-- kilde: src/engine/book/portfolio.ts:35-36, 234; src/engine/football/sim.ts:26-27, 36, 329, 367, 402-403, 411-425, 432, 467, 488-492, 543 -->
+<p>Integrationstesten kører det samme gennem den rigtige store: et FCK-stop udløses efter et BIF-mål, først når substeppet for salget minus genåbningens substep er over 7, og Sikr gevinst på samme position annulleres.</p>
+<!-- kilde: tests/features.test.ts:82-106 -->
+
+<h3 id="k17-oco">Den ene annullerer den anden</h3>
+<p>Der er ingen særskilt kobling mellem de to ordrer. Når den ene sælger, går positionen til 0 andele, og <code>sell</code> kalder <code>cancelExitsOf</code>, som annullerer resten. Det samme sker, når du sælger alt med faderen, og når kontrakten afregnes. Et stop og en Sikr gevinst kan ikke ramme i samme substep, så længe stoppet ligger under Sikr gevinst. Det ville kræve <i>a</i> − 2 ≤ <i>L</i><sub>stop</sub> &lt; <i>L</i><sub>gevinst</sub> ≤ <i>b</i>, og spreadet er mindst 2 point. Rammer to ordrer alligevel i samme substep, fordi en ordre er flyttet forbi den anden, sælger den, der står først i listen.</p>
+<!-- kilde: src/engine/book/portfolio.ts:99-114, 159-170, 212-214, 225-242; tests/book.test.ts:77-88, 96-105 -->
+
+<h2 id="k17-sporet">Sporet gennem genåbningen</h2>
+<p>Historiens FCK-mål faldt i substep {{maal1.k}}, og handlen genåbnede i substep {{genaabning1.k}}. Tabellen viser substep 1190–1201, som <code>afterStep</code> så dem. Kolonnen med substeps siden genåbning er <i>k</i> − <i>k</i><sub>gen</sub>. Den er tom før genåbningen, fordi kampen ikke havde haft en genåbning endnu.</p>
+<table class="t">
+  <thead><tr><th class="n">Substep</th><th>Handelsstop</th><th class="n">Siden genåbning</th><th class="n">BIF kurs / salgskurs</th><th class="n">Over salgskurs</th><th>Hændelse</th></tr></thead>
+  <tbody>
+    <tr><td class="n">1190</td><td>ja</td><td class="n">–</td><td class="n">24 / 22</td><td class="n">29</td><td>handelsstop, Sikring venter</td></tr>
+    <tr><td class="n">1191</td><td>ja</td><td class="n">–</td><td class="n">24 / 22</td><td class="n">29</td><td>sidste substep i stoppet</td></tr>
+    <tr><td class="n">1192</td><td>nej</td><td class="n">0</td><td class="n">{{genaabning1.bifKurs}} / {{genaabning1.bifSalg}}</td><td class="n">{{genaabning1.overSalg}}</td><td>genåbning {{genaabning1.ur}}. Over: {{genaabning1.overSalg}} ≥ {{take.over.niveau}}, Sikr gevinst sælger {{take.over.andele}} andele, Over-stoppet annulleres. BIF: 9 − 2 ≤ 17, men vagten holder</td></tr>
+    <tr><td class="n">1193</td><td>nej</td><td class="n">1</td><td class="n">9 / 3</td><td class="n">55</td><td>vagt</td></tr>
+    <tr><td class="n">1194</td><td>nej</td><td class="n">2</td><td class="n">9 / 3</td><td class="n">56</td><td>vagt</td></tr>
+    <tr><td class="n">1195</td><td>nej</td><td class="n">3</td><td class="n">10 / 4</td><td class="n">56</td><td>vagt</td></tr>
+    <tr><td class="n">1196</td><td>nej</td><td class="n">4</td><td class="n">10 / 4</td><td class="n">55</td><td>vagt</td></tr>
+    <tr><td class="n">1197</td><td>nej</td><td class="n">5</td><td class="n">10 / 4</td><td class="n">55</td><td>vagt</td></tr>
+    <tr><td class="n">1198</td><td>nej</td><td class="n">6</td><td class="n">10 / 4</td><td class="n">55</td><td>vagt</td></tr>
+    <tr><td class="n">1199</td><td>nej</td><td class="n">7</td><td class="n">10 / 4</td><td class="n">54</td><td>sidste substep med vagt og spread 6</td></tr>
+    <tr><td class="n">1200</td><td>nej</td><td class="n">8</td><td class="n">{{stopTidspunkt.bifKurs}} / {{stopTidspunkt.bifSalg}}</td><td class="n">57</td><td>{{stop.bif.ur}}: 10 − 2 ≤ 17 og vagten er slut. BIF-stoppet sælger {{stop.bif.andele}} andele @ {{stop.bif.kurs}} = {{stop.bif.kr}}, Sikr gevinst {{take.bif.niveau}} annulleres</td></tr>
+    <tr><td class="n">1201</td><td>nej</td><td class="n">9</td><td class="n">10 / 8</td><td class="n">57</td><td>–</td></tr>
+  </tbody>
+</table>
+<!-- data: story.json trace k 1190–1201 (halted, sinceReopen, ask[2] / bid[2], o25.bid[0], exits); final.exits (fill k 1192 og k 1200) -->
+<p>Tre ting kan læses af tabellen. Stopbetingelsen <i>a</i> − 2 ≤ 17 var opfyldt i alle 8 substeps af vagten, så det var kun vagten, der holdt stoppet tilbage. BIF's spread var 6 i præcis de 8 substeps og 2 i substep {{stop.bif.k}}, så salgskursen steg fra {{genaabning1.bifSalg}} til {{stopTidspunkt.bifSalg}}, mens kursen kun steg 1 point. Over 2,5's spread var 8 ved genåbningen og ikke 6, fordi overshoot-leddet ⌈100 · |<i>o</i>| · mid + 1⌉ var større. Otte substeps senere var det 3.</p>
+<!-- kilde: src/engine/football/sim.ts:446-450, 463-469, 539-545 -->
+<!-- data: story.json trace k 1191–1192 (Over mid 0,2937 → 0,5975, fair 0,5704): o = 0,1 · (logit 0,5704 − logit 0,2937) ≈ 0,116, ⌈100 · 0,116 · 0,5975 + 1⌉ = 8; k 1200 (Over 60 / 57) -->
+
+<figure class="fig" data-fig="sikring-spor"><figcaption><b>Figur:</b> Sikring-sporet, substep 1170–1215. Det grå skraverede felt er handelsstoppet fra substep {{maal1.k}} til {{genaabning1.k}}, det røde vagtens 8 substeps. BIF-stoppets betingelse var opfyldt fra genåbningen, men det solgte først i substep {{stop.bif.k}}: den hule ring er salget uden vagt (salgskurs {{udenVagt.kurs}} = {{udenVagt.kr}}), den fyldte prik salget med vagt (salgskurs {{stop.bif.kurs}} = {{stop.bif.kr}}). Over 2,5's Sikr gevinst har ingen vagt og solgte i genåbningens substep.</figcaption></figure>
+
+<h2 id="k17-kanter">Kanttilfælde</h2>
+<p><b>Et stop kan fylde langt under sit niveau.</b> Stoppet sælger til den salgskurs, der er, når det udløses, og efter et gab kan den ligge langt under niveauet. Bakken siger det med <span class="ui">til første kurs efter stoppet</span>, men dens skøn er andele · niveau / 100, i historien ≈ {{stop.bif.bakkeSkoen}} mod faktisk {{stop.bif.kr}}. Uden vagten var salget sket i genåbningens substep til salgskurs {{udenVagt.kurs}} og havde givet {{udenVagt.kr}}.</p>
+<!-- kilde: src/ui/kamp/Tray.tsx:139, 152-154; src/engine/book/portfolio.ts:234-240 -->
+<!-- data: story.json counterfactual (reopenK 1192, bidAtReopen 3, noGuardKr 23,07, guardKr 61,52) -->
+<p><b>Sikr gevinst kan fylde i genåbningens brede spread.</b> Den har ingen vagt, fordi den aldrig sælger under sit niveau (PLAN §19). Til gengæld sælger den i det første substep, hvor salgskursen er på eller over niveauet, og efter et gab i positionens favør er det genåbningen, hvor spreadet er bredest. Over 2,5 solgte til salgskurs {{take.over.kurs}} med kurs {{genaabning1.overKurs}}. Otte substeps senere var salgskursen 57.</p>
+<!-- kilde: docs/PLAN.md:493; src/engine/book/portfolio.ts:234 -->
+<!-- data: story.json trace k 1192 (Over 62 / 54), k 1200 (Over 60 / 57) -->
+<p><b>Grænse og stop i samme gab.</b> En købsgrænse på {{kant.graense.niveau}} og et stop på 17 på BIF springes begge over ved genåbningen. Grænsen fylder i genåbningens substep, og 8 substeps senere sælger stoppet alle andele, også de netop købte. Stop/grænse-reglen fanger det ikke, fordi stoppet ligger under grænsen. Tilfældet er gennemgået med tal i kapitel 21.</p>
+<!-- data: edge.json (limit-fill k 1192, stop k 1200) -->
+
+<div class="callout advarsel"><b>Stop/grænse-reglen ser bort fra de 2 point.</b> Reglen i <code>placeExit</code> og <code>placeLimit</code> sammenligner niveauerne direkte og afviser kun et stop på eller over grænsen. Men stoppet udløses ved kurs ≤ niveau + 2, og grænsen fylder ved kurs ≤ niveau. Et stop 1 eller 2 point under en grænse udløses derfor før eller samtidig med den. Falder kursen roligt ét point pr. substep med spread 2, og er grænsen 20, udløses et stop på 19 ved kurs 21, ét substep før grænsen køber ved 20. Med et stop på 18 sker begge dele i samme substep. I begge tilfælde står de nye andele bagefter uden stop, og det er det salg efterfulgt af genkøb, reglen skulle forhindre. Med et stop på 17 køber grænsen først, som reglen tænker det, men falder kursen videre, udløses stoppet ét substep senere ved kurs 19 og sælger alle andele, også de netop købte. En regel med forskydningen, der afviser et stop på eller over grænsen − 2, ville fjerne de ubeskyttede andele, men ikke det sidste tilfælde. Fundet under rapportarbejdet og ikke rettet.</div>
+<!-- kilde: src/engine/book/portfolio.ts:37-38, 120-121, 136-142, 196-199, 234 -->
+<!-- data: genskabt med motorbundtet (tests/.cache/engine.mjs): Book med BIF-position, grænse 20 og stop 17 / 18 / 19 (alle godtaget), roligt fald i kursen med spread 2. Stop 17: grænsen køber ved kurs 20, stoppet sælger alt ved kurs 19. Stop 18: begge ved kurs 20, stoppet først. Stop 19: stoppet ved kurs 21, grænsen ved 20. -->

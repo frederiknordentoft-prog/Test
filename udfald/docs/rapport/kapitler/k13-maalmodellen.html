@@ -1,0 +1,63 @@
+<h1 class="kapitel" id="k13" data-nr="13">Målmodellen</h1>
+<p class="ingress">Mål opstår af en intensitet pr. hold og kampminut. Den samme intensitet driver simulationen, prissætteren og Monte Carlo, så kampen og kurserne bygger på én model.</p>
+
+<h2 id="k13-intensitet">Intensiteten</h2>
+<p>Hvert hold har en målintensitet λ i mål pr. kampminut. Den er et produkt af en basisskala og seks faktorer:</p>
+<div class="formel">λ<sub><i>i</i></sub>(<i>t</i>) = (Λ<sub><i>i</i></sub>/90) · <i>s</i>(<i>t</i>) · <i>m</i><sub>score</sub>(<i>d</i>) · <i>m</i><sub>rød</sub> · e<sup>±π/2</sup> · (1 + <i>E</i><sub><i>i</i></sub>) · <i>z</i><sub><i>i</i></sub><span class="hvor">hvor <i>i</i> er FCK (fortegn +) eller BIF (fortegn −), Λ<sub>FCK</sub> = 1,4 og Λ<sub>BIF</sub> = 0,965, <i>s</i> er tidsprofilen, <i>d</i> er målforskellen FCK minus BIF, π er presset, <i>E</i> er excitationen efter mål, og <i>z</i> er boldzonens faktor.</span></div>
+<p>Basisskalaen og de tre første faktorer er <code>baseRate</code>. Simulationen ganger de sidste tre på. Holdet bagud får <i>m</i><sub>score</sub> = 1,18, holdet foran 0,9, og ved lige stilling er den 1. Faktoren afhænger kun af fortegnet på <i>d</i>, så klippet ved ±8 i prissætteren ændrer ikke raterne (kapitel 14). Røde kort giver <i>m</i><sub>rød</sub> = 0,7<sup>egne</sup> · 1,18<sup>modstanderens</sup>.</p>
+<!-- kilde: src/engine/football/params.ts:68-76; src/engine/football/sim.ts:289-293; src/engine/football/dp.ts:200-204 -->
+
+<h2 id="k13-parametre">Parametrene</h2>
+<table class="t">
+  <thead><tr><th>Navn</th><th class="n">Værdi</th><th>Betydning</th></tr></thead>
+  <tbody>
+    <tr><td><code>lamF</code> / <code>lamB</code></td><td class="n">1,4 / 0,965</td><td>basisskala Λ for FCK og BIF</td></tr>
+    <tr><td><code>trailing</code> / <code>leading</code></td><td class="n">1,18 / 0,9</td><td><i>m</i><sub>score</sub> for holdet bagud og foran</td></tr>
+    <tr><td><code>redOwn</code> / <code>redOpp</code></td><td class="n">0,7 / 1,18</td><td>faktor pr. eget og pr. modstanderens røde kort</td></tr>
+    <tr><td><code>theta</code> / <code>sigma</code> / <code>clip</code></td><td class="n">0,2 / 0,3 / 0,9</td><td>presets tilbagetrækning pr. kampminut, volatilitet og grænse</td></tr>
+    <tr><td><code>kickCorner</code> / <code>kickChance</code></td><td class="n">0,08 / 0,12</td><td>spark i presset pr. hjørnespark og pr. chance</td></tr>
+    <tr><td><code>kappa</code> / <code>tauE</code></td><td class="n">0,6 / 3</td><td>excitation pr. mål og dens tidskonstant i kampminutter</td></tr>
+    <tr><td><code>zoneDwell</code> / <code>zoneMult</code></td><td class="n">0,12 / 0 · 0 · 0,3 · 0,9 · 1,9 · 2,9</td><td>opholdstid i en zone (cirka 7 kampsekunder) og FCK's målfaktor i zone 1–6</td></tr>
+    <tr><td><code>cornerRate</code> / <code>chanceRate</code> / <code>shotRate</code></td><td class="n">0,115 / 0,07 / 0,27</td><td>hjørnespark, chancer og skud pr. kampminut. Skud er kosmetiske, og <code>kickShotOnTarget</code> = 0,05 bruges ikke</td></tr>
+    <tr><td><code>beta</code></td><td class="n">0,55</td><td>stiernes hældning pr. enhed pres i logit (kapitel 14)</td></tr>
+  </tbody>
+</table>
+<!-- kilde: src/engine/football/params.ts:39-61; src/engine/football/sim.ts:282 (skud udsendes kun som hændelse) -->
+
+<h2 id="k13-tid">Tidsprofil</h2>
+<p>Der scores flere mål sent i kampen. Tidsprofilen stiger lineært fra 0,81 ved kampstart til 1,19 ved 90′ og står stille i tillægstiden. Gennemsnittet over 0–90′ er 1.</p>
+<div class="formel"><i>s</i>(<i>t</i>) = (0,85 + 0,4 · min(<i>t</i>, 90)/90) / 1,05</div>
+<!-- kilde: src/engine/football/params.ts:63-66 -->
+
+<h2 id="k13-pres">Pres</h2>
+<p><b>Presset</b> π er ét tal: FCK's pres minus BIF's. Det er en Ornstein-Uhlenbeck-proces (OU), en tilfældig bevægelse, der trækkes tilbage mod et niveau, opdateret eksakt pr. substep:</p>
+<div class="formel">π ← <i>b</i> + (π − <i>b</i>) · e<sup>−<i>r</i>·Δ<i>t</i></sup> + σ · √((1 − e<sup>−2θΔ<i>t</i></sup>)/(2θ)) · <i>N</i>(0, 1)<span class="hvor">hvor Δ<i>t</i> = 0,025 kampminutter, θ = 0,2 og σ = 0,3. Normalt er <i>b</i> = 0 og <i>r</i> = θ. I instruktørens pres-vinduer er <i>b</i> vinduets skævhed og <i>r</i> = 1, og i en opbygning før et scriptet mål er <i>b</i> = ±0,45 og <i>r</i> = 1,5.</span></div>
+<!-- kilde: src/engine/football/sim.ts:240-257 -->
+<p>Oven på processen kommer sparkene: et hjørnespark flytter π med ±0,08 og en chance med ±0,12 til fordel for det hold, der fik det, og bagefter klippes π til ±0,9. Holdet trækkes med sandsynligheden 1/(1 + e<sup>−1,6π</sup>) for FCK, så pres giver hjørnespark, som giver mere pres. Et mål ganger π med 0,3.</p>
+<!-- kilde: src/engine/football/sim.ts:268-283, 307-310, 327 -->
+<p>Ved π = 0,5 er FCK's intensitet ganget med e<sup>0,25</sup> ≈ 1,28 og BIF's med 0,78. Uden spark har processen stationær varians σ²/(2θ) = 0,225, en spredning på cirka 0,47.</p>
+<!-- kilde: src/engine/football/sim.ts:293; src/engine/football/params.ts:46-47 -->
+
+<h2 id="k13-zone">Boldzone</h2>
+<p>Banen er delt i 6 zoner set fra FCK: zone 1 er FCK's eget felt, og zone 6 er BIF's felt. I hvert substep flytter bolden én zone med sandsynligheden Δ<i>t</i>/0,12 ≈ 0,21, frem eller tilbage med 50 % hver vej (88 % mod målet i en scriptet opbygning). Ved enderne bliver den liggende. Den stationære fordeling er derfor jævn, og zonefaktorens middel er (0 + 0 + 0,3 + 0,9 + 1,9 + 2,9)/6 = 1: zonen flytter mål i tid, men ændrer ikke antallet i gennemsnit. BIF's faktor er spejlet.</p>
+<p>Zonen er med vilje uafhængig af presset; en sammenhæng ville give mål, som prissætteren ikke kender. Efter et mål uden VAR sparker det hold, der lukkede målet ind, i gang fra zone 3 eller 4.</p>
+<!-- kilde: src/engine/football/sim.ts:259-266, 328; src/engine/football/params.ts:54-56, 78-82 -->
+
+<h2 id="k13-excitation">Excitation</h2>
+<p>Et godkendt mål, også efter VAR, giver begge hold <i>E</i> += κ = 0,6, som henfalder med τ<sub><i>E</i></sub> = 3 kampminutter. Lige efter et mål er begge holds intensitet ganget med 1,6, og halveringstiden er 3 · ln 2 ≈ 2,1 kampminutter.</p>
+<div class="formel"><i>E</i><sub><i>i</i></sub> ← <i>E</i><sub><i>i</i></sub> · e<sup>−Δ<i>t</i>/τ<sub><i>E</i></sub></sup>, og ved mål <i>E</i><sub><i>i</i></sub> ← <i>E</i><sub><i>i</i></sub> + κ for begge hold</div>
+<!-- kilde: src/engine/football/sim.ts:285-287, 326, 397 -->
+<p>Prissætteren og Monte Carlo kender, som planlagt, kun excitation fra mål, der er sket; mål i fremtiden giver ingen excitation i prisen. Derfor ligger prisen lidt lavt på mål ved kampstart: Over 2,5's fair chance er i snit {{kal.o25.kickoffPris}} mod en faktisk hyppighed på {{kal.o25.kickoffFaktisk}} (kapitel 16).</p>
+<!-- kilde: src/engine/football/dp.ts:46-48; src/engine/mc/paths.ts:162-166; tests/totals.test.ts:84; docs/PLAN.md:215 -->
+
+<h2 id="k13-thinning">Mål ved thinning</h2>
+<p>Simulationen trækker mål ved <b>thinning</b>: i hvert substep får hvert hold et mål med sandsynligheden λ·Δ<i>t</i>, og λ er den samme intensitet, som prissætteren bruger. FCK trækkes først, og der kan højst falde ét mål pr. substep; med λ·Δ<i>t</i> omkring 0,0004 i normalt spil betyder det intet. Under et handelsstop falder der ingen naturlige mål, og et scriptet mål venter, til handlen er åben. Røde kort kommer kun fra tidslinjen.</p>
+<div class="formel">mål til hold <i>i</i> i substep <i>k</i> ⇔ hash01(seed, <i>k</i>, 1, <i>i</i>) &lt; λ<sub><i>i</i></sub>(<i>t</i>) · Δ<i>t</i><span class="hvor">hvor <i>i</i> = 0 er FCK og <i>i</i> = 1 er BIF, og strøm 1 er målstrømmen.</span></div>
+<!-- kilde: src/engine/football/sim.ts:282, 289-299, 355-369 -->
+
+<h2 id="k13-kalibrering">Kalibrering</h2>
+<p>{{kal.kampe}} kampe uden prissætning og hvaler gav {{kal.maalPrKamp}} mål pr. kamp, og FCK vandt {{kal.fckSejr}}. Testen kræver 2,7 ± 0,15 mål og 47 % ± 3,5 point. Kalibreringen af priserne står i kapitel 20.</p>
+<!-- kilde: tests/football.test.ts:15-29, 65-91 -->
+
+<div class="callout advarsel"><b>Afvigelser fra planen (PLAN §8).</b> Planen havde λ<sub>FCK</sub><sup>pre</sup> = 1,60 og λ<sub>BIF</sub><sup>pre</sup> = 1,10. Koden bruger 1,4 og 0,965, fordi pres og excitation lægger mål oveni, så kampen stadig giver cirka 2,7 mål. Planens e<sup>π<sub><i>i</i></sub></sup> pr. hold er blevet ét pres, der indgår som e<sup>±π/2</sup>. Zoneleddet (1 + α·xT(<i>z</i>)) er en multiplikativ faktor på 0–2,9 med middel 1, og planens <i>c</i><sub><i>i</i></sub> og ρ = −0,08 findes ikke i koden.</div>
+<!-- kilde: docs/PLAN.md:211-214; src/engine/football/params.ts:13, 39-41, 55-56; src/engine/football/sim.ts:293 -->

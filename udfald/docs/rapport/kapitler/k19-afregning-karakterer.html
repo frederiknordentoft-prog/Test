@@ -1,0 +1,58 @@
+<h1 class="kapitel" id="k19" data-nr="19">Afregning og træk-karakterer</h1>
+<p class="ingress">Afregningen gør to ting efter slutfløjt: den lukker regnskabet, og den giver hvert køb på 1X2 en karakter. Regnskabet er en sum over bogens log. Karakteren er prisens bevægelse efter købet, målt i logit og renset for det, tiden alene ville have gjort.</p>
+
+<h2 id="k19-regnskab">Regnskabet</h2>
+<p>Bogen fører en log over alle køb, salg, afregninger og puljeindsatser. <code>totals</code> summerer den, og saldoen følger af summerne:</p>
+<div class="formel">Indsat = Σ kr for <code>buy</code>, <code>limit-fill</code> og <code>pool-stake</code><br>Udbetalt = Σ kr for <code>sell</code> + Σ udbetaling for <code>settle</code> og <code>pool-settle</code><br>saldo = {{k.START_SALDO}} − Indsat + Udbetalt</div>
+<!-- kilde: src/engine/book/portfolio.ts:22-30, 288-297 -->
+<p>Integrationstesten kræver identiteten for saldoen efter en hel kamp med køb, salg, Sikring, slutresultater og pulje. Afregningen viser derudover et resultat, der også tæller det, der endnu ikke er afgjort:</p>
+<!-- kilde: tests/features.test.ts:138-140 -->
+<div class="formel">Resultat = Udbetalt − Indsat + <i>V</i> + <i>U</i><span class="hvor">hvor <i>V</i> = Σ andele · salgskurs / 100 over åbne, uafregnede positioner, og <i>U</i> er dine puljeindsatser, så længe puljen ikke er afregnet. Puljen tæller altså til kostpris, indtil den er betalt ud. Efter slutfløjt er <i>V</i> = <i>U</i> = 0, og resultatet er saldoen minus startsaldoen.</span></div>
+<!-- kilde: src/ui/afregning/Afregning.tsx:99-102; src/engine/book/portfolio.ts:277-286; src/state/match.ts:855, 865 -->
+<p>I historien blev det Udbetalt {{slut.udbetalt}}, Indsat {{slut.indsat}} og Resultat {{slut.resultat}}, med en slutsaldo på {{slut.saldo}}.</p>
+<!-- data: story.json final (staked 949,21, paidOut 1.487,5, saldo 5.538,29) -->
+<p><b>Ved slutfløjt</b> afregner <code>settleOn</code> i denne rækkefølge: de tre 1X2-kontrakter, dobbeltchancerne, næste mål, så hver position med en nøgle for Byg, målvinduer, efter-målet, Over/Under eller slutresultat, og til sidst puljen. <code>settle</code> afregner også en position med 0 andele. Den får udbetalingen 0 og en linje i loggen, men ingen besked. Derfor står BIF og Over 2,5 i Afregningens liste med <span class="ui">solgt før afregning</span> og salgsbeløbet, selv om Sikring solgte dem ved 29′.</p>
+<!-- kilde: src/state/match.ts:322-325, 374-395; src/engine/book/portfolio.ts:159-170; src/ui/afregning/Afregning.tsx:153-157 -->
+<!-- data: story.json final.log (settle 1x2:B og tot:2.5:O med udbetaling 0 ved k 3768) -->
+
+<h2 id="k19-karakter">Træk-karakteren</h2>
+<p>Hvert køb gemmes som et lot med kampur, kurs og chancen i købsøjeblikket, for 1X2 markedets mid. Køb på FCK, X og BIF får desuden en <b>grundlinje</b>: modellens fair chance nu og om 10 kampminutter, hvis intet sker. Det gælder både køb gennem prislåsen og fyldte købsgrænser. Andre køb har ingen grundlinje og vises med en tankestreg.</p>
+<!-- kilde: src/engine/book/portfolio.ts:6, 84-97; src/state/match.ts:277-281, 681-703; src/ui/afregning/Afregning.tsx:78-85 -->
+<div class="formel"><i>b</i><sub>0</sub> = <i>f</i>(<i>t</i><sub>0</sub>)<br><i>b</i><sub>10</sub> = price1x2 ved <i>t</i><sub>0</sub> + Δ med pres π · e<sup>−θΔ</sup> og excitation <i>E</i> · e<sup>−Δ/τ<sub>E</sub></sup>,  Δ = min(10; slut − <i>t</i><sub>0</sub>)<span class="hvor">hvor <i>f</i>(<i>t</i><sub>0</sub>) er fair chancen ved købet, og stillingen, de røde kort og zonen er uændrede. <i>b</i><sub>10</sub> er altså prisen, hvis der ikke falder et mål i de næste 10 minutter.</span></div>
+<!-- kilde: src/state/match.ts:696-703 -->
+<p>Karakteren regnes i Afregningen ved et referencetidspunkt <i>t</i><sub>R</sub>:</p>
+<div class="formel"><i>t</i><sub>R</sub> = min(<i>t</i><sub>0</sub> + 10; <i>t</i><sub>mål</sub> − 0,05; <i>t</i><sub>nu</sub>)<br><i>b</i><sub>R</sub> = <i>b</i><sub>0</sub> + (<i>b</i><sub>10</sub> − <i>b</i><sub>0</sub>) · klip((<i>t</i><sub>R</sub> − <i>t</i><sub>0</sub>) / 10; 0; 1)<br>CLV = [lg(mid<sub>R</sub>) − lg(mid<sub>0</sub>)] − [lg(<i>b</i><sub>R</sub>) − lg(<i>b</i><sub>0</sub>)],  lg(<i>p</i>) = ln(<i>p</i> / (1 − <i>p</i>))<span class="hvor">hvor <i>t</i><sub>mål</sub> er det første godkendte mål efter købet, mid<sub>0</sub> er markedets mid ved købet, mid<sub>R</sub> er mid i den sidste måling i kampens historik med <i>t</i> ≤ <i>t</i><sub>R</sub>, og <i>p</i> klippes til [0,001; 0,999] før logit.</span></div>
+<!-- kilde: src/ui/afregning/Afregning.tsx:86-95; src/engine/book/portfolio.ts:300-310; src/engine/football/display.ts:61-63; src/engine/football/sim.ts:581-603 -->
+<p><b>CLV</b> står for closing-line value. Begrebet kommer fra sportsbetting, hvor man måler sin pris mod slutkursen før kampen. Her er slutkursen mid ved <i>t</i><sub>R</sub>. Første led er markedets bevægelse, andet led den del, tiden alene ville have givet. Uden andet led ville et køb af uafgjort eller af det førende hold næsten altid se godt ud, fordi deres chance stiger, mens uret løber. Referencen stopper 0,05 kampminut, altså 2 substeps, før næste mål, så selve målet ikke tæller: karakteren skal måle prisen, ikke heldet.</p>
+<p>Logit vejer en bevægelse tungere, jo tættere chancen er på 0 eller 100 %. Da d<i>p</i> ≈ <i>p</i>(1 − <i>p</i>) · d(logit), svarer 0,1 i logit til cirka 2,5 point ved 50 % chance og cirka 0,5 point ved 5 %.</p>
+<table class="t">
+  <thead><tr><th>CLV</th><th>Karakter</th></tr></thead>
+  <tbody>
+    <tr><td>0,3 eller mere</td><td><span class="ui">Brillant !!</span></td></tr>
+    <tr><td>fra 0,1 til under 0,3</td><td><span class="ui">Godt køb !</span></td></tr>
+    <tr><td>over −0,1 og under 0,1</td><td><span class="ui">Præcist</span></td></tr>
+    <tr><td>over −0,3 til og med −0,1</td><td><span class="ui">Unøjagtigt ?!</span></td></tr>
+    <tr><td>−0,3 eller mindre</td><td><span class="ui">Fejlkøb ??</span></td></tr>
+  </tbody>
+</table>
+<!-- kilde: src/engine/book/portfolio.ts:304-308 -->
+<p>Testen tjekker tre tilfælde med købet ved 48 % og en grundlinje fra 48 % til 47 %. Mid til 60 % giver CLV ≈ 0,53 og <span class="ui">Brillant !!</span>, mid til 47 % giver 0 og <span class="ui">Præcist</span>, og mid til 30 % giver ≈ −0,73 og <span class="ui">Fejlkøb ??</span>.</p>
+<!-- kilde: tests/book.test.ts:43-47 (CLV regnet med formlen i grade: ln(0,6/0,4) − ln(0,48/0,52) − (ln(0,47/0,53) − ln(0,48/0,52)) = 0,526; tilsvarende −0,727 for 0,3) -->
+
+<h2 id="k19-historien">Historiens karakterer</h2>
+<p>Begge 1X2-køb ved {{koeb.fck.minut}} fik referencetidspunktet <i>t</i><sub>R</sub> = 28,725, 0,05 kampminut før FCK-målet {{maal1.ur}}, fordi målet faldt, før de 10 minutter var gået. Kolonnerne er mid<sub>0</sub>, mid<sub>R</sub>, <i>b</i><sub>0</sub>, <i>b</i><sub>10</sub> og <i>b</i><sub>R</sub> fra formlerne ovenfor.</p>
+<table class="t">
+  <thead><tr><th>Køb</th><th class="n">Mid ved køb</th><th class="n">Mid ved R</th><th class="n">Fair ved køb</th><th class="n">Fair +10 min</th><th class="n">Grundlinje ved R</th><th class="n">CLV</th><th>Karakter</th></tr></thead>
+  <tbody>
+    <tr><td>FCK, {{koeb.fck.andele}} @ {{koeb.fck.kurs}}</td><td class="n">43,40 %</td><td class="n">42,10 %</td><td class="n">44,11 %</td><td class="n">42,18 %</td><td class="n">42,44 %</td><td class="n">{{karakter.fck.clv}}</td><td>{{karakter.fck}}</td></tr>
+    <tr><td>BIF, {{koeb.bif.andele}} @ {{koeb.bif.kurs}}</td><td class="n">25,23 %</td><td class="n">23,53 %</td><td class="n">23,55 %</td><td class="n">23,16 %</td><td class="n">23,21 %</td><td class="n">{{karakter.bif.clv}}</td><td>{{karakter.bif}}</td></tr>
+  </tbody>
+</table>
+<!-- data: story.json final.positions[].lots (FCK: t 20,05, midAtEntry 0,434, baseline [0,4411; 0,4218]; BIF: t 20,1, midAtEntry 0,2523, baseline [0,2355; 0,2316]) og final.grades (tR 28,725; FCK midR 0,421, baseR 0,4244, clv 0,0148; BIF midR 0,2353, baseR 0,2321, clv −0,0732) -->
+<p><b>FCK.</b> Mid faldt 1,3 point fra købet til <i>t</i><sub>R</sub>, men tiden alene ville have taget 1,7 point, fordi uafgjort vinder terræn, mens stillingen er 0–0. I logit faldt markedet lidt mindre end grundlinjen, og CLV blev {{karakter.fck.clv}}.</p>
+<p><b>BIF.</b> Købet skete, mens BIF's mid lå 1,7 point over modellens fair chance, efter to hvaler på BIF ved {{hval2.minut}} og {{hval3.minut}} (kapitel 15). Frem til <i>t</i><sub>R</sub> faldt mid 1,7 point, mens tiden alene kun ville have taget 0,3 point. CLV blev {{karakter.bif.clv}}, stadig inden for <span class="ui">Præcist</span>.</p>
+<p>Begge køb fik altså <span class="ui">Præcist</span>, selv om FCK-andelene endte på 0, og BIF-andelene blev solgt med tab. Det er meningen: karakteren måler prisen ved købet, ikke udfaldet. Over 2,5, 1–1 og 2–1 fik en tankestreg.</p>
+<!-- data: story.json final.grades (Over 2,5, slutresultat 1–1 og 2–1: "—") -->
+
+<div class="callout advarsel"><b>Grundlinjen for sene køb.</b> <i>b</i><sub>10</sub> regnes højst frem til slutfløjt, Δ = min(10; slut − <i>t</i><sub>0</sub>), men interpolationen deler altid med 10. For et køb mindre end 10 kampminutter før slut når <i>b</i><sub>R</sub> derfor kun brøkdelen (slut − <i>t</i><sub>0</sub>) / 10 af vejen til <i>b</i><sub>10</sub>, også når <i>t</i><sub>R</sub> er slutfløjt. Et køb 5 minutter før slut får kun halvdelen af tidens effekt trukket fra. Et sent køb på det førende hold eller på uafgjort, hvis chance stiger med tiden, får derfor en for god karakter, og et sent køb på det hold, der er bagud, en for dårlig. Fundet under rapportarbejdet ved at læse koden og ikke rettet.</div>
+<!-- kilde: src/state/match.ts:700-702; src/ui/afregning/Afregning.tsx:88, 93-94 -->

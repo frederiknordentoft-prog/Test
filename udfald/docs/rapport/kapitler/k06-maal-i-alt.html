@@ -1,0 +1,154 @@
+<h1 class="kapitel" id="k6" data-nr="6">Nyt: Mål i alt og slutresultat</h1>
+<p class="ingress">Kampen har nu to kurser: resultatet og Over 2,5 mål. Fanen <span class="ui">Mål</span> samler resten af målmarkederne i et kort over 36 slutresultater og en stige med Over/Under fra 0,5 til 4,5 mål. Alt er prissat fra samme model som 1X2.</p>
+
+<div class="callout ny"><b>Nyt i denne version.</b>
+<ul>
+<li>Over 2,5 kan være fokus på kampskærmen, med egen vifte, tally, andelsbar, gab og Sikring.</li>
+<li>Skærmen <span class="ui">Mål og slutresultat</span> med et 6×6-kort over slutresultater, regioner og en P&amp;L-tone (plus eller minus) for dine positioner.</li>
+<li>Over/Under på fem linjer: 0,5, 1,5, 2,5, 3,5 og 4,5 mål.</li>
+</ul>
+</div>
+
+<h2 id="k6-over">Over 2,5 som kampens anden kurs</h2>
+<section class="duo">
+  <div class="txt">
+    <p>Tryk på etiketten i instrumenthovedet, til der står <span class="ui">Over 2,5 mål ▾</span>. Så følger hele skærmen antallet af mål i stedet for resultatet. Viften bliver pink, og hver sti ender i Over eller Under: 3 mål eller flere, eller højst 2.</p>
+    <p>Hovedet viser kurs 37 og <span class="ui">33 % chance</span>. Forskellen er husets andel. Tallyen tæller de samme 33 stier som <span class="ui">33 Over</span> og resten som <span class="ui">67 Under</span>. I de første 8 minutter står der <span class="ui">udbetaler 100 ved 3+ mål</span> under chancen.</p>
+    <p>Andelsbaren har kun to felter, <span class="ui">Over 2,5</span> og <span class="ui">Under 2,5</span>. Kurserne summerer til cirka 106 mod 1X2's {{t20.sumKurs}}, fordi Over/Under har en margin på {{k.O25_MARGIN}}. Ved 20′ var summen {{t20.overUnderSum}}.</p>
+    <p>Grenmærkerne viser, at et mål til hvert af holdene løfter Over: <span class="ui">Mål BIF → 65</span> og <span class="ui">Mål FCK → 63</span>, mens <span class="ui">Intet mål 10′ → 29</span> trækker ned. Positionskortet siger <span class="ui">Ved 3+ mål 512 kr</span> i stedet for <span class="ui">Ved sejr</span>.</p>
+  </div>
+  <figure class="phone" data-shot="07-over25-vifte"><figcaption><b>Over 2,5 i fokus ved 24′, 0–0.</b> Kurs 37, 33 % chance og tally 33 Over mod 67 Under. Baren viser <span class="ui">Over 2,5 37</span> og <span class="ui">Under 2,5 69</span>. Linjerne <span class="ui">Sikr gevinst 50</span> og <span class="ui">Stop 30</span> hører til positionen fra {{koeb.over.minut}}: {{koeb.over.andele}} andele @ kurs {{koeb.over.kurs}} (kapitel 7).</figcaption></figure>
+</section>
+<!-- kilde: src/ui/kamp/Kampen.tsx:152-171, 176-181, 361-366; src/state/focus.ts:54-78, 102-108; src/render/fan/live.ts:271-291; src/engine/football/display.ts:158-165; src/engine/football/sim.ts:42, 458-471, 535-536 -->
+<!-- data: data/shots/07-over25-vifte.json (k 990: kurs 37/69, salgskurs 33, tally 33/67, grenmærker 65/63/29, "Ved 3+ mål 512 kr") -->
+
+<p>Over 2,5 ligner 1X2 på skærmen, men fire ting er anderledes. Du kan ikke sætte købsgrænser i viften, og der er ingen spøgelseslinje. Trækker du i baren fra Over til Under, sker der intet, for der findes ingen dobbeltchance på mål. Og kursen har hverken publikumshandel eller hvaler: den følger modellens chance tæt, med lidt støj og et lille udsving forbi den nye pris, når handlen genåbner. En storordre på FCK flytter derfor 1X2, men ikke Over 2,5.</p>
+<!-- kilde: src/state/focus.ts:74-75; src/ui/kamp/Fan.tsx:91, 94, 219; src/ui/kamp/Kampen.tsx:232-233; src/engine/football/sim.ts:427-456 -->
+
+<h3 id="k6-aarsag">Årsagschippen for Over</h3>
+<p>Årsagschippen forklarer bevægelsen i Over 2,5 over de seneste 2 kampminutter, målt på chancen og ikke på kursen, og den kender kun to slags grunde. En hændelse flytter kursen med et hop, og så står den i chippen, fx <span class="ui">▲ 27 point: mål FCK 28′</span>. Det kan også være et rødt kort eller en VAR-dom. Uden hændelser trækker tiden kursen ned, og chippen siger <span class="ui">tiden løber</span> med antallet af mål i parentes. Pres og chancer løfter den: <span class="ui">pres og chancer giver flere mål</span>. Under 1 point står der <span class="ui">Rolig handel · under 1 point på 2 kampmin</span>.</p>
+<!-- kilde: src/engine/football/display.ts:198-220 -->
+<!-- data: data/shots/14-over25-efter-maal.json ("▲ 27 point: mål FCK 28′") -->
+
+<h2 id="k6-bakke">Bakken for Over og Under</h2>
+<section class="duo">
+  <div class="txt">
+    <p>Chippen <span class="ui">Over 2,5 · kurs 37</span> ved Målvejret skifter fokus og åbner bakken <span class="ui">Mål i alt · 2,5</span> på én gang. Med Over 2,5 i fokus gør et tryk på et af felterne i baren det samme. Øverst vælger du side, <span class="ui">Over 2,5 37</span> eller <span class="ui">Under 2,5 69</span>, og derunder står reglen:</p>
+    <p><span class="ui">3 eller flere mål i kampen: Over udbetaler 100. Afregnes i det øjeblik, det 3. mål er godkendt.</span></p>
+    <p>Resten er ordresedlen fra kapitel 4: kurs og odds, chips fra 25 til 500 kr, udbetalingen med store tal og den samme prislås på 1,5 sekund. På billedet giver 250 kr til kurs 37 i alt 675 andele for 249,75 kr. Du kan også holde fingeren på et felt i baren og købe med hold-for-indsats.</p>
+    <p>Ved {{koeb.over.minut}} købte vi Over 2,5 for {{koeb.over.indsats}} til kurs {{koeb.over.kurs}}: {{koeb.over.andele}} andele for {{koeb.over.kr}}. På positionen satte vi stop-loss på {{stop.over.niveau}} og Sikr gevinst på {{take.over.niveau}}. De to linjer ses i viften bag bakken.</p>
+  </div>
+  <figure class="phone" data-shot="08-over25-bakke"><figcaption><b>Bakken for Over 2,5 ved 24′.</b> Over er valgt med 250 kr: <span class="ui">Udbetaling ved sejr 675 kr</span> og <span class="ui">675 andele for 249,75 kr</span>. Noten over prisen siger, hvornår kontrakten afregnes.</figcaption></figure>
+</section>
+<!-- kilde: src/ui/kamp/Kampen.tsx:35-44, 88, 218-230, 270-283; src/ui/kamp/Tray.tsx:11, 59-110; src/engine/book/portfolio.ts:62-66 -->
+<!-- data: data/shots/08-over25-bakke.json; story.json toasts (k 835: "Købt 512 andele @ kurs 39"), exitsPlaced -->
+
+<h2 id="k6-maal">Når der falder mål</h2>
+<p>Under et handelsstop står Over 2,5 stille ligesom de andre kurser, mens modellen allerede regner med det nye mål. Ved genåbningen springer kursen til den nye pris med et gab. Et mål til hvert af holdene bringer kampen tættere på 3 mål, så Over springer op, uanset hvem der scorer.</p>
+<p>FCK's mål {{maal1.ur}} løftede Over fra kurs {{foerMaal.overKurs}} til {{genaabning1.overKurs}} ved genåbningen {{genaabning1.ur}}, et gab på {{genaabning1.gabOver}} point. BIF's udligning {{maal2.ur}} gav et gab på {{genaabning2.gabOver}} point, for nu manglede der kun ét mål.</p>
+<!-- kilde: src/engine/football/sim.ts:411-425, 427-456 -->
+
+<section class="duo">
+  <div class="txt">
+    <p>Billedet er taget ved 29′, lige efter genåbningen. Over står i kurs 59 med <span class="ui">56 % chance</span>, og gabet er mærket <span class="ui">+29 point</span> ved genåbningen. Prislinjen viser springet som en lodret streg, og årsagschippen siger <span class="ui">▲ 27 point: mål FCK 28′</span>.</p>
+    <p>Grenmærkerne er nu ens: <span class="ui">Mål FCK → 87</span> og <span class="ui">Mål BIF → 87</span>. Ved 1–0 giver et mål til hvert af holdene 2 mål i kampen, og så mangler der kun ét. Bliver der ingen mål i 10 minutter, falder Over til omkring 50.</p>
+    <p>Positionskortet har ingen Over-position. Den blev solgt ved genåbningen af Sikr gevinst, og kortet henviser nu til Porteføljen. Indgangsringen ved kurs 39 står stadig på prislinjen.</p>
+    <p>I de første minutter efter et mål står chippen <span class="ui">Efter målet</span> på Over-chippens plads ved Målvejret. Over 2,5 nås da via etiketten eller fanen <span class="ui">Mål</span>.</p>
+  </div>
+  <figure class="phone" data-shot="14-over25-efter-maal"><figcaption><b>Over 2,5 efter FCK-målet, 29′, 1–0.</b> Kurs 59 og gabet <span class="ui">{{genaabning1.gabOver}} point</span>. Tallyen viser 56 Over og 44 Under. Chippen <span class="ui">Efter målet 20</span> har taget Over-chippens plads, og positionen er solgt (kapitel 7).</figcaption></figure>
+</section>
+<!-- kilde: src/render/fan/live.ts:117-128, 238-247; src/ui/kamp/Kampen.tsx:281-282, 347-360; src/engine/football/display.ts:116-126, 143-165 -->
+<!-- data: data/shots/14-over25-efter-maal.json (k 1214: kurs 59, salgskurs 57, tally 56/44, grenmærker 87/87/50, "Efter målet 20") -->
+
+<h3 id="k6-tredje">Det 3. mål</h3>
+<p>Over 2,5 afgøres i det øjeblik, det 3. godkendte mål falder, ikke ved slutfløjt. Over går til 100 og Under til 0 i samme substep, og pengene står på saldoen med det samme. Skal målet tjekkes af VAR, tæller det først, når VAR har godkendt det. Et annulleret mål tæller aldrig.</p>
+<p>Samtidig rydder skærmen op. Har du Over 2,5 i fokus, hopper fokus tilbage til FCK, og etiketten springer Over 2,5 over resten af kampen. Chippen ved Målvejret forsvinder, og fanen <span class="ui">Mål</span> i bundbjælken viser <span class="ui">3 mål · Over ✓</span> i stedet for kursen. Ender kampen med højst 2 mål, afregnes Over til 0 og Under til 100 ved slutfløjt.</p>
+<p>I vores kamp kom der kun 2 mål. Over 2,5 ville altså have betalt 0, men positionen var solgt ved {{take.over.ur}} til kurs {{take.over.kurs}}.</p>
+<!-- kilde: src/state/match.ts:337-357, 384-388, 621-628; src/engine/football/sim.ts:312-331, 387-405, 433-443; src/state/focus.ts:102-108; src/ui/kamp/Kampen.tsx:126, 157, 282; src/engine/book/portfolio.ts:159-170 -->
+
+<figure class="fig" data-fig="over25-kamp"><figcaption><b>Figur:</b> Over 2,5 gennem kampen. Den pink linje er kursen, den stiplede er modellens fair chance gange 100. Mellem målene trækker tiden kursen ned, og ved hver genåbning springer den op: {{genaabning1.gabOver}} point efter FCK's mål og {{genaabning2.gabOver}} point efter BIF's. Ringen er købet til kurs {{koeb.over.kurs}} ved {{koeb.over.minut}}, prikken salget via Sikr gevinst til kurs {{take.over.kurs}} ved {{take.over.ur}}. Kampen endte {{slutresultat}} med 2 mål, så kursen ender nær 0.</figcaption></figure>
+
+<h2 id="k6-skaerm">Skærmen Mål og slutresultat</h2>
+<p>Fanen <span class="ui">Mål</span> i bundbjælken viser Over 2,5-kursen på sin anden linje, fx <span class="ui">Over 2,5 · 37</span>, og åbner skærmen <span class="ui">Mål og slutresultat</span>. Den har to dele, et kort over slutresultater og stigen <span class="ui">Mål i alt</span>, og under dem en ordreseddel for det, du har valgt. Øverst står: <span class="ui">Hver celle er et slutresultat. Lysstyrken er sandsynligheden, regnet fra samme model som 1X2. Vælg én celle eller en hel region.</span></p>
+<!-- kilde: src/ui/kamp/Kampen.tsx:126; src/ui/maal/Maal.tsx:83-91 -->
+
+<section class="duo">
+  <div class="txt">
+    <p>Kortet har 6 × 6 celler. FCK's mål går nedad og BIF's henad, fra 0 til <span class="ui">5+</span>, så den sidste række og kolonne dækker 5 mål eller flere. Hver celle viser stillingen og chancen i procent, og jo større chancen er i forhold til den mest sandsynlige celle, jo stærkere lyser cellen. Den aktuelle stilling har en hvid ring.</p>
+    <p>Et tryk vælger en celle, og et tryk mere fravælger den. Vælger du flere, bliver de til én <b>region</b>, der betaler, hvis kampen ender i en af dem. Ordresedlen viser, hvor mange af 100 fremtider der ender i dit valg, fx <span class="ui">≈ 29 af 100 fremtider</span>. Tallet er modellens chance omregnet til hele fremtider; det er ikke talt i viften.</p>
+    <p>På billedet er regionen 0–0 og 1–1 valgt ved 24′: <span class="ui">Slutresultat: 0–0, 1–1 · kurs 32 · 29 % chance · odds 3,13</span>. Indsatsen vælger du med chips fra 25 til 250 kr, og knappen siger, hvad du får: <span class="ui">Køb 50 kr · ved sejr 156 kr</span>. Købet går gennem den samme prislås som på kampskærmen.</p>
+  </div>
+  <figure class="phone" data-shot="09-maal-0-0"><figcaption><b>Mål og slutresultat ved 24′, 0–0.</b> Regionen 0–0 + 1–1 er valgt, og 0–0 har ringen for stillingen nu. Stregen under hver celle er P&amp;L-tonen. Nederst stigen fra <span class="ui">Over 88</span> og <span class="ui">Under 18</span> på 0,5 til <span class="ui">Over 10</span> og <span class="ui">Under 96</span> på 4,5.</figcaption></figure>
+</section>
+<!-- kilde: src/ui/maal/Maal.tsx:56-76, 92-122, 153-177; src/engine/football/display.ts:13-14, 73-76; src/state/focus.ts:145-147; src/styles/kamp.css:302-311 -->
+<!-- data: data/shots/09-maal-0-0.json (k 990: celler 14/15, regionen kurs 32, "≈ 29 af 100 fremtider", "Køb 50 kr · ved sejr 156 kr") -->
+
+<h3 id="k6-regioner">Regionsknapperne</h3>
+<p>Under kortet står seks knapper:</p>
+<ul>
+<li><span class="ui">FCK med 2+</span>: FCK vinder med 2 mål eller mere.</li>
+<li><span class="ui">Begge scorer</span>: begge hold scorer mindst ét mål.</li>
+<li><span class="ui">0–0 eller 1–1</span>.</li>
+<li><span class="ui">Uafgjort</span> og <span class="ui">BIF vinder</span>.</li>
+<li><span class="ui">Ryd</span> fjerner valget.</li>
+</ul>
+<p>En region tager kun de celler med, der stadig kan nås. <span class="ui">Uafgjort</span> og <span class="ui">BIF vinder</span> er ikke regioner. De markerer cellerne på kortet, men køber de samme 1X2-kontrakter som baren på kampskærmen, og noten siger det: <span class="ui">Samme udbetaling som Uafgjort i baren, til samme kurs.</span> Den samme udbetaling har derfor aldrig to priser.</p>
+<!-- kilde: src/ui/maal/Maal.tsx:8-11, 71-73, 124-131, 163 -->
+
+<h3 id="k6-pris">Prisen på en celle og en region</h3>
+<p>Celler og regioner har ikke deres eget marked med publikum og hvaler. Kursen regnes direkte fra modellens chance med et tillæg, der er større end på 1X2:</p>
+<div class="formel">celle: kurs = ⌈1,15 · 100 · <i>p</i>⌉ <span class="hvor">hvor <i>p</i> er cellens chance, og ⌈ ⌉ runder op.</span></div>
+<div class="formel">region: kurs = ⌈1,10 · 100 · Σ<i>p</i>⌉ <span class="hvor">hvor Σ<i>p</i> er regionens samlede chance. Kursen er højst summen af cellernes egne kurser.</span></div>
+<p>Salgskursen er 0,92 · 100 · Σ<i>p</i> rundet ned, dog mindst 2 point under kursen og aldrig under 1.</p>
+<!-- kilde: src/state/match.ts:568-585 -->
+<p>Ved 20′ havde 1–1 en chance på {{q20.cs11.p}} (præcist 14,99 %). Ganget med 1,15 bliver det {{q20.cs11.raa}}, som rundes op til kurs {{q20.cs11.kurs}}, og salgskursen var {{q20.cs11.salg}}. Vi købte cellen for {{koeb.cs11.indsats}}: {{koeb.cs11.andele}} andele for {{koeb.cs11.kr}}. Kampen endte {{slutresultat}}, og cellen betalte {{slut.cs11.udbetaling}}.</p>
+<p>Regionen 0–0 + 1–1 havde en samlet chance på {{q20.r0011.p}}, og med 10 % blev det kurs {{q20.r0011.kurs}}. Hver for sig kostede de to celler {{q20.cs00.kurs}} og {{q20.cs11.kurs}}, i alt {{q20.r0011.loft}}. Regionen er altså billigere end cellerne enkeltvis, og loftet sikrer, at den aldrig bliver dyrere.</p>
+<p>En enkelt celle er til gengæld dyr i forhold til chancen. 1X2 har en margin på 3 %, en celle 15 %: kurs {{q20.cs11.kurs}} for en chance på {{q20.cs11.p}}.</p>
+<!-- kilde: src/engine/football/sim.ts:536 (1X2: powerAsks(mid, 0,03)) -->
+<!-- data: story.json quotes20 (cs:1-1 p 0,1499, kurs 18, salgskurs 13, rå 17,24; cs:0-0.1-1 p 0,2744, kurs 31, loft 33) -->
+
+<h2 id="k6-stige">Mål i alt: Over/Under 0,5–4,5</h2>
+<p>Stigen under kortet har fem linjer. Hver linje har en Over- og en Under-knap med kursen, fx <span class="ui">Over 63</span> og <span class="ui">Under 43</span> på 1,5 ved 24′. Vælger du en side, lyser de slutresultater op på kortet, der får den til at vinde, og fremtiderne tælles som for en region.</p>
+<p>Linjen 2,5 er kampens egen Over 2,5-kurs, og noten siger det: <span class="ui">Over 2,5 er kampens anden kurs: den samme som i viften og baren.</span> De fire andre linjer regnes direkte fra modellens chance med samme margin på {{k.O25_MARGIN}} og en salgskurs 3 point under kursen. Her er stigen ved 20′, da vi købte:</p>
+<table class="t">
+  <thead><tr><th>Linje</th><th class="n">Over kurs</th><th class="n">Under kurs</th><th class="n">Chance for Over</th></tr></thead>
+  <tbody>
+    <tr><td>0,5</td><td class="n">{{q20.tot05O.kurs}}</td><td class="n">{{q20.tot05U.kurs}}</td><td class="n">{{q20.tot05O.p}}</td></tr>
+    <tr><td>1,5</td><td class="n">{{q20.tot15O.kurs}}</td><td class="n">{{q20.tot15U.kurs}}</td><td class="n">{{q20.tot15O.p}}</td></tr>
+    <tr><td>2,5</td><td class="n">{{q20.tot25O.kurs}}</td><td class="n">{{q20.tot25U.kurs}}</td><td class="n">{{q20.tot25O.p}}</td></tr>
+    <tr><td>3,5</td><td class="n">{{q20.tot35O.kurs}}</td><td class="n">{{q20.tot35U.kurs}}</td><td class="n">{{q20.tot35O.p}}</td></tr>
+    <tr><td>4,5</td><td class="n">{{q20.tot45O.kurs}}</td><td class="n">{{q20.tot45U.kurs}}</td><td class="n">{{q20.tot45O.p}}</td></tr>
+  </tbody>
+</table>
+<p>I tabellen summerer hver linje til 106. Når der er scoret flere mål end linjen, er den afgjort: Over har betalt 100, Under 0, og linjen viser <span class="ui">Over ✓ passeret</span>. Det sker i det øjeblik, målet er godkendt, præcis som for Over 2,5.</p>
+<!-- kilde: src/engine/football/display.ts:12, 42-48, 77-87; src/ui/maal/Maal.tsx:61-65, 133-151, 164; src/state/match.ts:347-350 -->
+
+<h2 id="k6-lukket">Når du ikke kan købe</h2>
+<p>Er en celle, en region eller en linje lukket, står grunden på købsknappen i stedet for beløbet. Spillet tjekker grundene i denne rækkefølge og viser den første, der passer:</p>
+<ol>
+<li><span class="ui">Kampen er slut</span></li>
+<li><span class="ui">Kun "Målet står?" er åben under VAR</span></li>
+<li><span class="ui">Handlen er stoppet</span></li>
+<li><span class="ui">Linjen N er allerede passeret</span></li>
+<li><span class="ui">Resultatet er ikke længere muligt</span></li>
+<li><span class="ui">For usandsynligt (under 3 %)</span></li>
+</ol>
+<!-- kilde: src/state/match.ts:24-25, 587-602; src/ui/maal/Maal.tsx:75, 161, 168, 173 -->
+
+<section class="duo">
+  <div class="txt">
+    <p>Ved 35′ står det 1–0. Hele rækken med 0 FCK-mål er brændt af: cellerne er skraverede, viser <span class="ui">–</span> og kan ikke vælges. Ringen er rykket til 1–0. På stigen er 0,5 afgjort og viser <span class="ui">Over ✓ passeret</span>, og Over 2,5 står nu i 54 mod Under 52.</p>
+    <p>Cellen 4–3 er valgt. Den har 0,2 % chance og kurs 1, og knappen siger <span class="ui">For usandsynligt (under 3 %)</span>. Grænsen på 3 % gælder hele valget, ikke hver celle. En region af små celler kan købes, når de tilsammen har mindst 3 % chance. På kortet står procenten dæmpet i celler under 3 %.</p>
+    <p>I samme øjeblik købte vi slutresultatet 2–1 for {{koeb.cs21.indsats}} til kurs {{koeb.cs21.kurs}}: {{koeb.cs21.andele}} andele. Modellen gav 2–1 en chance på {{q35.cs21.p}}.</p>
+    <p>En celle eller region afregnes til 0, så snart ingen af dens stillinger kan nås. Ellers afregnes den ved slutfløjt. Vores 1–1 betalte {{slut.cs11.udbetaling}}, og 2–1 gik til 0.</p>
+  </div>
+  <figure class="phone" data-shot="15-maal-1-0"><figcaption><b>Kortet ved 35′, 1–0.</b> Række 0 er brændt, og 1–0 har ringen. Cellen 4–3 er valgt: <span class="ui">Slutresultat 4–3 · kurs 1 · 0,2 % chance</span> og <span class="ui">≈ 0 af 100 fremtider</span>. Købsknappen er lukket med grunden.</figcaption></figure>
+</section>
+<!-- kilde: src/state/focus.ts:136-139; src/ui/maal/Maal.tsx:99-117, 138-142, 161, 173; src/state/match.ts:351-352, 389-390, 595-600; src/styles/kamp.css:305-308 -->
+<!-- data: data/shots/15-maal-1-0.json (k 1432); story.json toasts (k 1432 "Købt 294 andele @ kurs 17"; k 3768 "Slutresultat 1–1: +277 kr", "Slutresultat 2–1: afregnet til 0") -->
+
+<h2 id="k6-tone">P&amp;L-tonen</h2>
+<p>Har du åbne positioner, får hver mulig celle en streg i bunden. Grøn betyder, at du samlet går i plus, hvis kampen ender sådan, og rød, at du går i minus. Spillet lægger udbetalingerne ved den stilling sammen og trækker indsatserne fra. Kun kontrakter, der afgøres af slutresultatet alene, tæller med: 1X2, dobbeltchance, Over/Under, slutresultater og Byg uden tidsvinduer. Næste mål, Målvejret, VAR og puljen er ikke med, og det står under kortet: <span class="ui">plus · minus: din udbetaling ved hvert slutresultat, kun kontrakter der afgøres af slutresultatet alene</span>.</p>
+<p>Ved 24′ (billedet af kortet ved 0–0) havde vi FCK, BIF, Over 2,5 og 1–1. Stillingen 0–0 er rød, for intet af det betaler. 0–1 er grøn, fordi BIF-andelene alene betaler {{koeb.bif.andele}} kr, mere end de fire køb kostede tilsammen. 2–1 er også grøn, for der betaler både FCK og Over 2,5.</p>
+<!-- kilde: src/ui/maal/Maal.tsx:17-46, 80, 103-104, 123 -->
+<!-- data: data/shots/09-maal-0-0.json (0–0 og 1–1 røde, 0–1 og 2–1 grønne); købene {{koeb.fck.kr}} + {{koeb.bif.kr}} + {{koeb.over.kr}} + {{koeb.cs11.kr}} er under 769 kr -->

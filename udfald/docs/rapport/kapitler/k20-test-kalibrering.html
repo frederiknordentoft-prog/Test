@@ -1,0 +1,96 @@
+<h1 class="kapitel" id="k20" data-nr="20">Test, kalibrering og ydelse</h1>
+<p class="ingress">Motoren, bogen og de nye funktioner er dækket af {{test.antal}} automatiske tests, og den byggede app af {{qa.antal}} tjek i en rigtig browser. Kapitlet viser, hvad de måler, hvor godt modellens chancer rammer udfaldene i simulationen, og hvor appen ikke når planens mål for ydelse.</p>
+
+<h2 id="k20-tests">Testene</h2>
+<p>Testene kører med Vitest i 8 filer, og alle {{test.antal}} bestod i den kørsel, rapporten bygger på. De statistiske tests bruger et færdigbygget bundt af motoren, fordi Vitests omsætning af TypeScript gør de varme løkker cirka 8 gange langsommere end i appen. Test af storen kører på et virtuelt ur: <code>clock</code> erstattes, så prislåsen på 1,5 s og kampens hændelser forløber deterministisk og uden ventetid.</p>
+<!-- kilde: tests/setup/engine.ts:1-6; README.md:80; tests/features.test.ts:10-39; src/state/match.ts:111-112, 663-679 -->
+<!-- data: vitest.txt (Test Files 8 passed (8), Tests 65 passed (65), Duration 24.05s) -->
+<table class="t">
+  <thead><tr><th>Fil</th><th class="n">Tests</th><th>Hvad testene kræver</th></tr></thead>
+  <tbody>
+    <tr><td><code>football</code></td><td class="n">{{test.football}}</td><td>Samme seed giver samme hash. 2,7 ± 0,15 mål pr. kamp og FCK-sejr i 47 % ± 3,5 point. I en kamp uden mål og hvaler summerer 1X2-kurserne til 103 ± 1, mens handlen er åben. Et scriptet VAR-mål når den scriptede dom og ændrer først stillingen da. Fair-prisen er kalibreret pr. prisinterval.</td></tr>
+    <tr><td><code>mc</code></td><td class="n">{{test.mc}}</td><td>Monte Carlo mod DP i fem tilstande. 100 stier, hvor tallyen er <code>largestRemainder</code> af chancen, og hver sti starter i kursen og ender i 0 eller 100. Højst 5 af 100 stier skifter på et kampminut uden hændelser. Byg tager den fælles chance fra de samme stier.</td></tr>
+    <tr><td><code>totals</code></td><td class="n">{{test.totals}}</td><td>Gitteret summerer til 1 og giver <code>price1x2</code> og <code>totalsBack</code> inden for 10<sup>−11</sup>. Monte Carlo for 3+ mål ligger inden for 2 point. Over 2,5 er kalibreret pr. decil. Tre golden hashes er uændrede.</td></tr>
+    <tr><td><code>features</code></td><td class="n">{{test.features}}</td><td>En scriptet kamp gennem storen: Over/Under og slutresultater afregnes på godkendte mål, også efter et annulleret VAR-mål. Et stop udløses efter vagten og annullerer Sikr gevinst, puljen betaler efter formlen, og saldoen er start − indsat + udbetalt. Regioner er aldrig under fair (ny). Puljen giver højst 0,95 pr. krone i 20 kampe.</td></tr>
+    <tr><td><code>book</code></td><td class="n">{{test.book}}</td><td>Hele andele, salg til salgskursen, købsgrænser (reservation, ingen fyld i handelsstop, fyld efter gab, højst 3), afregning og træk-karakter. Seks tests af Sikring og tre af puljens regnskab.</td></tr>
+    <tr><td><code>demo</code></td><td class="n">{{test.demo}}</td><td>Hele demoen på virtuelt ur: hver scriptet handling fylder, og ingen køb bliver genkvoteret.</td></tr>
+    <tr><td><code>handball</code></td><td class="n">{{test.handball}}</td><td>Hallens motor: ur, determinisme, kalibrering over 200 kampe, σ og drift, passivt spil og powerplay, vinderpriser og triggere mod Monte Carlo, kurser og instruktøren.</td></tr>
+    <tr><td><code>lib</code></td><td class="n">{{test.lib}}</td><td><code>hash32</code>, <code>mulberry32</code>, power-metoden og <code>largestRemainder</code>.</td></tr>
+  </tbody>
+</table>
+<!-- kilde: tests/football.test.ts:5-91; tests/mc.test.ts:7-63; tests/totals.test.ts:17-103; tests/features.test.ts:55-141, 143-160, 162-187; tests/book.test.ts:5-136; tests/demo.test.ts:10; tests/handball.test.ts:48-372; tests/lib.test.ts:5-28 -->
+
+<h2 id="k20-kalibrering">Kalibrering</h2>
+<p>Kalibrering betyder her, at når modellen siger 40 %, sker udfaldet i cirka 40 % af tilfældene. Testene måler modellens <b>fair chance</b> fra DP'en, ikke kursen, som med vilje ligger over chancen (kapitel 15). Kørslerne er fri kamp uden hvaler og uden markedslag, med et nyt seed pr. kamp.</p>
+<!-- kilde: tests/football.test.ts:21, 69, 74; tests/totals.test.ts:56, 63 -->
+
+<h3 id="k20-1x2">Mål og 1X2</h3>
+<p>{{kal.kampe}} kampe gav {{kal.maalPrKamp}} mål pr. kamp, og FCK vandt {{kal.fckSejr}} (kapitel 13). For 1X2 kører testen 1.200 kampe og noterer FCK's fair chance i hvert 600. substep, cirka hvert 15. kampminut, når handlen er åben. Det giver op til seks punkter pr. kamp. Punkterne deles i prisintervaller på 10 point og sammenlignes med andelen af FCK-sejre i intervallet. Over 2,5 deles i stedet i deciler med lige mange punkter:</p>
+<div class="formel">1X2:  |<i>ȳ</i> − <i>p̄</i>| &lt; 0,10 i hvert interval med <i>n</i> ≥ 300<br>Over 2,5:  |<i>ȳ</i> − <i>p̄</i>| &lt; 0,035 + 3 · √(max(<i>p̄</i>(1 − <i>p̄</i>); 0,01) / <i>n</i>) i hver decil<span class="hvor">hvor <i>p̄</i> er den gennemsnitlige fair chance i gruppen, <i>ȳ</i> er andelen, hvor udfaldet skete, og <i>n</i> er antallet af punkter. Testens kommentar begrunder 0,10 med 3 standardfejl plus 1 point ved <i>n</i> = 300.</span></div>
+<!-- kilde: tests/football.test.ts:65-91; tests/totals.test.ts:72-81 -->
+<p>I de syv intervaller med mindst 300 punkter, 6.593 af de 7.133 punkter, lå andelen af FCK-sejre højst {{kal.1x2.maxAfvigelse}} point fra den gennemsnitlige chance. To mindre intervaller ligger længere fra: 60–70 % (243 punkter, 69,3 % mod 72,0 %) og 80–90 % (297 punkter, 82,9 % mod 79,8 %). Intervallet 50–60 % fik ingen punkter. Grænsen på 10 point er langt bredere end planens krav om ±3 point pr. decil over 2.000 kampe, og punkterne er ikke uafhængige: punkter fra samme kamp deler udfald, så den reelle usikkerhed er større end standardfejlen i figuren.</p>
+<!-- data: stats.json cal1x2 (9 intervaller, n i alt 7.133; [5] p 0,6925 y 0,7202 n 243; [7] p 0,8289 y 0,798 n 297; 7.133 − 243 − 297 = 6.593); vitest.txt (deciles … - …) -->
+<!-- kilde: docs/PLAN.md:343 (F1-gate: 2.000 kampe, ±3 pp pr. decil); tests/football.test.ts:74, 86-89 -->
+<figure class="fig" data-fig="kal-1x2"><figcaption><b>Figur:</b> 1X2-kalibrering. FCK's fair chance mod andelen af FCK-sejre pr. prisinterval, 7.133 punkter fra 1.200 kampe, med ±3 standardfejl. Intervallet 50–60 % er tomt, og 60–70 % og 80–90 % har under 300 punkter og indgår ikke i testen.</figcaption></figure>
+
+<h3 id="k20-over">Over 2,5</h3>
+<p>Testen noterer fair-chancen ved 0′, 15′, 30′, 45,5′, 60′ og 75′ i {{kal.o25.kampe}} kampe, i alt {{kal.o25.punkter}} punkter, så længe Over ikke er afgjort. Den største afvigelse i en decil var {{kal.o25.maxAfvigelse}} point. Ved kickoff ligger prisen lavt, {{kal.o25.kickoffPris}} mod faktisk {{kal.o25.kickoffFaktisk}}, fordi DP'en ikke regner med excitation fra mål, der endnu ikke er scoret. Figuren og forklaringen står i kapitel 16.</p>
+<!-- kilde: tests/totals.test.ts:50-86 -->
+<!-- data: stats.json calO25 (10 deciler à 791 punkter), o25Kickoff -->
+
+<h3 id="k20-mc">Monte Carlo mod DP</h3>
+<p>Viftens stier skal give samme chance som DP'en. For 1X2 kører testen 5.000 stier i fem tilstande fra 0′ til 85′. Den gennemsnitlige afvigelse var 0,3 point og den største 1,0 point; testen tillader 1,2 og 3 point, og planen sagde højst 1 point i gennemsnit. For Over 2,5 kører testen 6.000 stier i fire tilstande med en grænse på 2 point, og den største afvigelse var {{mc.maxAfvigelse}} point (tabel i kapitel 16). Gitterets 1X2 afveg fra <code>price1x2</code> med højst {{grid.maxAfvigelse1x2}}, hvilket er afrunding i flydende tal.</p>
+<!-- kilde: tests/mc.test.ts:7-21; tests/totals.test.ts:17-48; docs/PLAN.md:229 -->
+<!-- data: vitest.txt (mean |MC-DP| 0.0032 max 0.0104); stats.json mcVsDp -->
+
+<h3 id="k20-haandbold">Håndbold</h3>
+<p>Hallens motor har sine egne tests. Over 200 kampe kræver de 58–64 mål i snit, at Aalborg vinder 50–65 % af kampene, 3–4 udvisninger pr. hold og gennemsnitlige angreb på 30–36 s. Den analytiske σ skal ligge inden for 10 % af den simulerede spredning, og vinderpriser og triggere skal ligge inden for 3 point af en Monte Carlo af selve kæden. README angiver de målte værdier: 61,8 mål pr. kamp, σ = 0,654 mål pr. √min, analytisk og simuleret inden for 1 %, og triggerpriser inden for 1,6 point. De tal er ikke kørt igen til rapporten.</p>
+<!-- kilde: tests/handball.test.ts:125-166, 168-192, 237-288; README.md:92-95 -->
+
+<h2 id="k20-qa">QA i browseren</h2>
+<p><code>qa/qa.cjs</code> kører den byggede app i Playwright Chromium uden skærm. Appen serveres fra <code>dist/</code> med en Content Security Policy som i et artifact og vises i en 390 px bred iframe fra en anden origin, både med sandbox (opaque origin) og uden. Alle {{qa.antal}} tjek bestod:</p>
+<!-- kilde: qa/qa.cjs:1-8, 19-34, 39-51 -->
+<table class="t">
+  <thead><tr><th>Område</th><th>Tjek</th><th class="n">Antal</th></tr></thead>
+  <tbody>
+    <tr><td>Værten</td><td>Ingen sidefejl, og Monte Carlo kører, med og uden sandbox. I sandboxen kørte en blob-worker, uden sandbox en worker fra egen fil.</td><td class="n">4</td></tr>
+    <tr><td>Diagnose</td><td>0 CSP-overtrædelser, fonte fra egne filer, worker fundet i sandboxen.</td><td class="n">3</td></tr>
+    <tr><td>Ydelse</td><td>p95 for intervallet mellem frames ≤ 20 ms ved 1× CPU.</td><td class="n">1</td></tr>
+    <tr><td>Mål</td><td>Kampbånd, instrumenthoved, andelsbar og bundbjælke står stille i 1,2 s efter et mål, og målet tæller. Med fokus på FCK og på Over 2,5.</td><td class="n">4</td></tr>
+    <tr><td>Nye funktioner</td><td>Over 2,5-chippen, et Over-køb, baren Over · Under, Sikring med stop og Sikr gevinst, en puljeindsats på X, et køb af 1–1 og ingen sidefejl.</td><td class="n">7</td></tr>
+    <tr><td>Køb</td><td>Udbetalingen ses i bakken, købet fylder efter prislåsen, og positionskortet har fader.</td><td class="n">3</td></tr>
+    <tr><td>Reduceret bevægelse</td><td>Prikken for enden af prislinjen holder op med at pulsere, men kampen kører videre.</td><td class="n">2</td></tr>
+    <tr><td>Tilgængelighed</td><td>axe (WCAG 2 A og AA) uden kritiske fund på 8 skærme og Sikring-bakken.</td><td class="n">9</td></tr>
+    <tr><td>Demoen</td><td>Kører i realtid til Afregning på {{qa.demoSek}}, viser Byg ved pausen, laver de scriptede handler og giver ingen sidefejl.</td><td class="n">4</td></tr>
+  </tbody>
+</table>
+<!-- kilde: qa/qa.cjs:58-68, 70-79, 81-97, 99-114, 116-157, 159-175, 177-188, 190-207, 233-255; src/styles/kamp.css:47-53 (.fan-head er prikken på prislinjen, åndedrættet er ::after) -->
+<!-- data: qa.txt (37 × PASS, mode=worker (blob) / worker (fil)) -->
+<p>Kun kritiske axe-fund får QA til at fejle; alvorlige fund skrives i loggen. I denne kørsel var der ingen af delene. Screenshots ved 664, 744 og 844 px skærmhøjde gemmes til gennemsyn, men sammenlignes ikke pixel for pixel (PLAN §16).</p>
+<!-- kilde: qa/qa.cjs:203-205, 209-231; docs/PLAN.md:450 -->
+<!-- data: qa-report.json (detail er tom for alle 9 axe-tjek; detail lister kritiske og alvorlige fund) -->
+
+<h2 id="k20-ydelse">Ydelse</h2>
+<p>QA måler intervallet mellem frames i 7 s, mens kampen kører ved ×1 fra 20′, først uden og så med 4 gange CPU-drosling via Chrome DevTools Protocol. p95 er det interval, som 95 % af intervallerne ikke er længere end. Lange opgaver (long tasks) er opgaver på hovedtråden over 50 ms. Planen satte p95 ≤ 16,7 ms ved 1× og ≤ 33 ms ved 4× og ingen lange animationsframes (LoAF) over 50 ms. QA måler lange opgaver, ikke LoAF.</p>
+<!-- kilde: qa/qa.cjs:81-97; docs/PLAN.md:367 -->
+<table class="t">
+  <thead><tr><th>Måling</th><th class="n">1× CPU</th><th class="n">4× CPU</th><th class="n">Planens mål</th></tr></thead>
+  <tbody>
+    <tr><td>p95, frame-interval</td><td class="n">{{perf.1x.p95}}</td><td class="n">{{perf.4x.p95.tidligere}}–{{perf.4x.p95}}</td><td class="n">≤ 16,7 ms / ≤ 33 ms</td></tr>
+    <tr><td>p50, frame-interval</td><td class="n">16,7 ms</td><td class="n">33,3 ms</td><td class="n">–</td></tr>
+    <tr><td>Lange opgaver, antal og længste</td><td class="n">2 · 59 ms</td><td class="n">23 · {{perf.4x.lang}}</td><td class="n">ingen LoAF over 50 ms</td></tr>
+    <tr><td>Monte Carlo, én kørsel i workeren</td><td class="n">{{perf.mc}}</td><td class="n">231 ms</td><td class="n">–</td></tr>
+  </tbody>
+</table>
+<!-- data: qa.txt (perf cpu1x: p50 16,7, p95 16,8, long 2, maxLong 59, mcMs 232,8; perf cpu4x: p50 33,3, p95 83,4, long 46, maxLong 357, frames 324, mcMs 231,3); 66,7 ms ved 4× er fra en tidligere QA-kørsel (scripts/fakta.py:260). Long 46 ved 4× er talt to gange: qa/qa.cjs:88 starter en ny PerformanceObserver og rAF-løkke pr. CPU-rate uden at stoppe dem fra 1×, og begge skriver til window.__lt og window.__d. Kontrol: 329 intervaller på 7 s giver i snit 21 ms, umuligt med p50 33,3 ms, så hvert interval er talt to gange -->
+<p>Ved 1× ligger p95 0,1 ms over planens 16,7 ms, men under QA-grænsen på 20 ms, og p50 svarer til 60 frames i sekundet. Ved 4× når appen ikke målet: p95 var {{perf.4x.p95.tidligere}} i en tidligere kørsel og {{perf.4x.p95}} i den seneste, og den længste opgave tog {{perf.4x.lang}}. QA har ingen grænse for 4×.</p>
+<p>QA-loggen angiver 46 lange opgaver ved 4×, men observatøren og frame-løkken fra 1×-målingen kører videre, så hver lang opgave og hvert frame-interval tælles to gange; der var altså 23. p50, p95 og den længste opgave påvirkes ikke.</p>
+<!-- kilde: qa/qa.cjs:86-92 -->
+<p>Monte Carlo kører i en worker og blokerer ikke tegningen. Storen beder om en ny kørsel hver 8. tick, altså hver 800 ms ved ×1, så {{perf.mc}} pr. kørsel er inden for rammen. Efter optimeringen i F0 noterede planen 45–70 ms pr. kørsel. Forskellen til målingen her er ikke undersøgt.</p>
+<!-- kilde: src/state/match.ts:486-502; src/engine/mc/paths.ts:224, 338; src/engine/mc/client.ts:79-82; docs/PLAN.md:426 -->
+<div class="callout advarsel"><b>Målt uden GPU.</b> Målingerne er lavet i headless Chromium (uden skærm), hvor canvas tegnes i software. Allerede i F0 gav 4× lange opgaver på 100–600 ms af den grund (PLAN §15). Planens modtræk var at måle på en telefon og flytte stregtegningen til OffscreenCanvas i workeren, hvis WebKit også blev ramt. Der findes ingen telefonmåling i dette materiale, og koden bruger ikke OffscreenCanvas. Tallene ved 4× siger derfor mere om software-tegning end om en telefon, men det er ikke målt.</div>
+<!-- kilde: docs/PLAN.md:424, 451; grep efter OffscreenCanvas i src/ giver intet -->
+
+<h2 id="k20-golden">Golden hashes</h2>
+<p><code>hash()</code> samler substep, kampur, fase, stilling, pres, zone, de tre kurser, de tre mid-chancer og antallet af hændelser og handler. Tre strenge fra commit 5d727d8, før Over 2,5 kom til, låser 1X2-simulationen: seed <code>det-1</code> efter 1.500 substeps, <code>golden-2</code> til ende og demoen til ende. De er uændrede, så de nye funktioner har ikke ændret 1X2-simulationens tilstand ved slutningen af de tre kørsler (kapitel 12). En særskilt test kører samme seed to gange og kræver samme hash.</p>
+<!-- kilde: src/engine/football/sim.ts:622-626; tests/totals.test.ts:88-103; tests/football.test.ts:5-13 -->

@@ -1,0 +1,82 @@
+<h1 class="kapitel" id="k8" data-nr="8">Nyt: Parken-puljen</h1>
+<p class="ingress">I Parken-puljen spiller du ikke mod en kurs, men mod et publikum. Alle indsatser på kampens resultat lægges i én pulje, huset tager {{k.POOL_TAKE}}, og de, der ramte rigtigt, deler resten.</p>
+
+<div class="callout ny"><b>Nyt i denne version.</b> Fanen <span class="ui">Pulje</span> med en totalisator på 1X2 mod et simuleret publikum. Puljen er åben fra før kampstart, holder pause under handelsstop, låses ved pausen og udbetales ved slutfløjt.</div>
+
+<h2 id="k8-ide">Totalisator i klart sprog</h2>
+<p>Puljen er en <b>totalisator</b>: der er ingen fast pris, når du sætter pengene. Din gevinst afhænger af, hvor mange penge der står på din side, når puljen lukker. Står der få penge på uafgjort, og bliver det uafgjort, deler få spillere en stor pulje. Skærmen siger det sådan: <span class="ui">Jo færre der står på din side, jo mere får du.</span></p>
+<div class="formel">odds = 0,9 · <i>T</i> / <i>S</i> <span class="hvor">hvor <i>T</i> er hele puljen og <i>S</i> pengene på din side, begge med din egen indsats. 0,9 er det, der er tilbage, når huset har taget {{k.POOL_TAKE}}.</span></div>
+<div class="formel">udbetaling = <i>u</i> · 0,9 · <i>T</i> / <i>S</i> <span class="hvor">hvor <i>u</i> er din indsats på den side, der vinder, og <i>T</i> og <i>S</i> er beløbene, da puljen lukkede.</span></div>
+<p>Oddsene på skærmen er altså et øjebliksbillede. De ændrer sig, mens publikum spiller, og står først fast, når puljen lukker ved pausen.</p>
+<!-- kilde: src/engine/book/portfolio.ts:33-34, 40-49; src/state/match.ts:451-470; src/ui/pulje/Pulje.tsx:35 -->
+
+<h2 id="k8-skaerm">Skærmen</h2>
+<section class="duo">
+  <div class="txt">
+    <p>Fanen <span class="ui">Pulje</span> i bundbjælken åbner <span class="ui">Parken-puljen</span>. Øverst står puljens størrelse og under <span class="ui">Publikum (simuleret)</span> antallet af indsatser, her <span class="ui">366.920 kr</span> og <span class="ui">4.334 indsatser</span> ved 24′. Statuslinjen siger, hvor længe du kan nå at være med: <span class="ui">Åben · lukker ved pausen om 21 min</span>.</p>
+    <p>Tre bjælker viser pengene på FCK, X og BIF med det aktuelle skøn over oddsene, fx <span class="ui">odds ≈ 2,77</span> på X. Dine egne penge står under beløbet, <span class="ui">dig 200 kr</span>. Under bjælkerne står: <span class="ui">Oddsene er skøn: de låses ved pausen, når puljen lukker.</span></p>
+    <p>Tryk på en bjælke for at vælge side, og vælg indsats med chips på 50, 100, 250 eller 500 kr. Skønnet over udbetalingen regner den nye indsats med, både i puljen og på din side, fordi den selv trækker oddsene lidt ned: <span class="ui">Din udbetaling, hvis uafgjort (skøn) 832 kr</span>, <span class="ui">i alt 300 kr på X med denne indsats</span>. Knappen siger <span class="ui">Sæt 100 kr på X</span>. Der er ingen prislås; pengene går ind med det samme.</p>
+  </div>
+  <figure class="phone" data-shot="10-pulje-aaben"><figcaption><b>Puljen ved 24′, 0–0.</b> {{pulje.t24.total}} fra {{pulje.t24.n}} indsatser. FCK har flest penge og derfor de laveste odds, ≈ 2,02. Vores {{pulje.indsats}} på X fra 20′ står som <span class="ui">dig 200 kr</span>, og X er valgt med 100 kr mere.</figcaption></figure>
+</section>
+<!-- kilde: src/ui/pulje/Pulje.tsx:15-82; src/state/match.ts:441-449; src/engine/book/portfolio.ts:255-265 -->
+<!-- data: data/shots/10-pulje-aaben.json (k 990: 366.920 kr, 4.334 indsatser, sider 163.259/119.068/84.593 kr, odds 2,02/2,77/3,90, skøn 832 kr); story.json final.poolStakes (200 kr på X ved k 837, 20′) -->
+
+<h2 id="k8-publikum">Publikum</h2>
+<p>Publikum er simuleret. Puljen starter på {{pulje.start}} fordelt på {{pulje.startN}} indsatser, før kampen begynder. Derefter vokser den med handlen i kampens marked. Hver gang publikum køber andele i 1X2, lægges fire gange beløbet i puljen, og tælleren får 9 indsatser mere. En hval tæller højst som 2.000 kr, og salg tæller ikke.</p>
+<p>Fordelingen på de tre sider følger modellens fair chancer, ikke markedets kurs. Der er en lille hjemmebias: før pengene fordeles, ganges FCK's chance med 1,035 og X's og BIF's med 0,985. Publikum følger modellen med cirka et kampminuts forsinkelse. Fordi det er modellens chance og ikke kursen, flytter en hval ikke fordelingen. Den gør kun puljen større.</p>
+<!-- kilde: src/state/match.ts:29-37, 146-150, 403-433; src/engine/football/params.ts:6 (SUB 0,025 kampminut) -->
+
+<h2 id="k8-tider">Hvornår puljen er åben</h2>
+<ul>
+<li><b>Fra før kampstart.</b> Puljen er åben allerede under auktionen før kickoff.</li>
+<li><b>Pause under handelsstop.</b> Efter et mål, et rødt kort og under VAR holder puljen pause. Statuslinjen siger <span class="ui">Stoppet under handelsstoppet</span>, knappen er slået fra med teksten <span class="ui">Puljen er stoppet</span>, og bundbjælken siger <span class="ui">stoppet</span>. Rammer en indsats alligevel et stop, afviser spillet den med <span class="ui">Puljen åbner efter stoppet</span>.</li>
+<li><b>Låst ved pausen.</b> Når første halvleg slutter ved 45:00, lukker puljen, og oddsene står fast: <span class="ui">Lukket ved pausen · odds låst</span>. Bundbjælken viser derefter dit beløb, fx <span class="ui">200 kr inde</span>.</li>
+<li><b>Afgjort ved slutfløjt.</b> Først der udbetales puljen.</li>
+</ul>
+<p>Under et handelsstop flytter publikum sig helt til de nye chancer på én gang. Når puljen åbner igen, er målet allerede regnet med, så du ikke kan nå at sætte penge til oddsene fra før målet. I vores kamp stod uafgjort i odds 2,71 lige før FCK's mål og i 4,29, da puljen åbnede igen {{genaabning1.ur}}.</p>
+<!-- kilde: src/state/match.ts:396-398, 410-413, 425-428, 435-449; src/engine/football/sim.ts:156-158, 185-191; src/ui/pulje/Pulje.tsx:24-25, 73-75; src/ui/kamp/Kampen.tsx:127 -->
+<!-- data: story.json series k 1170 (odds X 2,7061, åben), k 1180 (stoppet, odds X 4,3625), k 1192 (åben, odds X 4,2910) -->
+
+<h2 id="k8-regler">Reglerne</h2>
+<ul>
+<li><b>Indsats.</b> 1–1.000 kr pr. indsats. Skærmen har chips på 50, 100, 250 og 500 kr, og du kan sætte flere gange og på flere sider. Pengene trækkes fra saldoen med det samme.</li>
+<li><b>Ingen salg.</b> En indsats i puljen kan ikke sælges eller trækkes tilbage.</li>
+<li><b>Huset</b> tager {{k.POOL_TAKE}} af hele puljen. Resten deles mellem dem, der står på det rigtige resultat, i forhold til deres indsats.</li>
+<li><b>Udbetaling ved slutfløjt.</b> Slutresultatet afgør det. Taber din side, får du 0 kr, og beskeden siger <span class="ui">Puljen: din side tabte</span>.</li>
+<li><b>Refusion.</b> Står der ingen penge på det rigtige resultat, får alle deres indsats tilbage. Det sker ikke i praksis, for publikum har altid penge på alle tre sider (kapitel 21).</li>
+</ul>
+<!-- kilde: src/engine/book/portfolio.ts:31, 34, 40-49, 248-275; src/state/match.ts:374-395, 441-449 -->
+
+<div class="callout"><b>Under 0,95 med vilje.</b> Puljen er bygget, så den ikke kan slås i gennemsnit. Når den lukker, fordeler publikums penge sig efter modellens chancer med hjemmebiassen. Så får du i gennemsnit højst cirka {{pulje.graense}} kr tilbage pr. indsat krone på X eller BIF og højst 0,90 kr på FCK, før din egen indsats er regnet med. Din indsats trækker oddsene yderligere ned. Regnestykket står i kapitel 18.</div>
+<!-- kilde: src/state/match.ts:36, 403-408, 435-439; src/engine/book/portfolio.ts:34 -->
+<!-- data: stats.json poolBoundMax 0,9457 -->
+
+<h2 id="k8-historie">Historien</h2>
+<p>Ved 20′ satte vi {{pulje.indsats}} på {{pulje.side}}, og spillet bekræftede med <span class="ui">I puljen: 200 kr på X</span>. Ved 24′ stod uafgjort i odds ≈ 2,77 (billedet ovenfor). FCK's mål {{maal1.ur}} flyttede publikum mod FCK, og pengene på uafgjort blev en mindre del af puljen. Uafgjort blev mindre sandsynligt, men oddsene steg.</p>
+<!-- data: story.json final.poolStakes (k 837, 20′), toasts k 837 ("I puljen: 200 kr på X") -->
+<p>Ved pausen lukkede puljen med {{pulje.lukning.total}} fra {{pulje.lukning.n}} indsatser:</p>
+<table class="t">
+  <thead><tr><th>Side</th><th class="n">I puljen</th><th class="n">Odds</th><th class="n">Modellens chance</th><th class="n">Forventet pr. krone</th></tr></thead>
+  <tbody>
+    <tr><td>FCK</td><td class="n">{{pulje.lukning.fck}}</td><td class="n">{{pulje.lukning.odds.fck}}</td><td class="n">{{pulje.lukning.fair.fck}}</td><td class="n">{{pulje.lukning.ev.fck}}</td></tr>
+    <tr><td>X</td><td class="n">{{pulje.lukning.x}}</td><td class="n">{{pulje.lukning.odds.x}}</td><td class="n">{{pulje.lukning.fair.x}}</td><td class="n">{{pulje.lukning.ev.x}}</td></tr>
+    <tr><td>BIF</td><td class="n">{{pulje.lukning.bif}}</td><td class="n">{{pulje.lukning.odds.bif}}</td><td class="n">{{pulje.lukning.fair.bif}}</td><td class="n">{{pulje.lukning.ev.bif}}</td></tr>
+  </tbody>
+</table>
+<p>Den sidste kolonne er modellens chance gange oddsene: så meget var en krone på hver side værd i gennemsnit, da puljen lukkede. Alle tre ligger under 1, og FCK lavest, fordi hjemmebiassen lægger for mange penge der.</p>
+<!-- data: story.json poolClose (sider inkl. vores 200 kr på X, odds, fair) -->
+
+<div class="phones">
+<figure class="phone sm" data-shot="16-pulje-pause"><figcaption><b>Lukket ved pausen, 1–0.</b> {{pulje.lukning.total}} og {{pulje.lukning.n}} indsatser, odds ≈ {{pulje.lukning.odds.fck}}, {{pulje.lukning.odds.x}} og {{pulje.lukning.odds.bif}}. Nederst: <span class="ui">Du har 200 kr i puljen. Afgøres ved slutfløjt.</span></figcaption></figure>
+<figure class="phone sm" data-shot="19-pulje-afgjort"><figcaption><b>Afgjort efter {{slutresultat}}.</b> X-bjælken har fået en grøn kant som vinder, og resultatet står nederst: <span class="ui">Puljen udbetalt: +872,50 kr</span>.</figcaption></figure>
+</div>
+<!-- data: data/shots/16-pulje-pause.json (k 1832), data/shots/19-pulje-afgjort.json (k 3788) -->
+
+<p>BIF udlignede {{maal2.ur}}, og kampen endte {{slutresultat}}. Vores indsats var en lille del af pengene på uafgjort, og den del af 90 % af puljen blev udbetalt ved slutfløjt:</p>
+<div class="formel">{{pulje.indsats}} / {{pulje.lukning.x}} · {{pulje.lukning.total}} · 0,9 = {{pulje.udbetaling}} <span class="hvor">Det svarer til indsatsen gange de låste odds på {{pulje.lukning.odds.x}}.</span></div>
+<p>I Porteføljen står puljen i sit eget afsnit, og i Afregningen tæller den til kostpris, indtil den er betalt ud (kapitel 10).</p>
+<!-- kilde: src/state/match.ts:392-395; src/engine/book/portfolio.ts:44-49, 267-275; src/ui/pulje/Pulje.tsx:60-63; src/ui/portefolje/Portefolje.tsx:55-60; src/ui/afregning/Afregning.tsx:100-102 -->
+<!-- data: story.json final.poolResult (vinder X, udbetaling 872,496) -->
+
+<figure class="fig" data-fig="pulje-flow"><figcaption><b>Figur:</b> Puljens pengestrøm ved pausen. Til venstre pengene på de tre udfald, med vores {{pulje.indsats}} på uafgjort. Huset tager {{k.POOL_TAKE}}, og resten går til den side, der vinder, her uafgjort efter {{slutresultat}}. Vores andel er {{pulje.indsats}} af {{pulje.lukning.x}}, og det gav {{pulje.udbetaling}}.</figcaption></figure>

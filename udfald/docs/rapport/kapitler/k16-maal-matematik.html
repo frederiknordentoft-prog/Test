@@ -1,0 +1,126 @@
+<h1 class="kapitel" id="k16" data-nr="16">Mål i alt og slutresultat: matematik og regler</h1>
+<p class="ingress">Mål i alt og slutresultater bygger på det samme rate-gitter som 1X2: en fremad-DP giver slutresultaterne, og en baglæns DP giver Over 2,5 i hvert substep. Stipriserne kommer fra en tabel over grundraterne uden pres. Kapitlet gennemgår formlerne, kurserne, reglerne for lukning og afregning og målingerne.</p>
+
+<h2 id="k16-gitter">Ét gitter over slutresultater</h2>
+<p><code>scoreGrid</code> regner fremad fra nu over de mål, der mangler: <i>f</i> ekstra FCK-mål og <i>b</i> ekstra BIF-mål, hver fra 0 til 10. Intensiteten afhænger af stillingen, så hvert felt slår raten op ved sin egen målforskel i rate-gitteret fra kapitel 14:</p>
+<div class="formel"><i>P</i><sub><i>k</i>+1</sub>(<i>f</i>, <i>b</i>) = <i>P</i><sub><i>k</i></sub>(<i>f</i>, <i>b</i>) · (1 − <i>h</i><sub><i>k</i></sub>(<i>f</i>, <i>b</i>) − <i>a</i><sub><i>k</i></sub>(<i>f</i>, <i>b</i>)) + <i>P</i><sub><i>k</i></sub>(<i>f</i> − 1, <i>b</i>) · <i>h</i><sub><i>k</i></sub>(<i>f</i> − 1, <i>b</i>) + <i>P</i><sub><i>k</i></sub>(<i>f</i>, <i>b</i> − 1) · <i>a</i><sub><i>k</i></sub>(<i>f</i>, <i>b</i> − 1)<span class="hvor">hvor <i>h</i><sub><i>k</i></sub>(<i>f</i>, <i>b</i>) og <i>a</i><sub><i>k</i></sub>(<i>f</i>, <i>b</i>) er FCK's og BIF's målsandsynlighed i trin <i>k</i> ved <i>d</i> = klip((<i>h</i><sub>0</sub> + <i>f</i>) − (<i>a</i><sub>0</sub> + <i>b</i>); ±8), <i>h</i><sub>0</sub>–<i>a</i><sub>0</sub> er stillingen nu, og <i>P</i><sub>0</sub>(0, 0) = 1.</span></div>
+<!-- kilde: src/engine/football/dp.ts:197-227 -->
+<p>Ingen masse går tabt: et 11. ekstra mål til samme hold bliver liggende i 10, og klippet ved ±8 er eksakt, fordi intensiteten kun afhænger af fortegnet på <i>d</i>. <code>fromGrid</code> læser resten af slutfordelingen <i>P</i><sub><i>n</i></sub>:</p>
+<div class="formel">P(FCK) = Σ <i>P</i><sub><i>n</i></sub>(<i>f</i>, <i>b</i>) over <i>h</i><sub>0</sub> + <i>f</i> &gt; <i>a</i><sub>0</sub> + <i>b</i>, og tilsvarende for X (=) og BIF (&lt;)<br>P(over <i>L</i>) = Σ <i>P</i><sub><i>n</i></sub>(<i>f</i>, <i>b</i>) over <i>h</i><sub>0</sub> + <i>a</i><sub>0</sub> + <i>f</i> + <i>b</i> &gt; <i>L</i><br>celle(<i>i</i>, <i>j</i>) = Σ <i>P</i><sub><i>n</i></sub>(<i>f</i>, <i>b</i>) over min(5, <i>h</i><sub>0</sub> + <i>f</i>) = <i>i</i> og min(5, <i>a</i><sub>0</sub> + <i>b</i>) = <i>j</i>, hvor 5 betyder 5+</div>
+<!-- kilde: src/engine/football/dp.ts:229-263 -->
+<p>Gitteret er altså én model for 1X2, Over/Under og kortet. Testen kræver i fire tilstande (0′ til 80′, med pres, excitation og rødt kort), at gitteret og de 36 celler summerer til 1, og at gitterets 1X2 og Over er lig <code>price1x2</code> og <code>totalsBack</code> inden for 10<sup>−11</sup>; den største afvigelse på 1X2 var {{grid.maxAfvigelse1x2}}. Visningen regner gitteret hvert tredje tick og lige efter en hændelse, og <span class="ui">≈ N af 100 fremtider</span> er summen over de valgte celler af <code>largestRemainder</code>(celler; 100).</p>
+<!-- kilde: tests/totals.test.ts:9-32; src/engine/football/display.ts:65-76; src/state/match.ts:228-241; src/ui/maal/Maal.tsx:57, 76 -->
+<!-- data: stats.json mcVsDp[].x12diff (største 1,7e-13) -->
+
+<h2 id="k16-baglaens">Over 2,5 baglæns</h2>
+<p>Simulationen skal kende Over 2,5's fair chance i hvert substep. Til det bruger den en baglæns DP med færre tilstande end gitterets 11 × 11: <code>totalsBack</code> tæller målene efter nu i lag <i>m</i>; laget, hvor linjen er krydset, er absorberende med værdien 1:</p>
+<div class="formel"><i>V</i><sub><i>k</i></sub>(<i>m</i>, <i>d</i>) = <i>h</i><sub><i>k</i></sub>(<i>d</i>) · <i>V</i><sub><i>k</i>+1</sub>(<i>m</i> + 1, <i>d</i> + 1) + <i>a</i><sub><i>k</i></sub>(<i>d</i>) · <i>V</i><sub><i>k</i>+1</sub>(<i>m</i> + 1, <i>d</i> − 1) + (1 − <i>h</i><sub><i>k</i></sub>(<i>d</i>) − <i>a</i><sub><i>k</i></sub>(<i>d</i>)) · <i>V</i><sub><i>k</i>+1</sub>(<i>m</i>, <i>d</i>),  <i>m</i> &lt; <i>N</i><br><i>V</i><sub><i>k</i></sub>(<i>N</i>, <i>d</i>) = 1,  <i>V</i><sub><i>n</i></sub>(<i>m</i>, <i>d</i>) = 0 for <i>m</i> &lt; <i>N</i>,  P(over <i>L</i>) = <i>V</i><sub>0</sub>(0, <i>d</i><sub>nu</sub>)<span class="hvor">hvor <i>N</i> = ⌊<i>L</i>⌋ + 1 − <i>g</i> er de mål, der mangler, og <i>g</i> er de godkendte mål indtil nu. Er <i>N</i> ≤ 0, er prisen 1.</span></div>
+<!-- kilde: src/engine/football/dp.ts:265-298 -->
+<p>Ved 2,5 og 0–0 er det tre lag à 17 målforskelle mod 1X2's to (sejr og uafgjort), og hvert godkendt mål fjerner et lag. Planen anslår omkostningen til cirka 0,1 ms pr. substep, cirka 1 % CPU ved ×8. <code>price1x2</code> og <code>totalsBack</code> læser det samme <code>rateGrid</code>.</p>
+<!-- kilde: src/engine/football/sim.ts:209-213; docs/PLAN.md:488 -->
+
+<h2 id="k16-marked">Over 2,5 som marked</h2>
+<p><code>marketO25</code> er en skrabet udgave af markedslaget i kapitel 15: intet publikum, ingen hvaler og intet Hawkes-led, kun støj og overshoot i logit oven på fair-chancen <i>f</i><sub>O</sub>:</p>
+<div class="formel"><i>m</i><sub>O</sub> = σ(logit <i>f</i><sub>O</sub> + <i>o</i><sub>O</sub> + ε<sub>O</sub>)<br>ε<sub>O</sub> ← klip(ε<sub>O</sub> · e<sup>−3,2Δ<i>t</i></sup> + 0,016 · √(1 − e<sup>−6,4Δ<i>t</i></sup>) · <i>N</i>(0, 1); ±0,02),  <i>o</i><sub>O</sub> ← <i>o</i><sub>O</sub> · e<sup>−Δ<i>t</i>/0,125</sup><br>ved genåbning: <i>o</i><sub>O</sub> = 0,1 · (logit <i>f</i><sub>O</sub> − logit <i>m</i><sub>O</sub><sup>før</sup>)<span class="hvor">hvor <i>f</i><sub>O</sub> er <code>totalsBack</code> for 2,5, σ er logistisk-funktionen, og Δ<i>t</i> = 0,025 kampminutter.</span></div>
+<!-- kilde: src/engine/football/sim.ts:33-36, 40, 427-456 -->
+<p>Under et <b>handelsstop</b> står mid og kurser stille, mens støj og overshoot kører videre. Ved <b>genåbning</b> springer mid, og gabet gemmes på hændelsen som <code>gapO25</code> = rund(kurs efter) − rund(kurs, sidst handlen var åben). Ved <b>3 godkendte mål</b> er mid = 1 med det samme, også under stoppet, og gabet regnes til 100, selv om kursen højst vises som 99. <code>requoteO25</code> bruger reglerne fra 1X2 med en margin på {{k.O25_MARGIN}} på to udfald:</p>
+<!-- kilde: src/engine/football/sim.ts:411-425, 433-455 -->
+<div class="formel">kurs<sub>O</sub><sup>rå</sup> = 100 · min(0,99; <i>m</i><sup><i>r</i></sup>),  kurs<sub>U</sub><sup>rå</sup> = 100 · min(0,99; (1 − <i>m</i>)<sup><i>r</i></sup>),  <i>m</i><sup><i>r</i></sup> + (1 − <i>m</i>)<sup><i>r</i></sup> = 1,06<br>kurs = rund(kurs<sup>rå</sup>) i [1; 99], ændret når |kurs<sup>rå</sup> − kurs| ≥ {{k.HYST}}, ved genåbning og ved krydsning<br>salgskurs = max(1; kurs − <i>s</i>),  <i>s</i> = max(<i>s</i><sub>0</sub>; ⌈100 · |<i>o</i><sub>O</sub>| · <i>m</i><sub><i>i</i></sub> + 1⌉)<span class="hvor">hvor <i>m</i><sub><i>i</i></sub> er <i>m</i> for Over og 1 − <i>m</i> for Under, og <i>s</i><sub>0</sub> er 2 i roligt spil, 4 ved fare og 6 i de første 8 substeps efter en genåbning.</span></div>
+<!-- kilde: src/engine/football/sim.ts:37, 41-43, 458-471; src/engine/lib/quote.ts:5-17 -->
+<p>Ved 20′ gav mid 35,1 % eksponenten <i>r</i> ≈ 0,91 og de rå kurser cirka 38,6 og 67,4, altså kurs {{q20.tot25O.kurs}} og {{q20.tot25U.kurs}}. Ved genåbningerne kan overshoot-leddet styre spreadet. Ved {{genaabning1.ur}} var det for Over ⌈100 · 0,116 · 0,598 + 1⌉ = 8, så salgskursen blev {{genaabning1.overSalg}}, den Sikr gevinst på {{take.over.niveau}} fyldte til (kapitel 7). Efter udligningen fik Under et spread på 17.</p>
+<!-- data: story.json quotes20 (tot:2.5:O p 0,3511); eksponent og rå kurser beregnet med powerAsks([0,3511, 0,6489], 0,06) -->
+<table class="t">
+  <thead><tr><th>Genåbning</th><th class="n">Fair</th><th class="n">Mid før</th><th class="n"><i>o</i><sub>O</sub></th><th class="n">Mid efter</th><th class="n">Kurs O · U</th><th class="n">Salg O · U</th><th class="n">Gab</th></tr></thead>
+  <tbody>
+    <tr><td>{{genaabning1.ur}}, 1–0</td><td class="n">57,0 %</td><td class="n">29,4 %</td><td class="n">0,116</td><td class="n">59,8 %</td><td class="n">{{genaabning1.overKurs}} · 44</td><td class="n">{{genaabning1.overSalg}} · 38</td><td class="n">{{genaabning1.gabOver}}</td></tr>
+    <tr><td>{{genaabning2.ur}}, 1–1</td><td class="n">30,8 %</td><td class="n">4,0 %</td><td class="n">0,237</td><td class="n">36,3 %</td><td class="n">40 · 66</td><td class="n">30 · 49</td><td class="n">{{genaabning2.gabOver}}</td></tr>
+  </tbody>
+</table>
+<!-- data: story.json series k 1180 (fair 0,5693, mid 0,2937 frosset), k 1192 (fair 0,5704, mid 0,5975, ask [62, 44], bid [54, 38]), k 3380 (mid 0,0401 frosset), k 3381 (fair 0,3084, mid 0,3633, ask [40, 66], bid [30, 49]); o beregnet som 0,1·(logit fair − logit mid før) -->
+<p>Over 2,5 har sin egen støjstrøm og egne historik-arrays, og gabet er et felt på den eksisterende genåbningshændelse. Derfor er 1X2-simulationen bit for bit som før: de tre golden hashes fra commit 5d727d8 er uændrede (kapitel 12).</p>
+<!-- kilde: src/engine/football/sim.ts:40, 87-102, 431, 438-450, 622-626; tests/totals.test.ts:88-103 -->
+
+<p><b>De øvrige linjer</b>, 0,5, 1,5, 3,5 og 4,5, har intet markedslag. De regnes fra gitteret hvert tredje tick, mens 2,5 læses fra simulationen i hvert tick. Ved 20′ summerede Over og Under til 106 på alle fem linjer (kapitel 6).</p>
+<div class="formel"><i>p</i><sub><i>L</i></sub> = klip(P(over <i>L</i>); 0,005; 0,995), eller 1, når linjen er passeret<br>(kurs<sub>O</sub>, kurs<sub>U</sub>) = rund(100 · power(<i>p</i><sub><i>L</i></sub>, 1 − <i>p</i><sub><i>L</i></sub>; 6 %)) i [1; 99],  salgskurs = max(1; kurs − 3)</div>
+<!-- kilde: src/engine/football/display.ts:12, 42-48, 77-87; src/state/match.ts:238-239 -->
+
+<h2 id="k16-cs">Slutresultater</h2>
+<p>En slutresultat-kontrakt hedder <code>cs:</code> plus de sorterede celler, fx <code>cs:0-0.1-1</code>. <code>csQuote</code> prissætter den direkte fra cellechancerne <i>p</i><sub><i>i</i></sub>, uden markedslag og hysterese:</p>
+<div class="formel">én celle: kurs = max(1; min(99; ⌈100 · <i>p</i> · 1,15⌉))<br>region: kurs = max(1; min(99; ⌈100 · Σ<i>p</i><sub><i>i</i></sub> · 1,10⌉; Σ kurs<sub><i>i</i></sub>))<br>salgskurs = max(1; min(kurs − 2; ⌊100 · Σ<i>p</i><sub><i>i</i></sub> · 0,92⌋))<span class="hvor">hvor kurs<sub><i>i</i></sub> er hver celles egen kurs.</span></div>
+<!-- kilde: src/state/match.ts:568-585; src/state/focus.ts:112-134 -->
+<p>Loftet kan ikke binde. En celle under 99 koster mindst 115 · <i>p</i><sub><i>i</i></sub>, så summen af cellekurserne er et heltal ≥ 115 · Σ<i>p</i><sub><i>i</i></sub> og dermed ≥ ⌈110 · Σ<i>p</i><sub><i>i</i></sub>⌉; står en celle i 99, er regionen alligevel højst 99. Det står som værn mod arbitrage: en region koster aldrig mere end cellerne hver for sig. Ved 20′ havde 1–1 chancen {{q20.cs11.p}}; 1,15 · 100 · <i>p</i> = {{q20.cs11.raa}} gav kurs {{q20.cs11.kurs}} og salgskurs {{q20.cs11.salg}}. Regionen 0–0 + 1–1 ({{q20.r0011.p}}) fik kurs {{q20.r0011.kurs}} mod loftet {{q20.cs00.kurs}} + {{q20.cs11.kurs}} = {{q20.r0011.loft}}.</p>
+<!-- data: story.json quotes20 single cs:1-1 (p 0,1499, rå 17,24, kurs 18, salgskurs 13), regions 0–0 eller 1–1 (p 0,2744, kurs 31, cap 33) -->
+
+<h3 id="k16-loft">Det gamle regionsloft</h3>
+<p>Indtil rapportarbejdet var loftet Σ kurs<sub><i>i</i></sub> − (<i>n</i> − 1), efter mønster fra dobbeltchancen (højst de to 1X2-kurser − 1). Fradraget tog et point pr. ekstra celle, også når cellens oprunding var tæt på 0, så store regioner fik en kurs ned mod eller under fair:</p>
+<table class="t">
+  <thead><tr><th>Region ved 20′</th><th class="n">Celler</th><th class="n">Fair, point</th><th class="n">Σ kurs<sub><i>i</i></sub></th><th class="n">Gammelt loft</th><th class="n">Gammel kurs</th><th class="n">Ny kurs</th></tr></thead>
+  <tbody>
+    <tr><td>FCK med 2+</td><td class="n">{{q20.fck2.n}}</td><td class="n">{{q20.fck2.fairPoint}}</td><td class="n">{{q20.fck2.loft}}</td><td class="n">{{q20.fck2.gammeltLoft}}</td><td class="n">{{q20.fck2.gammelKurs}}</td><td class="n">{{q20.fck2.kurs}}</td></tr>
+    <tr><td>Begge scorer</td><td class="n">{{q20.btts.n}}</td><td class="n">{{q20.btts.fairPoint}}</td><td class="n">{{q20.btts.loft}}</td><td class="n">{{q20.btts.gammeltLoft}}</td><td class="n">{{q20.btts.gammelKurs}}</td><td class="n">{{q20.btts.kurs}}</td></tr>
+    <tr><td>0–0 eller 1–1</td><td class="n">{{q20.r0011.n}}</td><td class="n">{{q20.r0011.fairPoint}}</td><td class="n">{{q20.r0011.loft}}</td><td class="n">{{q20.r0011.gammeltLoft}}</td><td class="n">{{q20.r0011.gammelKurs}}</td><td class="n">{{q20.r0011.kurs}}</td></tr>
+    <tr><td>Mindst 4 mål</td><td class="n">{{q20.m4.n}}</td><td class="n">{{q20.m4.fairPoint}}</td><td class="n">{{q20.m4.loft}}</td><td class="n">{{q20.m4.gammeltLoft}}</td><td class="n">{{q20.m4.gammelKurs}}</td><td class="n">{{q20.m4.kurs}}</td></tr>
+  </tbody>
+</table>
+<!-- data: story.json quotes20 regions (n, p, ask, ten, cap, oldCap, oldAsk) -->
+<p>{{gammelFejl.region}} er de 26 celler med mindst 4 mål, valgt celle for celle (der er ingen knap). Den kostede kurs {{gammelFejl.kurs}} for en fair chance på {{gammelFejl.fair}} point, {{gammelFejl.under}} point under fair, og FCK med 2+ og Begge scorer lå kun 0,1 og 1,1 point over fair. Nu får alle fire ⌈110 · Σ<i>p</i><sub><i>i</i></sub>⌉. En regressionstest kræver mindst det (højst 99) for fem regioner ved 1′, 20′, 40′ og 60′, og at kursen er over 100 · Σ<i>p</i><sub><i>i</i></sub>.</p>
+<!-- kilde: git fbac034 (src/state/match.ts:581 før og efter); src/engine/football/display.ts:93; tests/features.test.ts:143-160; docs/PLAN.md:482 -->
+<!-- data: story.json quotes20 regions (FCK med 2+ oldAsk 18 mod p 0,1789; Begge scorer oldAsk 46 mod p 0,4488) -->
+
+<h2 id="k16-lukket">Lukning og afregning</h2>
+<p><code>closedReason</code> tjekker i en fast rækkefølge, og den første grund, der passer, står på købsknappen: kampen er slut → VAR-stop (kun <span class="ui">Målet står?</span> er åben) → handelsstop → linjen er passeret (<i>h</i> + <i>a</i> &gt; <i>L</i>) → ingen celle kan nås → samlet chance under {{k.CS_MIN_P}}. Teksterne står i kapitel 6. En celle (<i>i</i>, <i>j</i>) kan nås, når <i>h</i> ≤ <i>i</i> og <i>a</i> ≤ <i>j</i>, og 5+ kan altid nås. Grænsen på 3 % gælder hele valget. For Over/Under og slutresultater er <code>isOpen</code> netop, at der ingen grund er, og <code>isOpen</code> styrer både køb og salg.</p>
+<!-- kilde: src/state/match.ts:24-25, 587-618, 705-716; src/state/focus.ts:136-139 -->
+<p>Afregningen sker i <code>settleOn</code>. Kun et godkendt mål giver en <code>goal</code>-hændelse; et annulleret VAR-mål giver kun en dom. Ved hvert mål tæller <code>confirmedThrough</code> de godkendte mål til og med hændelsen. Er tallet over en linje, afregnes Over til 100 og Under til 0 i samme substep. Et slutresultat, hvor ingen celle længere kan nås, afregnes til 0. Står fokus på Over 2,5, når linjen krydses, sættes fokus til FCK, og Monte Carlo kører straks igen. Ved slutfløjt fejes resten: Over/Under efter <i>h</i> + <i>a</i>, og et slutresultat betaler 100, hvis cellen (min(5, <i>h</i>), min(5, <i>a</i>)) er blandt dets celler.</p>
+<!-- kilde: src/state/match.ts:284-286, 327-391; src/engine/football/sim.ts:394-401; src/state/focus.ts:141-143 -->
+<p><b>Næste mål</b> blev rettet samtidig. Visningen kalder kontrakten <code>ng{n}</code> med <i>n</i> = godkendte mål + 1, men afregningen brugte <code>goalNo</code>, som også tæller et mål, der går til VAR, og ramte efter et annulleret mål nummeret over det købte. Nu bruger den <code>confirmedThrough</code>; <code>ag{n}</code> er fortsat nøglet på <code>goalNo</code> i både visning og afregning. Testen annullerer et VAR-mål ved 20′ og kræver, at <code>ng2:B</code> betaler ved BIF-målet ved 30′, og at Over 2,5 først afregnes ved det tredje godkendte mål.</p>
+<!-- kilde: src/engine/football/display.ts:60-63, 99-100, 118-124; src/engine/football/sim.ts:312-323; src/state/match.ts:337-346, 364-367; git a2420ce; tests/features.test.ts:41-50, 88-121 -->
+
+<h2 id="k16-fokus">Fokus</h2>
+<p>Viften, hovedet, andelsbaren og bakken læser én <code>FocusSpec</code>, så ingen kode slår op i 1X2's tre felter med et fokus, der ikke er et udfald. Fokus er <code>0 | 1 | 2 | 'o25'</code>. Etiketten skifter FCK → X → BIF → Over 2,5 og springer Over 2,5 over efter 3 mål, hvor <code>setFocus</code> også afviser den.</p>
+<!-- kilde: src/state/focus.ts:102-108; src/ui/kamp/Kampen.tsx:157; src/state/match.ts:621-628 -->
+<table class="t">
+  <thead><tr><th>Felt</th><th>1X2 (<i>f</i> = 0, 1, 2)</th><th>Over 2,5</th></tr></thead>
+  <tbody>
+    <tr><td><code>contract</code> · <code>label</code></td><td><code>1x2:F</code> osv. · <span class="ui">FCK vinder</span></td><td><code>tot:2.5:O</code> · <span class="ui">Over 2,5 mål</span></td></tr>
+    <tr><td><code>payoff</code></td><td><span class="ui">udbetaler 100 hvis FCK vinder</span></td><td><span class="ui">udbetaler 100 ved 3+ mål</span></td></tr>
+    <tr><td><code>askRaw</code>, <code>ask</code>, <code>bid</code>, <code>p</code></td><td>rå kurs, kurs, salgskurs og mid for <i>f</i></td><td>det samme for Over</td></tr>
+    <tr><td><code>hist</code> · <code>gapOf</code></td><td>1X2-historikken · <code>gap[f]</code></td><td>Over-historikken · <code>gapO25</code></td></tr>
+    <tr><td><code>strata</code> · <code>stratum</code> · farve</td><td>FCK, X, BIF · <i>f</i> · cyan, grå, gul</td><td>Over, Under · 0 · pink</td></tr>
+    <tr><td><code>canLimit</code> · <code>canGhost</code> · <code>done</code></td><td>ja · ja · nej</td><td>nej · nej · ja ved <i>h</i> + <i>a</i> &gt; 2,5</td></tr>
+  </tbody>
+</table>
+<!-- kilde: src/state/focus.ts:12-21, 23-108; src/state/match.ts:621-628 -->
+
+<h2 id="k16-mc">Monte Carlo for Over 2,5</h2>
+<p>Med Over 2,5 i fokus har forespørgslen <code>kind: 'o25'</code>, chancerne [<i>m</i><sub>O</sub>, 1 − <i>m</i><sub>O</sub>] og Overs rå kurs. Stratum er Over (<i>h</i> + <i>a</i> &gt; 2,5) eller Under, med <code>largestRemainder</code>([<i>m</i><sub>O</sub>, 1 − <i>m</i><sub>O</sub>]; 100) stier hver, så tallyen <span class="ui">Over · Under</span> er kursens chance. Stiprisen kommer fra <code>totalsTable</code>, en baglæns tabel fra 0′ over (trin, <i>d</i>, mål indtil nu) uden pres, excitation og zone, men med faktoren e<sup><i>v</i>/8</sup> ≈ 1,029 fra <code>baseTable</code>, hvor <i>v</i> = σ²/(2θ) = 0,225 er pressets stationære varians. <code>strandOver</code> lægger stiens pres på gennem den samlede målintensitet:</p>
+<!-- kilde: src/state/match.ts:504-540; src/engine/mc/paths.ts:29-35, 80-92, 240-311; src/engine/football/dp.ts:310; src/engine/football/params.ts:46-47 -->
+<div class="formel"><i>T</i><sub><i>k</i></sub>(<i>d</i>, <i>c</i>) = <i>h</i> · <i>T</i><sub><i>k</i>+1</sub>(<i>d</i> + 1, <i>c</i> + 1) + <i>a</i> · <i>T</i><sub><i>k</i>+1</sub>(<i>d</i> − 1, <i>c</i> + 1) + (1 − <i>h</i> − <i>a</i>) · <i>T</i><sub><i>k</i>+1</sub>(<i>d</i>, <i>c</i>),  <i>T</i>(·, 3) = 1,  <i>T</i><sub><i>n</i></sub>(<i>d</i>, <i>c</i> &lt; 3) = 0<br><i>q</i> = σ(logit <i>T</i><sub><i>k</i></sub>(<i>d</i>, min(<i>c</i>, 3)) + 2 · ln <i>M</i> · min(1, (slut − <i>t</i>)/30)),  <i>M</i> = (λ<sub>F</sub> · e<sup>π/2</sup> + λ<sub>B</sub> · e<sup>−π/2</sup>) / (λ<sub>F</sub> + λ<sub>B</sub>)<span class="hvor">hvor <i>h</i> og <i>a</i> er grundraterne λ<sub>F</sub> og λ<sub>B</sub> fra kapitel 13 gange Δ<i>t</i> · e<sup><i>v</i>/8</sup>, <i>c</i> er målene indtil nu, og π er stiens pres. <i>q</i> er 1, når <i>c</i> &gt; 2,5, og 0 ved slutfløjt.</span></div>
+<!-- kilde: src/engine/football/dp.ts:300-346 -->
+<p>δ-fade er som for 1X2, så alle stier starter i kursen og ender i 0 eller 100. Testen kører 6.000 stier i de fire tilstande fra gittertesten og kræver, at Monte Carlos andel med 3+ mål ligger inden for 2 point af DP'en. Den største afvigelse er {{mc.maxAfvigelse}} point mod en standardfejl på cirka 0,6 point, og Monte Carlo ligger under DP'en i tre af fire tilstande:</p>
+<!-- kilde: src/engine/mc/paths.ts:312-328; tests/totals.test.ts:34-48 -->
+<table class="t">
+  <thead><tr><th>Tilstand</th><th class="n">DP</th><th class="n">Monte Carlo</th><th class="n">Tally Over · Under</th></tr></thead>
+  <tbody>
+    <tr><td>0′, 0–0</td><td class="n">47,3 %</td><td class="n">46,4 %</td><td class="n">47 · 53</td></tr>
+    <tr><td>30′, 1–0, FCK presser</td><td class="n">56,0 %</td><td class="n">54,8 %</td><td class="n">56 · 44</td></tr>
+    <tr><td>55′, 0–1, rødt kort til BIF</td><td class="n">33,1 %</td><td class="n">32,6 %</td><td class="n">33 · 67</td></tr>
+    <tr><td>80′, 1–1</td><td class="n">33,5 %</td><td class="n">33,5 %</td><td class="n">34 · 66</td></tr>
+  </tbody>
+</table>
+<!-- data: stats.json mcVsDp (dp 0,4726/0,5596/0,331/0,3352; mc 0,4643/0,548/0,3258/0,3352; counts [47,53] [56,44] [33,67] [34,66]); tilstande fra tests/totals.test.ts:9-14 -->
+
+<h2 id="k16-kalibrering">Kalibrering</h2>
+<p>Testen kører {{kal.o25.kampe}} kampe uden hvaler og markedslag og noterer <code>totalsBack</code> ved 0′, 15′, 30′, 45,5′, 60′ og 75′, når handlen er åben og Over ikke er afgjort. Hver decil skal ramme andelen med 3+ mål inden for 3,5 point plus 3 standardfejl; det er fair-chancen, der testes, ikke kursen. Ved kickoff er prisen {{kal.o25.kickoffPris}} mod faktisk {{kal.o25.kickoffFaktisk}}: i simulationen giver hvert mål begge hold excitationen κ = 0,6, men DP'en og Monte Carlo lader kun den excitation henfalde, der allerede er der, og <code>totalsTable</code> har slet ingen excitation.</p>
+<!-- kilde: tests/totals.test.ts:50-86; src/engine/football/sim.ts:326, 397; src/engine/football/dp.ts:46-48, 310-316; src/engine/football/params.ts:52; src/engine/mc/paths.ts:162-166 -->
+<figure class="fig" data-fig="kal-o25"><figcaption><b>Figur:</b> Over 2,5-kalibrering pr. decil: fair chance fra <code>totalsBack</code> mod andelen af kampe med 3+ mål, {{kal.o25.punkter}} punkter fra {{kal.o25.kampe}} kampe, med ±3 standardfejl. Største afvigelse {{kal.o25.maxAfvigelse}} point.</figcaption></figure>
+<!-- data: stats.json calO25, o25Kickoff -->
+<!-- kilde: src/engine/football/sim.ts:326, 397; src/engine/football/dp.ts:46-48; src/engine/football/params.ts:52-53; tests/totals.test.ts:84 -->
+
+<div class="callout advarsel"><b>Begrænsninger.</b>
+<ul>
+<li><b>Regioner har intet marked</b>, kun modellens chance og en fast margin. Samme udbetaling kan få to kurser: ved 20′ kostede regionen med mindst 4 mål {{q20.m4.kurs}} og Over 3,5 {{q20.tot35O.kurs}}, begge med chancen {{q20.m4.p}}.</li>
+<li><b>5+ er samlet</b> på kortet, og gitteret samler alt over 10 ekstra mål pr. hold i 10.</li>
+<li><b>Salg under 3 %.</b> Salg bruger samme åbent-tjek som køb, så en slutresultat-position under 3 % kan ikke sælges (<span class="ui">Sælg alt</span> i Porteføljen er slået fra). Salgskursen ville højst være 2.</li>
+</ul></div>
+<!-- kilde: src/state/match.ts:568-618, 705-716; src/ui/portefolje/Portefolje.tsx:37; src/engine/football/dp.ts:197-227; src/engine/mc/paths.ts:162-166 -->
+<!-- data: story.json quotes20 (regionen Mindst 4 mål p 0,164 kurs 19; tot:3.5:O p 0,164 kurs 21) -->

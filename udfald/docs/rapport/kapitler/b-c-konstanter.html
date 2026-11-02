@@ -1,0 +1,102 @@
+<h1 class="kapitel" id="bC" data-nr="C">Konstanter og parametre</h1>
+<p class="ingress">Bilaget viser de navngivne konstanter og modelparametre, som rapporten bruger, med værdi, fil og linje. Marginerne står som tal direkte i koden og er samlet i kapitel 15.</p>
+<p>Stierne er forkortet: <code>sim.ts</code>, <code>params.ts</code>, <code>dp.ts</code> og <code>display.ts</code> ligger i <code>src/engine/football/</code>, <code>portfolio.ts</code> i <code>src/engine/book/</code>, og <code>match.ts</code> og <code>focus.ts</code> i <code>src/state/</code>. Tider er i kamptid. Et substep er 1,5 kampsekunder.</p>
+<!-- data: stats.json constants og params (udtrukket af scripts/data.mjs:323-335 fra kildefilerne) -->
+
+<h2 id="bC-tid">Tid og faser</h2>
+<table class="t">
+  <thead><tr><th>Navn</th><th class="n">Værdi</th><th>Fil:linje</th><th>Betydning</th></tr></thead>
+  <tbody>
+    <tr><td><code>SUB</code></td><td class="n">0,025</td><td><code>params.ts:6</code></td><td>kampminutter pr. substep</td></tr>
+    <tr><td><code>DP_STEP</code></td><td class="n">0,25</td><td><code>params.ts:8</code></td><td>kampminutter pr. trin i DP og Monte Carlo (15 kampsekunder)</td></tr>
+    <tr><td><code>D</code></td><td class="n">8</td><td><code>params.ts:9</code></td><td>målforskellen i DP'en klippes til ±8</td></tr>
+    <tr><td><code>PRE_SUBS</code></td><td class="n">30</td><td><code>sim.ts:23</code></td><td>åbningsauktion før kampstart, 3 s ved ×1</td></tr>
+    <tr><td><code>HT_SUBS</code></td><td class="n">20</td><td><code>sim.ts:24</code></td><td>pausens længde i substeps, hvis tidslinjen ikke angiver en anden</td></tr>
+    <tr><td><code>CLOSE_SUBS</code></td><td class="n">20</td><td><code>sim.ts:25</code></td><td>substeps fra slutfløjt til lukket</td></tr>
+    <tr><td><code>GOAL_HALT</code></td><td class="n">12</td><td><code>sim.ts:26</code></td><td>handelsstop efter mål, 18 kampsekunder</td></tr>
+    <tr><td><code>RED_HALT</code></td><td class="n">16</td><td><code>sim.ts:27</code></td><td>handelsstop efter rødt kort, 24 kampsekunder</td></tr>
+  </tbody>
+</table>
+<!-- kilde: src/engine/football/params.ts:6-9; src/engine/football/sim.ts:23-27, 171-196, 312-331, 364-368 -->
+
+<h2 id="bC-marked">Markedslaget</h2>
+<table class="t">
+  <thead><tr><th>Navn</th><th class="n">Værdi</th><th>Fil:linje</th><th>Betydning</th></tr></thead>
+  <tbody>
+    <tr><td><code>B_LIQ</code></td><td class="n">200.000</td><td><code>sim.ts:28</code></td><td>kr pr. logit-enhed: en ordre på <i>x</i> kr flytter udfaldets log-vægt i mid med <i>x</i> / 200.000</td></tr>
+    <tr><td><code>MU_TRADES</code></td><td class="n">8</td><td><code>sim.ts:29</code></td><td>publikumshandler pr. kampminut i grundraten</td></tr>
+    <tr><td><code>BETA_HAWKES</code></td><td class="n">1/0,3</td><td><code>sim.ts:30</code></td><td>Hawkes-leddets henfald pr. kampminut</td></tr>
+    <tr><td><code>HALF_T</code></td><td class="n">1</td><td><code>sim.ts:31</code></td><td>halveringstid for kortvarigt flow, kampminutter</td></tr>
+    <tr><td><code>HALF_P</code></td><td class="n">15</td><td><code>sim.ts:32</code></td><td>halveringstid for vedvarende flow, kampminutter</td></tr>
+    <tr><td><code>NOISE_THETA</code></td><td class="n">3,2</td><td><code>sim.ts:33</code></td><td>støjens tilbagetrækning pr. kampminut</td></tr>
+    <tr><td><code>NOISE_SD</code></td><td class="n">0,016</td><td><code>sim.ts:34</code></td><td>støjens spredning i logit</td></tr>
+    <tr><td><code>NOISE_CLIP</code></td><td class="n">0,02</td><td><code>sim.ts:35</code></td><td>støjen klippes til ±0,02 logit</td></tr>
+    <tr><td><code>OVERSHOOT_TAU</code></td><td class="n">0,125</td><td><code>sim.ts:36</code></td><td>overshootets tidskonstant, kampminutter (7,5 kampsekunder)</td></tr>
+    <tr><td><code>HYST</code></td><td class="n">0,6</td><td><code>sim.ts:37</code></td><td>kursen ændres først, når den rå kurs er mindst 0,6 point fra den viste</td></tr>
+    <tr><td><code>ATTR_LEN</code></td><td class="n">80</td><td><code>sim.ts:38</code></td><td>årsagschippens vindue i substeps, 2 kampminutter</td></tr>
+  </tbody>
+</table>
+<!-- kilde: src/engine/football/sim.ts:28-38, 431-432, 484-547, 571-579 -->
+
+<h2 id="bC-maal">Målmarkederne</h2>
+<table class="t">
+  <thead><tr><th>Navn</th><th class="n">Værdi</th><th>Fil:linje</th><th>Betydning</th></tr></thead>
+  <tbody>
+    <tr><td><code>O25_MARGIN</code></td><td class="n">0,06</td><td><code>sim.ts:42</code></td><td>power-margin på Over/Under, alle linjer</td></tr>
+    <tr><td><code>GRID_MAX</code></td><td class="n">10</td><td><code>dp.ts:197</code></td><td>ekstra mål pr. hold i gitteret; mere samles i 10</td></tr>
+    <tr><td><code>TOT_LINES</code></td><td class="n">0,5 · 1,5 · 2,5 · 3,5 · 4,5</td><td><code>display.ts:12</code></td><td>Over/Under-linjerne</td></tr>
+    <tr><td><code>CS_N</code></td><td class="n">6</td><td><code>display.ts:14</code></td><td>kortets størrelse, 0–5 mål pr. hold, hvor 5 er 5+</td></tr>
+    <tr><td><code>CS_MIN_P</code></td><td class="n">0,03</td><td><code>match.ts:25</code></td><td>slutresultater under 3 % er lukkede</td></tr>
+  </tbody>
+</table>
+<!-- kilde: src/engine/football/sim.ts:41-43; src/engine/football/display.ts:12-14, 85; src/engine/football/dp.ts:197-198; src/state/match.ts:24-25, 599 -->
+
+<h2 id="bC-bog">Bogen og Sikring</h2>
+<table class="t">
+  <thead><tr><th>Navn</th><th class="n">Værdi</th><th>Fil:linje</th><th>Betydning</th></tr></thead>
+  <tbody>
+    <tr><td><code>START_SALDO</code></td><td class="n">5.000</td><td><code>portfolio.ts:30</code></td><td>saldo ved start, kr</td></tr>
+    <tr><td><code>MAX_STAKE</code></td><td class="n">1.000</td><td><code>portfolio.ts:31</code></td><td>højst kr pr. køb og pr. puljeindsats</td></tr>
+    <tr><td><code>MAX_LIMITS</code></td><td class="n">3</td><td><code>portfolio.ts:32</code></td><td>højst aktive købsgrænser</td></tr>
+    <tr><td><code>STOP_REOPEN_GUARD</code></td><td class="n">7</td><td><code>portfolio.ts:36</code></td><td>et stop udløses først, når der er gået mere end 7 substeps siden genåbning</td></tr>
+    <tr><td><code>STOP_ASK_OFFSET</code></td><td class="n">2</td><td><code>portfolio.ts:38</code></td><td>stoppet sammenligner kurs − 2 med niveauet</td></tr>
+    <tr><td><code>EXIT_CONTRACTS</code></td><td class="n">4 nøgler</td><td><code>match.ts:27</code></td><td>kontrakter med Sikring: <code>1x2:F</code>, <code>1x2:X</code>, <code>1x2:B</code>, <code>tot:2.5:O</code></td></tr>
+  </tbody>
+</table>
+<!-- kilde: src/engine/book/portfolio.ts:30-38, 84-88, 116-121, 222-244, 255-260; src/state/match.ts:26-27, 731-737 -->
+
+<h2 id="bC-pulje">Parken-puljen</h2>
+<table class="t">
+  <thead><tr><th>Navn</th><th class="n">Værdi</th><th>Fil:linje</th><th>Betydning</th></tr></thead>
+  <tbody>
+    <tr><td><code>POOL_TAKE</code></td><td class="n">0,1</td><td><code>portfolio.ts:34</code></td><td>husets andel af puljen</td></tr>
+    <tr><td><code>POOL_P0</code></td><td class="n">180.000</td><td><code>match.ts:30</code></td><td>publikums penge i puljen ved start, kr</td></tr>
+    <tr><td><code>POOL_N0</code></td><td class="n">3.100</td><td><code>match.ts:33</code></td><td>antal indsatser ved start</td></tr>
+    <tr><td><code>POOL_PER_KR</code></td><td class="n">4</td><td><code>match.ts:31</code></td><td>puljen vokser med 4 kr pr. krone, publikum køber for i markedet</td></tr>
+    <tr><td><code>POOL_WHALE_CAP</code></td><td class="n">2.000</td><td><code>match.ts:32</code></td><td>en hval tæller højst med 2.000 kr</td></tr>
+    <tr><td><code>POOL_N_PER_TRADE</code></td><td class="n">9</td><td><code>match.ts:34</code></td><td>nye indsatser pr. publikumskøb</td></tr>
+    <tr><td><code>POOL_BIAS</code></td><td class="n">1,035 · 0,985 · 0,985</td><td><code>match.ts:36</code></td><td>publikums hjemmebias på FCK, X og BIF</td></tr>
+    <tr><td><code>POOL_TAU</code></td><td class="n">1</td><td><code>match.ts:37</code></td><td>tidskonstant for publikums fordeling, kampminutter</td></tr>
+  </tbody>
+</table>
+<!-- kilde: src/engine/book/portfolio.ts:33-34, 44-49; src/state/match.ts:29-37, 403-439 -->
+
+<h2 id="bC-model">Målmodellen</h2>
+<p>Parametrene ligger i <code>DERBY_PARAMS</code> i <code>params.ts:39-61</code> og er forklaret i kapitel 13. Kolonnen Linje er linjen i <code>params.ts</code>.</p>
+<table class="t">
+  <thead><tr><th>Navn</th><th class="n">Værdi</th><th class="n">Linje</th><th>Betydning</th></tr></thead>
+  <tbody>
+    <tr><td><code>lamF</code> / <code>lamB</code></td><td class="n">1,4 / 0,965</td><td class="n">40–41</td><td>basisskala for FCK og BIF</td></tr>
+    <tr><td><code>trailing</code> / <code>leading</code></td><td class="n">1,18 / 0,9</td><td class="n">42–43</td><td>faktor for holdet bagud og holdet foran</td></tr>
+    <tr><td><code>redOwn</code> / <code>redOpp</code></td><td class="n">0,7 / 1,18</td><td class="n">44–45</td><td>faktor pr. eget og pr. modstanderens røde kort</td></tr>
+    <tr><td><code>theta</code> / <code>sigma</code> / <code>clip</code></td><td class="n">0,2 / 0,3 / 0,9</td><td class="n">46–48</td><td>pressets tilbagetrækning pr. kampminut, volatilitet og grænse</td></tr>
+    <tr><td><code>kickCorner</code> / <code>kickChance</code></td><td class="n">0,08 / 0,12</td><td class="n">49–50</td><td>spark i presset ved hjørnespark og chance</td></tr>
+    <tr><td><code>kickShotOnTarget</code></td><td class="n">0,05</td><td class="n">51</td><td>findes i parametrene, men bruges ikke</td></tr>
+    <tr><td><code>kappa</code> / <code>tauE</code></td><td class="n">0,6 / 3</td><td class="n">52–53</td><td>excitation pr. mål og dens tidskonstant, kampminutter</td></tr>
+    <tr><td><code>zoneDwell</code></td><td class="n">0,12</td><td class="n">54</td><td>opholdstid i en zone, kampminutter</td></tr>
+    <tr><td><code>zoneMult</code></td><td class="n">0 · 0 · 0,3 · 0,9 · 1,9 · 2,9</td><td class="n">56</td><td>målfaktor i zone 1–6 set fra FCK; BIF bruger den spejlet</td></tr>
+    <tr><td><code>cornerRate</code> / <code>chanceRate</code> / <code>shotRate</code></td><td class="n">0,115 / 0,07 / 0,27</td><td class="n">57–59</td><td>hjørnespark, chancer og skud pr. kampminut; skud er kosmetiske</td></tr>
+    <tr><td><code>beta</code></td><td class="n">0,55</td><td class="n">60</td><td>stiernes hældning pr. enhed pres, logit</td></tr>
+  </tbody>
+</table>
+<!-- kilde: src/engine/football/params.ts:12-61, 78-82 (zoneFactor); src/engine/football/sim.ts:268-283; grep efter kickShotOnTarget i src/ finder kun params.ts:25 og 51 -->
