@@ -1,0 +1,71 @@
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+html, body { overflow: hidden; overscroll-behavior: none; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 20px;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--fck); outline-offset: 2px; border-radius: 4px; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.screen { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.no-touch-ui { touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+
+/* Gate */
+.gate { position: fixed; inset: 0; z-index: 50; background: radial-gradient(120% 70% at 50% 0%, #10161d 0%, var(--bg) 60%); display: flex; flex-direction: column; justify-content: center; align-items: stretch; gap: 28px; padding: 32px 24px; }
+/* Wordmark: UDFALD with a thin rising price line underneath. */
+.gate-mark { position: relative; align-self: flex-start; font-family: var(--font-num); font-weight: 760; font-size: 64px; line-height: 1; letter-spacing: -0.01em; padding-bottom: 12px; }
+.gate-mark::after, .logo::after, .kb-logo::after { content: ''; position: absolute; left: 2%; right: 2%; bottom: 0; height: 3px; border-radius: 2px; background: linear-gradient(90deg, rgba(92, 225, 255, 0.25), var(--fck)); transform: skewY(-2deg); transform-origin: left; }
+.gate ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; color: var(--udsigt); max-width: 34ch; }
+.gate ol b { color: var(--text); font-weight: 600; }
+.gate-btn { min-height: 56px; border-radius: 999px; background: var(--fck); color: #03161c; font-weight: 700; font-size: 17px; }
+.gate-foot { color: var(--text-2); font-size: 12px; }
+
+/* Lobby */
+.lobby { padding: 20px 16px 24px; display: flex; flex-direction: column; gap: 16px; }
+.lobby-head { display: flex; align-items: center; justify-content: space-between; }
+.logo { position: relative; font-family: var(--font-num); font-weight: 760; font-size: 24px; letter-spacing: -0.01em; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; padding-bottom: 4px; }
+.logo::after { bottom: 8px; height: 2px; }
+.phase-pill { font-size: 12px; color: var(--text-2); border: 1px solid var(--hairline); border-radius: 999px; padding: 4px 10px; }
+.lead { color: var(--udsigt); margin: 0; max-width: 40ch; }
+.card { display: flex; flex-direction: column; gap: 6px; text-align: left; background: var(--surface-1); border: 1px solid var(--hairline); border-radius: var(--radius-card); padding: 16px; min-height: 96px; }
+.card h2 { margin: 0; font-size: 17px; font-weight: 650; }
+.card p { margin: 0; color: var(--text-2); font-size: 14px; }
+.card .go { color: var(--fck); font-size: 14px; font-weight: 600; }
+.foot { color: var(--text-2); font-size: 12px; text-align: center; padding-top: 8px; }
+
+/* Top bar used by spike */
+.bar { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-bottom: 1px solid var(--hairline); min-height: 52px; }
+.back { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; font-size: 26px; color: var(--text-2); }
+.bar h1 { font-size: 17px; margin: 0; font-weight: 650; flex: 1; }
+
+/* HUD */
+.hud { position: fixed; top: 6px; right: 6px; z-index: 60; background: rgba(14, 18, 23, 0.92); border: 1px solid var(--hairline); border-radius: 8px; padding: 6px 8px; font: 11px/14px var(--font-num); font-variant-numeric: tabular-nums; color: var(--udsigt); pointer-events: none; display: grid; grid-template-columns: auto auto; column-gap: 8px; }
+.hud b { color: var(--text); font-weight: 600; }
+.hud .bad { color: var(--down); }
+
+/* Spike */
+.spike { padding: 12px 16px 32px; display: flex; flex-direction: column; gap: 16px; }
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--hairline); border-radius: var(--radius-card); overflow: hidden; }
+.checks li { display: grid; grid-template-columns: 10px 104px 1fr; gap: 10px; align-items: baseline; padding: 10px 12px; border-bottom: 1px solid var(--hairline); font-size: 13px; line-height: 18px; }
+.checks li:last-child { border-bottom: 0; }
+.checks .dot { width: 8px; height: 8px; border-radius: 50%; align-self: center; }
+.checks .lbl { color: var(--text-2); }
+.checks .det { color: var(--text); overflow-wrap: anywhere; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.act { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--hairline); background: var(--surface-1); font-size: 14px; }
+.act.primary { background: var(--fck); color: #03161c; border-color: transparent; font-weight: 700; }
+.note { margin: 0; color: var(--udsigt); font-size: 13px; }
+.gesture p { margin: 0 0 8px; color: var(--udsigt); font-size: 13px; }
+.gesture-box { height: 180px; border: 1px dashed var(--hairline); border-radius: var(--radius-card); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: var(--surface-1); }
+.gesture-box span { font-size: 17px; font-weight: 600; }
+.gesture-box small { color: var(--text-2); font-size: 12px; }
+.raw summary { color: var(--text-2); font-size: 13px; min-height: 44px; display: flex; align-items: center; }
+.raw pre { font-size: 10px; line-height: 14px; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; background: var(--surface-1); padding: 10px; border-radius: 8px; }
+.report-box { width: 100%; min-height: 220px; font: 10px/14px ui-monospace, monospace; background: var(--surface-1); color: var(--text); border: 1px solid var(--hairline); border-radius: 8px; padding: 8px; user-select: text; -webkit-user-select: text; }

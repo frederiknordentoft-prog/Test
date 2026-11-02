@@ -1,0 +1,28 @@
+/* UDFALD design tokens. Stadium night. Team colours are data colours; up/down only for P&L, always with an arrow. */
+:root {
+  color-scheme: dark;
+  --bg: #07090c;
+  --surface-1: #0e1217;
+  --surface-2: #151a21;
+  --hairline: #232a35;
+  --text: #e8edf2;
+  --text-2: #8a94a3;
+  --udsigt: #b9c2ce;
+  --fck: #5ce1ff;
+  --fck-ice: #eaf6ff;
+  --bif: #ffd200;
+  --bif-dim: #8a7400;
+  --draw: #8a93a3;
+  --up: #3ddc97;
+  --down: #ff6b5e;
+  --trap: #c58bff;
+  --halt: #8a8f98;
+  --radius-chip: 4px;
+  --radius-tile: 8px;
+  --radius-card: 12px;
+  --radius-sheet: 20px;
+  --font-num: "UDF Flex", "Roboto Flex", "Helvetica Neue", Arial, sans-serif;
+  --font-ui: "UDF Tight", "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "UDF Serif", "Instrument Serif", Georgia, serif;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
