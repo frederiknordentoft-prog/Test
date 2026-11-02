@@ -1,0 +1,86 @@
+{
+ "log": [
+  {
+   "kind": "buy",
+   "k": 831,
+   "t": 20.05,
+   "contract": "1x2:B",
+   "label": "BIF vinder",
+   "shares": 769,
+   "price": 26,
+   "kr": 199.94
+  },
+  {
+   "kind": "limit-fill",
+   "k": 1192,
+   "t": 29.075,
+   "contract": "1x2:B",
+   "label": "BIF vinder",
+   "shares": 1111,
+   "price": 9,
+   "kr": 99.99,
+   "better": 11
+  },
+  {
+   "kind": "sell",
+   "k": 1200,
+   "t": 29.275,
+   "contract": "1x2:B",
+   "label": "BIF vinder",
+   "shares": 1880,
+   "price": 8,
+   "kr": 150.4,
+   "via": "stop"
+  }
+ ],
+ "limits": [
+  {
+   "id": 1,
+   "contract": "1x2:B",
+   "label": "BIF vinder",
+   "level": 20,
+   "kr": 100,
+   "reserved": 0,
+   "k": 831,
+   "status": "fyldt",
+   "fill": {
+    "price": 9,
+    "shares": 1111,
+    "k": 1192,
+    "gapBetter": 11
+   }
+  }
+ ],
+ "exits": [
+  {
+   "id": 1,
+   "contract": "1x2:B",
+   "label": "BIF vinder",
+   "kind": "stop",
+   "level": 17,
+   "k": 831,
+   "status": "udløst",
+   "fill": {
+    "price": 8,
+    "shares": 1880,
+    "kr": 150.4,
+    "k": 1200,
+    "t": 29.274999999999405
+   }
+  }
+ ],
+ "toasts": [
+  {
+   "k": 1192,
+   "t": 29.075,
+   "text": "Købsgrænse fyldt: 1111 andele @ kurs 9 · 11 point bedre",
+   "tone": "good"
+  },
+  {
+   "k": 1200,
+   "t": 29.275,
+   "text": "Stop-loss udløst: solgt 1880 @ kurs 8",
+   "tone": "bad"
+  }
+ ]
+}

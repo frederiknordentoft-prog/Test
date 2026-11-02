@@ -25,7 +25,7 @@ Planen ligger i `docs/PLAN.md`. Research, konceptspec og kritik ligger også i `
 - Langt tryk i viften sætter en købsgrænse.
 - Hold på en udfaldsflise for hurtigkøb. Glid op for at købe.
 - Tryk på etiketten over kursen for at skifte fokus: FCK → X → BIF → Over 2,5. Chippen "Over 2,5 · kurs N" under Målvejret går direkte dertil.
-- "Sikring" på positionskortet sætter stop-loss og "Sikr gevinst" (kun 1X2 og Over/Under 2,5).
+- "Sikring" på positionskortet sætter stop-loss og "Sikr gevinst" (kun 1X2 og Over 2,5, de kontrakter der har en linje i viften).
 - Bundbjælken: Byg · Mål · Pulje · Portefølje. Lobbyen nås via chevronen øverst.
 
 ## Arkitektur

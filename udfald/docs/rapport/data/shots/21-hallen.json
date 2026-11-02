@@ -1,0 +1,75 @@
+{
+ "name": "21-hallen",
+ "height": 844,
+ "k": 1164,
+ "t": 28.374999999999456,
+ "phase": "1H",
+ "score": "0-0",
+ "focus": 0,
+ "halted": false,
+ "ask": [
+  44,
+  35,
+  25
+ ],
+ "bid": [
+  40,
+  31,
+  21
+ ],
+ "o25": {
+  "ask": [
+   33,
+   73
+  ],
+  "bid": [
+   29,
+   69
+  ],
+  "mid": 0.29406676293574185
+ },
+ "counts": [
+  43,
+  34,
+  23
+ ],
+ "rects": {
+  ".kb": [
+   0,
+   0,
+   390,
+   45
+  ],
+  ".ih": null,
+  ".ih-label": null,
+  ".ih-price": null,
+  ".ih-futures": null,
+  ".fan-wrap": null,
+  ".ab": [
+   0,
+   728,
+   390,
+   58
+  ],
+  ".mv": null,
+  ".mv-h": null,
+  ".mv-bars": null,
+  ".mv-ag": null,
+  ".pc": null,
+  ".pc-sikring": null,
+  ".fader": null,
+  ".bb": null,
+  ".tray": null,
+  ".toasts": [
+   12,
+   52,
+   366,
+   0
+  ],
+  ".fan-head": null
+ },
+ "liveTexts": [],
+ "text": "‹\nAaH\n14–13\nGOG\n20′\nÅBEN\nAngreb GOG · 0 s\nMål i angrebet 56 %\nAalborg +4 før 45′?\nkurs 45 · 40 % chance\nfør 40′\nfør 45′\nfør 50′\nfør slut\n50 kr\n100 kr\n250 kr\nKøb trigger 100 kr · ved ramning 222 kr\nAaH\n63\nX\n10\nGOG\n31\n\nTræk i skopet for at vælge niveau. Tryk på en flise for at købe udfaldet for 100 kr.",
+ "toasts": [],
+ "log": 0
+}

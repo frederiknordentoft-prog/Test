@@ -1,0 +1,152 @@
+{
+ "name": "16-pulje-pause",
+ "height": 846,
+ "k": 1832,
+ "t": 44.999999999998515,
+ "phase": "HT",
+ "score": "1-0",
+ "focus": 0,
+ "halted": false,
+ "ask": [
+  73,
+  23,
+  7
+ ],
+ "bid": [
+  71,
+  21,
+  5
+ ],
+ "o25": {
+  "ask": [
+   45,
+   61
+  ],
+  "bid": [
+   43,
+   59
+  ],
+  "mid": 0.4219503768715394
+ },
+ "counts": [
+  72,
+  20,
+  8
+ ],
+ "rects": {
+  ".kb": null,
+  ".ih": null,
+  ".ih-label": null,
+  ".ih-price": null,
+  ".ih-futures": null,
+  ".fan-wrap": null,
+  ".ab": null,
+  ".mv": null,
+  ".mv-h": null,
+  ".mv-bars": null,
+  ".mv-ag": null,
+  ".pc": null,
+  ".pc-sikring": null,
+  ".fader": null,
+  ".bb": null,
+  ".tray": null,
+  ".toasts": null,
+  ".fan-head": null
+ },
+ "liveTexts": [
+  {
+   "text": "+29 point",
+   "x": 79.00714168023637,
+   "y": 40,
+   "align": "left",
+   "px": 79,
+   "py": 40
+  },
+  {
+   "text": "NU 35′",
+   "x": 123,
+   "y": 371,
+   "align": "center",
+   "px": 123,
+   "py": 371
+  },
+  {
+   "text": "0′",
+   "x": 10,
+   "y": 371,
+   "align": "left",
+   "px": 10,
+   "py": 371
+  },
+  {
+   "text": "90+",
+   "x": 324,
+   "y": 371,
+   "align": "right",
+   "px": 324,
+   "py": 371
+  },
+  {
+   "text": "Mål FCK",
+   "x": 332,
+   "y": 67,
+   "align": "left",
+   "px": 332,
+   "py": 67
+  },
+  {
+   "text": "→ 91",
+   "x": 332,
+   "y": 81,
+   "align": "left",
+   "px": 332,
+   "py": 81
+  },
+  {
+   "text": "Intet mål 10′",
+   "x": 332,
+   "y": 138.6116354837071,
+   "align": "left",
+   "px": 332,
+   "py": 138.6
+  },
+  {
+   "text": "→ 73",
+   "x": 332,
+   "y": 152.6116354837071,
+   "align": "left",
+   "px": 332,
+   "py": 152.6
+  },
+  {
+   "text": "Mål BIF",
+   "x": 332,
+   "y": 263.98609145481936,
+   "align": "left",
+   "px": 332,
+   "py": 264
+  },
+  {
+   "text": "→ 42",
+   "x": 332,
+   "y": 277.98609145481936,
+   "align": "left",
+   "px": 332,
+   "py": 278
+  },
+  {
+   "text": "Rolig handel · under 1 point på 2 kampmin",
+   "x": 20,
+   "y": 18,
+   "align": "left",
+   "px": 20,
+   "py": 18
+  }
+ ],
+ "text": "‹\nParken-puljen\n1–0 · Pause\n\nAlle indsatser på kampens resultat i én pulje. Vinderne deler puljen efter husets 10 %. Jo færre der står på din side, jo mere får du.\n\nPuljen\n519.760 kr\nPublikum (simuleret)\n5.342 indsatser\n\nLukket ved pausen · odds låst\n\nFCK\n379.543 kr\nodds ≈ 1,23\nX\n107.229 kr\nodds ≈ 4,36\ndig 200 kr\nBIF\n32.988 kr\nodds ≈ 14,18\n\nDu har 200 kr i puljen. Afgøres ved slutfløjt.",
+ "toasts": [
+  "Gevinst sikret: solgt 512 @ kurs 54 · 276,48 kr",
+  "Stop-loss udløst: solgt 769 @ kurs 8"
+ ],
+ "log": 8
+}

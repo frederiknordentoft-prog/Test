@@ -1,0 +1,148 @@
+{
+ "name": "15-maal-1-0",
+ "height": 1125,
+ "k": 1432,
+ "t": 35.07499999999908,
+ "phase": "1H",
+ "score": "1-0",
+ "focus": 0,
+ "halted": false,
+ "ask": [
+  73,
+  22,
+  9
+ ],
+ "bid": [
+  71,
+  20,
+  7
+ ],
+ "o25": {
+  "ask": [
+   54,
+   52
+  ],
+  "bid": [
+   52,
+   50
+  ],
+  "mid": 0.5148769309843927
+ },
+ "counts": null,
+ "rects": {
+  ".kb": null,
+  ".ih": null,
+  ".ih-label": null,
+  ".ih-price": null,
+  ".ih-futures": null,
+  ".fan-wrap": null,
+  ".ab": null,
+  ".mv": null,
+  ".mv-h": null,
+  ".mv-bars": null,
+  ".mv-ag": null,
+  ".pc": null,
+  ".pc-sikring": null,
+  ".fader": null,
+  ".bb": null,
+  ".tray": null,
+  ".toasts": null,
+  ".fan-head": null
+ },
+ "liveTexts": [
+  {
+   "text": "+29 point",
+   "x": 79.00714168023637,
+   "y": 40,
+   "align": "left",
+   "px": 79,
+   "py": 40
+  },
+  {
+   "text": "NU 35′",
+   "x": 123,
+   "y": 371,
+   "align": "center",
+   "px": 123,
+   "py": 371
+  },
+  {
+   "text": "0′",
+   "x": 10,
+   "y": 371,
+   "align": "left",
+   "px": 10,
+   "py": 371
+  },
+  {
+   "text": "90+",
+   "x": 324,
+   "y": 371,
+   "align": "right",
+   "px": 324,
+   "py": 371
+  },
+  {
+   "text": "Mål FCK",
+   "x": 332,
+   "y": 67,
+   "align": "left",
+   "px": 332,
+   "py": 67
+  },
+  {
+   "text": "→ 91",
+   "x": 332,
+   "y": 81,
+   "align": "left",
+   "px": 332,
+   "py": 81
+  },
+  {
+   "text": "Intet mål 10′",
+   "x": 332,
+   "y": 138.6116354837071,
+   "align": "left",
+   "px": 332,
+   "py": 138.6
+  },
+  {
+   "text": "→ 73",
+   "x": 332,
+   "y": 152.6116354837071,
+   "align": "left",
+   "px": 332,
+   "py": 152.6
+  },
+  {
+   "text": "Mål BIF",
+   "x": 332,
+   "y": 263.98609145481936,
+   "align": "left",
+   "px": 332,
+   "py": 264
+  },
+  {
+   "text": "→ 42",
+   "x": 332,
+   "y": 277.98609145481936,
+   "align": "left",
+   "px": 332,
+   "py": 278
+  },
+  {
+   "text": "Rolig handel · under 1 point på 2 kampmin",
+   "x": 20,
+   "y": 18,
+   "align": "left",
+   "px": 20,
+   "py": 18
+  }
+ ],
+ "text": "‹\nMål og slutresultat\n1–0 · 35′\n\nHver celle er et slutresultat. Lysstyrken er sandsynligheden, regnet fra samme model som 1X2. Vælg én celle eller en hel region.\n\nFCK ↓\nBIF →\n0\n1\n2\n3\n4\n5+\n0\n0–0\n–\n0–1\n–\n0–2\n–\n0–3\n–\n0–4\n–\n0–5+\n–\n1\n1–0\n18\n1–1\n15\n1–2\n4,9\n1–3\n1,0\n1–4\n0,2\n1–5+\n0,0\n2\n2–0\n16\n2–1\n14\n2–2\n5,8\n2–3\n1,3\n2–4\n0,2\n2–5+\n0,0\n3\n3–0\n7,4\n3–1\n6,2\n3–2\n2,7\n3–3\n0,7\n3–4\n0,1\n3–5+\n0,0\n4\n4–0\n2,2\n4–1\n1,8\n4–2\n0,8\n4–3\n0,2\n4–4\n0,0\n4–5+\n0,0\n5+\n5+–0\n0,6\n5+–1\n0,5\n5+–2\n0,2\n5+–3\n0,1\n5+–4\n0,0\n5+–5+\n0,0\n\n plus ·  minus: din udbetaling ved hvert slutresultat, kun kontrakter der afgøres af slutresultatet alene\n\nFCK med 2+\nBegge scorer\n0–0 eller 1–1\nUafgjort\nBIF vinder\nRyd\nMål i alt\n0,5\nOver ✓ passeret\n1,5\nOver 84\nUnder 22\n2,5\nOver 54\nUnder 52\n3,5\nOver 28\nUnder 78\n4,5\nOver 14\nUnder 92\n\n≈ 0 af 100 fremtider\n\nSlutresultat 4–3 · kurs 1 · 0,2 % chance\n\n25 kr\n50 kr\n100 kr\n250 kr\nFor usandsynligt (under 3 %)",
+ "toasts": [
+  "Gevinst sikret: solgt 512 @ kurs 54 · 276,48 kr",
+  "Stop-loss udløst: solgt 769 @ kurs 8"
+ ],
+ "log": 8
+}

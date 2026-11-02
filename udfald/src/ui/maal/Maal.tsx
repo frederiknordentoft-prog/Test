@@ -158,14 +158,14 @@ export function Maal({ store }: { store: MatchStore }) {
                 <p className="maal-fut num">≈ <b>{futures}</b> af 100 fremtider</p>
                 <p className="byg-ticker num">
                   <b>{q?.label ?? ''}</b>
-                  {q && <> · <b>kurs {q.ask}</b> · {Math.round(q.p * 100)} % chance · odds {(100 / q.ask).toFixed(2).replace('.', ',')}</>}
+                  {q && <> · <b>kurs {q.ask}</b> · {q.p >= 0.095 ? Math.round(q.p * 100) : (q.p * 100).toFixed(1).replace('.', ',')} % chance{why ? '' : ` · odds ${(100 / q.ask).toFixed(2).replace('.', ',')}`}</>}
                 </p>
                 {target.kind === 'x12' && <p className="tray-note">Samme udbetaling som {target.o === 1 ? 'Uafgjort' : 'BIF'} i baren, til samme kurs.</p>}
                 {target.kind === 'tot' && target.line === 2.5 && <p className="tray-note">Over 2,5 er kampens anden kurs: den samme som i viften og baren.</p>}
                 <div className="chips" role="group" aria-label="Indsats">
                   {[25, 50, 100, 250].map((c) => <button key={c} className={c === stake ? 'on' : ''} aria-pressed={c === stake} onClick={() => setStake(c)}><span className="num">{c}</span> kr</button>)}
                 </div>
-                <div className="tray-pay"><span>Udbetaling ved sejr</span><b className="num">{fmtKr(shares)}</b></div>
+                {!why && <div className="tray-pay"><span>Udbetaling ved sejr</span><b className="num">{fmtKr(shares)}</b></div>}
                 {pending ? (
                   pending.state === 'lock' ? <div className="lock" role="status"><span className="lock-ring" aria-hidden="true" /> Låser kurs {pending.lockedAsk} …</div>
                   : <div className="requote"><span>Kursen flyttede sig – acceptér {pending.newAsk}?</span><button className="tray-cancel" onClick={() => store.cancelPending()}>Annullér</button><button className="tray-buy" onClick={() => store.acceptRequote()}>Acceptér</button></div>

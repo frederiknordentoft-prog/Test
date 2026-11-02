@@ -1,0 +1,35 @@
+<div class="del" id="del1"><span>Del I</span><h1 class="delh">Spillet</h1><p>Første del viser UDFALD, som du møder det på telefonen: skærmene, handlerne og de tre nye funktioner. Alle billeder er fra den samme kamp.</p></div>
+
+<h1 class="kapitel" id="k1" data-nr="1">UDFALD på én side</h1>
+<p class="ingress">I UDFALD køber du ikke et odds på en kupon. Du køber andele i et udfald, og mens du gør det, ser du 100 af kampens mulige fremtider.</p>
+
+<h2 id="k1-andel">En andel betaler 1 kr eller 0</h2>
+<p>Alt i appen bygger på én slags kontrakt: en <b>andel</b>, der udbetaler 1 kr, hvis udfaldet sker, og ellers 0. Prisen hedder <b>kurs</b> og går fra 0 til 100. Kurs 45 betyder, at én andel koster 0,45 kr.</p>
+<p>Du vælger et beløb, og appen køber så mange hele andele, som beløbet rækker til. {{koeb.fck.indsats}} på FCK til kurs {{koeb.fck.kurs}} gav {{koeb.fck.andele}} andele for {{koeb.fck.kr}}. Vinder FCK, betaler de {{koeb.fck.andele}} kr; ellers betaler de 0.</p>
+<!-- kilde: src/engine/book/portfolio.ts:63-66, src/engine/book/portfolio.ts:160-163 -->
+<p>Alt er fiktivt. Du starter med {{k.START_SALDO}} i spillepenge, kurserne kommer fra en simulation, og der er ingen rigtige penge. Appen hed ØRE, før den blev omdøbt. Det nye navn siger, hvad du køber: et udfald.</p>
+<!-- kilde: README.md:3, src/engine/book/portfolio.ts:30, docs/PLAN.md:468-471 -->
+
+<h2 id="k1-kurs">Kurs er chance plus husets andel</h2>
+<p>Kursen ligger tæt på chancen for udfaldet, men lidt over. Forskellen er <b>husets andel</b>. Ved 20′ stod FCK i kurs {{t20.kursFCK}}, mens markedets chance for FCK-sejr var {{t20.midFCK}}. De tre kurser for FCK, uafgjort og BIF summerede til {{t20.sumKurs}} og ikke til 100. Huset lægger 3 % oveni og fordeler dem, så favoritten bærer en mindre del end de store overraskelser.</p>
+<!-- kilde: src/engine/football/sim.ts:534-536, src/engine/lib/quote.ts:1-17 -->
+<p>Vil du sælge, får du <b>salgskursen</b>, som ligger et par point under kursen. Ved 20′ var den {{t20.salgFCK}} for FCK. Odds står kun som sekundær tekst og er 100 ÷ kurs, så kurs {{t20.kursFCK}} svarer til odds 2,22.</p>
+<!-- kilde: src/ui/kamp/Kampen.tsx:166 -->
+
+<figure class="fig" data-fig="kurs-chance"><figcaption><b>Figur:</b> Kurs mod chance. Kursen er chancen plus husets andel, og en andel betaler 1 kr, hvis udfaldet sker.</figcaption></figure>
+
+<h2 id="k1-anderledes">Ikke en traditionel sportsbook</h2>
+<ul>
+<li><b>100 fremtider i stedet for en odds-tabel.</b> Kampskærmen viser 100 simulerede forløb af resten af kampen, <b>fremtidsviften</b>. Tallet ved højre kant tæller, hvor mange af dem der ender med hvert udfald, og det tal er chancen.</li>
+<li><b>Du kan sælge når som helst.</b> Kursen lever med kampen, og du kan sælge hele eller en del af din position til salgskursen. Undtagelsen er et <b>handelsstop</b>, en kort pause i handlen efter mål, rødt kort og under VAR.</li>
+<li><b>Prisen har en synlig årsag.</b> En <b>årsagschip</b> over viften siger med ord, hvorfor kursen har flyttet sig de seneste 2 kampminutter: et mål, tiden, pres, hjørnespark eller en storordre.</li>
+</ul>
+<!-- kilde: src/engine/mc/paths.ts:292-294, src/ui/kamp/Kampen.tsx:436-456, src/state/match.ts:705-711, src/engine/football/display.ts:222-250 -->
+
+<h2 id="k1-nyt">Tre nye funktioner</h2>
+<ul>
+<li><b>Mål i alt og slutresultat.</b> Over 2,5 mål er kampens anden kurs med sin egen vifte, og fanen <span class="ui">Mål</span> sælger slutresultater på et 6×6-kort og Over/Under fra 0,5 til 4,5 mål (kapitel 6).</li>
+<li><b>Sikring.</b> På en position i FCK, X, BIF eller Over 2,5 kan du sætte et stop-loss, der sælger, hvis kursen falder for langt, og en Sikr gevinst, der sælger, når den er steget nok (kapitel 7).</li>
+<li><b>Parken-puljen.</b> En pulje på kampens vinder mod et simuleret publikum, hvor dem, der ramte rigtigt, deler puljen, efter huset har taget {{k.POOL_TAKE}} (kapitel 8).</li>
+</ul>
+<!-- kilde: src/engine/football/display.ts:12-14, src/state/match.ts:27, src/engine/book/portfolio.ts:34, docs/PLAN.md:476-505 -->

@@ -1,0 +1,248 @@
+{
+ "name": "22-demo-var",
+ "height": 844,
+ "k": 2702,
+ "t": 64.09999999999745,
+ "phase": "2H",
+ "score": "0-1",
+ "focus": 0,
+ "halted": true,
+ "ask": [
+  10,
+  30,
+  63
+ ],
+ "bid": [
+  6,
+  26,
+  59
+ ],
+ "o25": {
+  "ask": [
+   28,
+   78
+  ],
+  "bid": [
+   24,
+   74
+  ],
+  "mid": 0.24237931586297237
+ },
+ "counts": [
+  9,
+  29,
+  62
+ ],
+ "rects": {
+  ".kb": [
+   0,
+   0,
+   390,
+   45
+  ],
+  ".ih": [
+   0,
+   45,
+   390,
+   86
+  ],
+  ".ih-label": [
+   16,
+   49,
+   92.5,
+   24
+  ],
+  ".ih-price": [
+   16,
+   73,
+   92.5,
+   56
+  ],
+  ".ih-futures": [
+   302,
+   53,
+   72,
+   20
+  ],
+  ".fan-wrap": [
+   0,
+   131,
+   390,
+   355
+  ],
+  ".ab": [
+   0,
+   486,
+   390,
+   58
+  ],
+  ".mv": [
+   0,
+   544,
+   390,
+   84
+  ],
+  ".mv-h": [
+   12,
+   548,
+   366,
+   19
+  ],
+  ".mv-bars": null,
+  ".mv-ag": null,
+  ".pc": [
+   10,
+   632,
+   370,
+   156
+  ],
+  ".pc-sikring": [
+   23,
+   690,
+   64.8,
+   30
+  ],
+  ".fader": [
+   23,
+   727,
+   344,
+   30
+  ],
+  ".bb": [
+   0,
+   792,
+   390,
+   52
+  ],
+  ".tray": null,
+  ".toasts": [
+   12,
+   52,
+   366,
+   0
+  ],
+  ".fan-head": [
+   118,
+   409.9,
+   10,
+   10
+  ]
+ },
+ "liveTexts": [
+  {
+   "text": "−24 point",
+   "x": 33.83071143231538,
+   "y": 40,
+   "align": "left",
+   "px": 33.8,
+   "py": 171
+  },
+  {
+   "text": "HANDEL STOPPET · VAR-tjek",
+   "x": 129,
+   "y": 323,
+   "align": "left",
+   "px": 129,
+   "py": 454
+  },
+  {
+   "text": "Godkendt ≈ 33",
+   "x": 169,
+   "y": 163.39175824259635,
+   "align": "left",
+   "px": 169,
+   "py": 294.4
+  },
+  {
+   "text": "Annulleret ≈ 10",
+   "x": 169,
+   "y": 279.2422279987314,
+   "align": "left",
+   "px": 169,
+   "py": 410.2
+  },
+  {
+   "text": "NU 64′",
+   "x": 123,
+   "y": 349,
+   "align": "center",
+   "px": 123,
+   "py": 480
+  },
+  {
+   "text": "0′",
+   "x": 10,
+   "y": 349,
+   "align": "left",
+   "px": 10,
+   "py": 480
+  },
+  {
+   "text": "90+",
+   "x": 324,
+   "y": 349,
+   "align": "right",
+   "px": 324,
+   "py": 480
+  },
+  {
+   "text": "9",
+   "x": 332,
+   "y": 44,
+   "align": "left",
+   "px": 332,
+   "py": 175
+  },
+  {
+   "text": "FCK",
+   "x": 348,
+   "y": 43,
+   "align": "left",
+   "px": 348,
+   "py": 174
+  },
+  {
+   "text": "29",
+   "x": 332,
+   "y": 317,
+   "align": "left",
+   "px": 332,
+   "py": 448
+  },
+  {
+   "text": "X",
+   "x": 352,
+   "y": 316,
+   "align": "left",
+   "px": 352,
+   "py": 447
+  },
+  {
+   "text": "62",
+   "x": 332,
+   "y": 333,
+   "align": "left",
+   "px": 332,
+   "py": 464
+  },
+  {
+   "text": "BIF",
+   "x": 352,
+   "y": 332,
+   "align": "left",
+   "px": 352,
+   "py": 463
+  },
+  {
+   "text": "Rolig handel · under 1 point på 2 kampmin",
+   "x": 20,
+   "y": 18,
+   "align": "left",
+   "px": 20,
+   "py": 149
+  }
+ ],
+ "text": "‹\nU\nFCK\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n–\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\nBIF\n64′\nVAR\nLyd\nFCK vinder ▾\nkurs\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n9 % chance\nodds 10,00 · sælg kurs 6\nBag vindertempo · -69 point\nFCK\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\nX\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\nBIF\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n\nVAR-tjek · Målet står? 90 %\n\nJa · 92\nNej · 16\nFCK vinder · 1075 andele @ kurs 33\nVed sejr 1.075 kr\nVærdi nu 64,50 kr\n▼ 285 kr\nsælg til kurs 6\nSikring\nAlt\n½\n\nSalg åbner efter stoppet\n\nByg\nen fremtid\nMål\nOver 2,5 · 28\nPulje\nlukket\nPortefølje\n−310,48 kr",
+ "toasts": [],
+ "log": 4
+}

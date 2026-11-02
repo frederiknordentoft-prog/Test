@@ -1,0 +1,188 @@
+{
+ "name": "10-pulje-aaben",
+ "height": 846,
+ "k": 990,
+ "t": 24.024999999999704,
+ "phase": "1H",
+ "score": "0-0",
+ "focus": "o25",
+ "halted": false,
+ "ask": [
+  44,
+  34,
+  25
+ ],
+ "bid": [
+  40,
+  30,
+  21
+ ],
+ "o25": {
+  "ask": [
+   37,
+   69
+  ],
+  "bid": [
+   33,
+   65
+  ],
+  "mid": 0.3314566421350046
+ },
+ "counts": [
+  33,
+  67
+ ],
+ "rects": {
+  ".kb": null,
+  ".ih": null,
+  ".ih-label": null,
+  ".ih-price": null,
+  ".ih-futures": null,
+  ".fan-wrap": null,
+  ".ab": null,
+  ".mv": null,
+  ".mv-h": null,
+  ".mv-bars": null,
+  ".mv-ag": null,
+  ".pc": null,
+  ".pc-sikring": null,
+  ".fader": null,
+  ".bb": null,
+  ".tray": null,
+  ".toasts": null,
+  ".fan-head": null
+ },
+ "liveTexts": [
+  {
+   "text": "Stop 30",
+   "x": 117,
+   "y": 271.1585776039563,
+   "align": "right",
+   "px": 117,
+   "py": 271.2
+  },
+  {
+   "text": "Sikr gevinst 50",
+   "x": 117,
+   "y": 142.083594647646,
+   "align": "right",
+   "px": 117,
+   "py": 142.1
+  },
+  {
+   "text": "NU 24′",
+   "x": 123,
+   "y": 371,
+   "align": "center",
+   "px": 123,
+   "py": 371
+  },
+  {
+   "text": "0′",
+   "x": 10,
+   "y": 371,
+   "align": "left",
+   "px": 10,
+   "py": 371
+  },
+  {
+   "text": "90+",
+   "x": 324,
+   "y": 371,
+   "align": "right",
+   "px": 324,
+   "py": 371
+  },
+  {
+   "text": "33",
+   "x": 332,
+   "y": 44,
+   "align": "left",
+   "px": 332,
+   "py": 44
+  },
+  {
+   "text": "Over",
+   "x": 358,
+   "y": 43,
+   "align": "left",
+   "px": 358,
+   "py": 43
+  },
+  {
+   "text": "67",
+   "x": 332,
+   "y": 339,
+   "align": "left",
+   "px": 332,
+   "py": 339
+  },
+  {
+   "text": "Under",
+   "x": 352,
+   "y": 338,
+   "align": "left",
+   "px": 352,
+   "py": 338
+  },
+  {
+   "text": "Mål BIF",
+   "x": 332,
+   "y": 98.5643362221912,
+   "align": "left",
+   "px": 332,
+   "py": 98.6
+  },
+  {
+   "text": "→ 65",
+   "x": 332,
+   "y": 112.5643362221912,
+   "align": "left",
+   "px": 332,
+   "py": 112.6
+  },
+  {
+   "text": "Mål FCK",
+   "x": 332,
+   "y": 128.5643362221912,
+   "align": "left",
+   "px": 332,
+   "py": 128.6
+  },
+  {
+   "text": "→ 63",
+   "x": 332,
+   "y": 142.5643362221912,
+   "align": "left",
+   "px": 332,
+   "py": 142.6
+  },
+  {
+   "text": "Intet mål 10′",
+   "x": 332,
+   "y": 259.43575018922184,
+   "align": "left",
+   "px": 332,
+   "py": 259.4
+  },
+  {
+   "text": "→ 29",
+   "x": 332,
+   "y": 273.43575018922184,
+   "align": "left",
+   "px": 332,
+   "py": 273.4
+  },
+  {
+   "text": "Rolig handel · under 1 point på 2 kampmin",
+   "x": 20,
+   "y": 18,
+   "align": "left",
+   "px": 20,
+   "py": 18
+  }
+ ],
+ "text": "‹\nParken-puljen\n0–0 · 24′\n\nAlle indsatser på kampens resultat i én pulje. Vinderne deler puljen efter husets 10 %. Jo færre der står på din side, jo mere får du.\n\nPuljen\n366.920 kr\nPublikum (simuleret)\n4.334 indsatser\n\nÅben · lukker ved pausen om 21 min\n\nFCK\n163.259 kr\nodds ≈ 2,02\nX\n119.068 kr\nodds ≈ 2,77\ndig 200 kr\nBIF\n84.593 kr\nodds ≈ 3,90\n\nOddsene er skøn: de låses ved pausen, når puljen lukker.\n\nUafgjort · odds ≈ 2,77 (låses ved pausen)\n\n50 kr\n100 kr\n250 kr\n500 kr\nDin udbetaling, hvis uafgjort (skøn)\n832 kr\ni alt 300 kr på X med denne indsats\nSæt 100 kr på X",
+ "toasts": [],
+ "log": 5
+}

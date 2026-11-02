@@ -1,0 +1,120 @@
+/* UDFALD-rapporten: mørkt A4, appens tokens og skrifter. */
+@font-face { font-family: "UDF Tight"; src: url(/nm/@fontsource-variable/inter-tight/files/inter-tight-latin-wght-normal.woff2) format("woff2"); font-weight: 100 900; font-style: normal; }
+@font-face { font-family: "UDF Tight"; src: url(/nm/@fontsource-variable/inter-tight/files/inter-tight-latin-ext-wght-normal.woff2) format("woff2"); font-weight: 100 900; font-style: normal; unicode-range: U+0100-024F, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "UDF Tight"; src: url(/nm/@fontsource-variable/inter-tight/files/inter-tight-latin-wght-italic.woff2) format("woff2"); font-weight: 100 900; font-style: italic; }
+@font-face { font-family: "UDF Flex"; src: url(/nm/@fontsource-variable/roboto-flex/files/roboto-flex-latin-full-normal.woff2) format("woff2"); font-weight: 100 1000; font-stretch: 25% 151%; }
+@font-face { font-family: "UDF Serif"; src: url(/nm/@fontsource/instrument-serif/files/instrument-serif-latin-400-italic.woff2) format("woff2"); font-style: italic; }
+
+:root {
+  --bg: #07090c; --s1: #0e1217; --s2: #151a21; --line: #232a35; --grid: #1a2029;
+  --text: #e8edf2; --body: #c7ced8; --muted: #8a94a3; --udsigt: #b9c2ce;
+  --fck: #5ce1ff; --bif: #ffd200; --goals: #ff5fa2; --up: #3ddc97; --down: #ff6b5e; --trap: #c58bff;
+  --ui: "UDF Tight", "Inter", "DejaVu Sans", sans-serif;
+  --num: "UDF Flex", "Inter", "DejaVu Sans", sans-serif;
+  --serif: "UDF Serif", "DejaVu Serif", serif;
+}
+
+@page { size: A4; margin: 15mm 16mm 17mm; background: #07090c;
+  @bottom-left { content: "UDFALD · spillet, de nye mekanismer og maskinrummet"; color: #5d6673; font: 500 7.2pt "UDF Tight", "Inter", sans-serif; letter-spacing: 0.02em; }
+  @bottom-right { content: counter(page); color: #8a94a3; font: 650 7.6pt "UDF Flex", "Inter", sans-serif; } }
+@page cover { margin: 0; @bottom-left { content: none } @bottom-right { content: none } }
+@page del { @bottom-left { content: none } }
+
+html { background: var(--bg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { margin: 0; color: var(--body); font: 400 9.4pt/1.52 var(--ui); font-feature-settings: "tnum" 0; text-rendering: geometricPrecision; }
+p, li, dd { orphans: 3; widows: 3; text-wrap: pretty; }
+b, strong { color: var(--text); font-weight: 650; }
+a { color: inherit; text-decoration: none; }
+code { font: 500 0.88em/1 "DejaVu Sans Mono", monospace; color: #d6dde6; background: var(--s2); border: 0.5px solid var(--line); border-radius: 3px; padding: 0.5px 3px; }
+.num, td.n { font-family: var(--num); font-variant-numeric: tabular-nums; }
+
+/* --- Cover -------------------------------------------------------------------------------------- */
+.cover { page: cover; position: relative; height: 297mm; width: 210mm; overflow: hidden; break-after: page;
+  background: radial-gradient(ellipse 120% 70% at 72% 38%, #10202b 0%, #0a1118 45%, #07090c 75%); }
+.cover .wordmark { position: absolute; left: 20mm; top: 34mm; font: 760 54pt/1 var(--num); color: var(--text); letter-spacing: 0.01em; }
+.cover .wordmark::after { content: ""; position: absolute; left: 1mm; right: 1mm; bottom: -5mm; height: 2.2mm; border-radius: 1mm; background: linear-gradient(90deg, rgba(92,225,255,0.15), var(--fck)); transform: skewY(-2.5deg); transform-origin: left; }
+.cover .title { position: absolute; left: 20mm; top: 66mm; width: 92mm; font: italic 26pt/1.12 var(--serif); color: var(--text); }
+.cover .sub { position: absolute; left: 20mm; top: 116mm; width: 88mm; font: 400 10.5pt/1.5 var(--ui); color: var(--udsigt); }
+.cover .meta { position: absolute; left: 20mm; bottom: 22mm; width: 92mm; font: 500 8.6pt/1.6 var(--ui); color: var(--muted); }
+.cover .meta b { color: var(--text); }
+.cover .hero { position: absolute; right: 18mm; top: 40mm; width: 74mm; }
+.cover .hero img { width: 100%; border-radius: 8mm; border: 0.6mm solid #232a35; display: block; }
+.cover .new { position: absolute; left: 20mm; top: 158mm; width: 92mm; display: grid; gap: 3mm; }
+.cover .new div { border-left: 1mm solid var(--goals); padding: 1mm 0 1mm 3.5mm; font: 400 9pt/1.45 var(--ui); color: var(--udsigt); }
+.cover .new div b { display: block; font: 650 10.5pt/1.3 var(--ui); color: var(--text); }
+
+/* --- Table of contents -------------------------------------------------------------------------- */
+.toc { break-after: page; }
+.toc h1 { font: 720 24pt/1.1 var(--num); color: var(--text); margin: 4mm 0 8mm; }
+.toc .part { font: italic 15pt/1.2 var(--serif); color: var(--fck); margin: 6mm 0 2mm; }
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc li { display: flex; align-items: baseline; gap: 2mm; padding: 1.2mm 0; border-bottom: 0.3mm solid var(--grid); font: 500 10pt/1.3 var(--ui); color: var(--text); }
+.toc li .nr { width: 9mm; flex: none; font: italic 12pt var(--serif); color: var(--fck); }
+.toc li .t { flex: 1; }
+.toc li .pg { width: 10mm; text-align: right; font: 650 9.5pt var(--num); color: var(--udsigt); font-variant-numeric: tabular-nums; }
+.toc li.sub { border: 0; padding: 0.3mm 0 0.3mm 11mm; font: 400 8.6pt/1.35 var(--ui); color: var(--muted); }
+.toc li.sub .pg { color: var(--muted); font-weight: 500; font-size: 8.4pt; }
+.toc li.ny .t::after { content: "NYT"; margin-left: 2mm; font: 700 6.5pt var(--ui); letter-spacing: 0.08em; color: var(--goals); border: 0.3mm solid var(--goals); border-radius: 1mm; padding: 0 1mm; vertical-align: 1px; }
+
+/* --- Part dividers --------------------------------------------------------------------------------- */
+.del { page: del; break-before: page; break-after: page; height: 250mm; display: flex; flex-direction: column; justify-content: center; padding-left: 4mm; }
+.del > span { font: italic 34pt/1 var(--serif); color: var(--fck); }
+.del .delh { font: 760 44pt/1.05 var(--num); color: var(--text); margin: 3mm 0 6mm; break-before: auto; }
+.del p { max-width: 120mm; font: 400 11pt/1.55 var(--ui); color: var(--udsigt); }
+
+/* --- Headings ------------------------------------------------------------------------------------- */
+h1.kapitel { break-before: page; font: 720 22pt/1.12 var(--num); color: var(--text); margin: 0 0 4mm; padding-top: 1mm; display: flex; align-items: baseline; gap: 3.5mm; }
+h1.kapitel::before { content: attr(data-nr); font: italic 34pt/0.9 var(--serif); color: var(--fck); min-width: 0; }
+h1.kapitel[data-nr=""]::before { display: none; }
+.del + h1.kapitel { break-before: auto; }
+p.ingress { font: 400 11pt/1.5 var(--ui); color: var(--udsigt); margin: 0 0 5mm; max-width: 150mm; }
+h2 { font: 680 13pt/1.25 var(--num); color: var(--text); margin: 6mm 0 2mm; break-after: avoid; }
+h3 { font: 650 10.4pt/1.3 var(--ui); color: var(--text); margin: 4mm 0 1.2mm; break-after: avoid; }
+p { margin: 0 0 2.4mm; }
+ul, ol { margin: 0 0 2.6mm; padding-left: 5mm; }
+li { margin: 0 0 1mm; }
+li::marker { color: var(--muted); }
+.ui { font: 600 0.9em/1 var(--ui); color: var(--text); background: var(--s2); border: 0.3mm solid var(--line); border-radius: 1.2mm; padding: 0.2mm 1.3mm; white-space: nowrap; }
+
+/* --- Phones (Part I) ------------------------------------------------------------------------------ */
+section.duo { display: grid; grid-template-columns: 1fr 64mm; gap: 7mm; align-items: start; margin: 2mm 0 5mm; break-inside: avoid; }
+section.duo.venstre { grid-template-columns: 64mm 1fr; }
+section.duo.venstre > figure { order: -1; }
+section.duo .txt > :first-child { margin-top: 0; }
+figure.phone { margin: 0; break-inside: avoid; }
+figure.phone img { display: block; width: 100%; max-height: 196mm; object-fit: contain; object-position: top center; border-radius: 4.2mm; border: 0.4mm solid #2a323e; background: #07090c; }
+figure.phone.tall img { width: auto; max-width: 100%; margin: 0 auto; }
+figure.phone figcaption, figure.fig figcaption { font: 400 7.9pt/1.45 var(--ui); color: var(--muted); margin-top: 2mm; }
+figure.phone figcaption b, figure.fig figcaption b { color: var(--udsigt); font-weight: 650; }
+.phones { display: flex; gap: 5mm; margin: 2mm 0 5mm; break-inside: avoid; justify-content: flex-start; align-items: flex-start; }
+.phones figure.phone { flex: 0 1 54mm; }
+.phones figure.phone.sm img { max-height: 120mm; }
+
+/* Anatomy: numbered badges on the hero shot. */
+figure.phone.anat { position: relative; }
+figure.phone.anat .pic { position: relative; }
+figure.phone.anat .badge { position: absolute; width: 4.6mm; height: 4.6mm; margin: -2.3mm 0 0 -2.3mm; border-radius: 50%; background: #07090c; border: 0.45mm solid var(--fck); color: var(--text); font: 700 6.6pt/4.4mm var(--num); text-align: center; box-sizing: border-box; }
+ol.anat { list-style: none; counter-reset: a; padding: 0; margin: 0; }
+ol.anat > li { counter-increment: a; position: relative; padding-left: 7mm; margin: 0 0 1.6mm; font-size: 8.9pt; line-height: 1.45; }
+ol.anat > li::before { content: counter(a); position: absolute; left: 0; top: 0.2mm; width: 4.6mm; height: 4.6mm; border-radius: 50%; border: 0.45mm solid var(--fck); box-sizing: border-box; color: var(--text); font: 700 6.6pt/4.2mm var(--num); text-align: center; }
+
+/* --- Figures, callouts, formulas, tables ---------------------------------------------------------- */
+figure.fig { margin: 3mm 0 5mm; padding: 4mm 4mm 3mm; background: var(--s1); border: 0.3mm solid var(--line); border-radius: 3mm; break-inside: avoid; }
+figure.fig svg { display: block; width: 100%; height: auto; }
+.callout { margin: 3mm 0 4mm; padding: 2.8mm 3.6mm; background: var(--s1); border: 0.3mm solid var(--line); border-left: 1.2mm solid var(--fck); border-radius: 2mm; break-inside: avoid; font-size: 9pt; }
+.callout.ny { border-left-color: var(--goals); }
+.callout.advarsel { border-left-color: var(--down); }
+.callout > :last-child { margin-bottom: 0; }
+.formel { margin: 2.5mm 0 3.5mm; padding: 2.6mm 4mm; background: var(--s2); border-radius: 2mm; font: 450 9.4pt/1.75 var(--num); color: var(--text); break-inside: avoid; }
+.formel i { font-family: var(--serif); font-size: 1.12em; color: #f1f4f7; }
+.formel .hvor { display: block; font: 400 8.2pt/1.45 var(--ui); color: var(--muted); margin-top: 0.8mm; }
+table.t { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 8.4pt; line-height: 1.35; }
+table.t thead { display: table-header-group; }
+table.t th { text-align: left; font: 650 7.2pt/1.3 var(--ui); color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; padding: 1.4mm 2mm; border-bottom: 0.4mm solid var(--line); background: var(--s1); }
+table.t td { padding: 1.2mm 2mm; border-bottom: 0.25mm solid var(--grid); vertical-align: top; }
+table.t tr { break-inside: avoid; }
+table.t td.n, table.t th.n { text-align: right; }
+dl.ord { margin: 0; columns: 2; column-gap: 8mm; }
+dl.ord dt { font: 650 9pt/1.3 var(--ui); color: var(--text); margin-top: 2mm; break-after: avoid; }
+dl.ord dd { margin: 0.4mm 0 0; font-size: 8.5pt; line-height: 1.42; break-inside: avoid; }
+.k { color: var(--muted); font-size: 7.6pt; }

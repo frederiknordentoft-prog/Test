@@ -1,0 +1,258 @@
+{
+ "name": "14-over25-efter-maal",
+ "height": 844,
+ "k": 1214,
+ "t": 29.624999999999385,
+ "phase": "1H",
+ "score": "1-0",
+ "focus": "o25",
+ "halted": false,
+ "ask": [
+  70,
+  23,
+  10
+ ],
+ "bid": [
+  68,
+  21,
+  8
+ ],
+ "o25": {
+  "ask": [
+   59,
+   47
+  ],
+  "bid": [
+   57,
+   45
+  ],
+  "mid": 0.5634750765754256
+ },
+ "counts": [
+  56,
+  44
+ ],
+ "rects": {
+  ".kb": [
+   0,
+   0,
+   390,
+   45
+  ],
+  ".ih": [
+   0,
+   45,
+   390,
+   86
+  ],
+  ".ih-label": [
+   16,
+   49,
+   92.5,
+   24
+  ],
+  ".ih-price": [
+   16,
+   73,
+   92.5,
+   56
+  ],
+  ".ih-futures": [
+   294.1,
+   67.5,
+   79.9,
+   20
+  ],
+  ".fan-wrap": [
+   0,
+   131,
+   390,
+   419
+  ],
+  ".ab": [
+   0,
+   550,
+   390,
+   58
+  ],
+  ".mv": [
+   0,
+   608,
+   390,
+   84
+  ],
+  ".mv-h": [
+   12,
+   617,
+   207.1,
+   18
+  ],
+  ".mv-bars": [
+   12,
+   643,
+   366,
+   32
+  ],
+  ".mv-ag": [
+   285.4,
+   612,
+   92.6,
+   28
+  ],
+  ".pc": [
+   10,
+   696,
+   370,
+   92
+  ],
+  ".pc-sikring": null,
+  ".fader": null,
+  ".bb": [
+   0,
+   792,
+   390,
+   52
+  ],
+  ".tray": null,
+  ".toasts": [
+   12,
+   52,
+   366,
+   0
+  ],
+  ".fan-head": [
+   118,
+   317.6,
+   10,
+   10
+  ]
+ },
+ "liveTexts": [
+  {
+   "text": "+29 point",
+   "x": 119.9705518527342,
+   "y": 40,
+   "align": "left",
+   "px": 120,
+   "py": 171
+  },
+  {
+   "text": "NU 29′",
+   "x": 123,
+   "y": 413,
+   "align": "center",
+   "px": 123,
+   "py": 544
+  },
+  {
+   "text": "0′",
+   "x": 10,
+   "y": 413,
+   "align": "left",
+   "px": 10,
+   "py": 544
+  },
+  {
+   "text": "90+",
+   "x": 324,
+   "y": 413,
+   "align": "right",
+   "px": 324,
+   "py": 544
+  },
+  {
+   "text": "56",
+   "x": 332,
+   "y": 44,
+   "align": "left",
+   "px": 332,
+   "py": 175
+  },
+  {
+   "text": "Over",
+   "x": 358,
+   "y": 43,
+   "align": "left",
+   "px": 358,
+   "py": 174
+  },
+  {
+   "text": "44",
+   "x": 332,
+   "y": 381,
+   "align": "left",
+   "px": 332,
+   "py": 512
+  },
+  {
+   "text": "Under",
+   "x": 352,
+   "y": 380,
+   "align": "left",
+   "px": 352,
+   "py": 511
+  },
+  {
+   "text": "Mål FCK",
+   "x": 332,
+   "y": 67,
+   "align": "left",
+   "px": 332,
+   "py": 198
+  },
+  {
+   "text": "→ 87",
+   "x": 332,
+   "y": 81,
+   "align": "left",
+   "px": 332,
+   "py": 212
+  },
+  {
+   "text": "Mål BIF",
+   "x": 332,
+   "y": 97,
+   "align": "left",
+   "px": 332,
+   "py": 228
+  },
+  {
+   "text": "→ 87",
+   "x": 332,
+   "y": 111,
+   "align": "left",
+   "px": 332,
+   "py": 242
+  },
+  {
+   "text": "Intet mål 10′",
+   "x": 332,
+   "y": 248.06523204302258,
+   "align": "left",
+   "px": 332,
+   "py": 379.1
+  },
+  {
+   "text": "→ 50",
+   "x": 332,
+   "y": 262.06523204302255,
+   "align": "left",
+   "px": 332,
+   "py": 393.1
+  },
+  {
+   "text": "▲ 27 point: mål FCK 28′",
+   "x": 20,
+   "y": 18,
+   "align": "left",
+   "px": 20,
+   "py": 149
+  }
+ ],
+ "text": "‹\nU\nFCK\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n–\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\nBIF\n29′\nÅBEN\nLyd\nOver 2,5 mål ▾\nkurs\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n56 % chance\nodds 1,69 · sælg kurs 57\nOver 2,5\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\nUnder 2,5\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n\nEt mål er sandsynligt inden 55′ (52 %)\n\nEfter målet 20\n✓\n25′\npause\n90+\n\n2 åbene positioner · værdi 410,64 kr. Se porteføljen\n\nByg\nen fremtid\nMål\nOver 2,5 · 59\nPulje\nåben til pausen\nPortefølje\n+49,41 kr",
+ "toasts": [
+  "Gevinst sikret: solgt 512 @ kurs 54 · 276,48 kr",
+  "Stop-loss udløst: solgt 769 @ kurs 8"
+ ],
+ "log": 7
+}

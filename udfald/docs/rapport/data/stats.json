@@ -1,0 +1,749 @@
+{
+ "goals": {
+  "perMatch": 2.6487,
+  "fckWin": 0.4627,
+  "n": 1500
+ },
+ "cal1x2": [
+  {
+   "p": 0.042,
+   "y": 0.0322,
+   "n": 1148
+  },
+  {
+   "p": 0.1478,
+   "y": 0.1458,
+   "n": 480
+  },
+  {
+   "p": 0.2369,
+   "y": 0.2374,
+   "n": 577
+  },
+  {
+   "p": 0.3586,
+   "y": 0.3599,
+   "n": 1003
+  },
+  {
+   "p": 0.4317,
+   "y": 0.4138,
+   "n": 1636
+  },
+  {
+   "p": 0.6925,
+   "y": 0.7202,
+   "n": 243
+  },
+  {
+   "p": 0.7336,
+   "y": 0.7411,
+   "n": 846
+  },
+  {
+   "p": 0.8289,
+   "y": 0.798,
+   "n": 297
+  },
+  {
+   "p": 0.9627,
+   "y": 0.9579,
+   "n": 903
+  }
+ ],
+ "calO25": [
+  {
+   "p": 0.0719,
+   "y": 0.0759,
+   "n": 791,
+   "se": 0.0092
+  },
+  {
+   "p": 0.1728,
+   "y": 0.1707,
+   "n": 791,
+   "se": 0.0134
+  },
+  {
+   "p": 0.2796,
+   "y": 0.2832,
+   "n": 791,
+   "se": 0.016
+  },
+  {
+   "p": 0.3461,
+   "y": 0.3489,
+   "n": 791,
+   "se": 0.0169
+  },
+  {
+   "p": 0.3941,
+   "y": 0.4046,
+   "n": 791,
+   "se": 0.0174
+  },
+  {
+   "p": 0.4428,
+   "y": 0.4412,
+   "n": 791,
+   "se": 0.0177
+  },
+  {
+   "p": 0.4724,
+   "y": 0.4753,
+   "n": 791,
+   "se": 0.0178
+  },
+  {
+   "p": 0.4942,
+   "y": 0.507,
+   "n": 791,
+   "se": 0.0178
+  },
+  {
+   "p": 0.6176,
+   "y": 0.6131,
+   "n": 791,
+   "se": 0.0173
+  },
+  {
+   "p": 0.7715,
+   "y": 0.7712,
+   "n": 791,
+   "se": 0.0149
+  }
+ ],
+ "o25Kickoff": {
+  "p": 0.4728,
+  "y": 0.4807,
+  "n": 1500,
+  "samples": 7910
+ },
+ "mcVsDp": [
+  {
+   "t": 0,
+   "score": "0-0",
+   "dp": 0.4726,
+   "grid": 0.4726,
+   "mc": 0.4643,
+   "counts": [
+    47,
+    53
+   ],
+   "x12diff": 1.7003065622134272e-13
+  },
+  {
+   "t": 30,
+   "score": "1-0",
+   "dp": 0.5596,
+   "grid": 0.5596,
+   "mc": 0.548,
+   "counts": [
+    56,
+    44
+   ],
+   "x12diff": 2.1094237467877974e-15
+  },
+  {
+   "t": 55,
+   "score": "0-1",
+   "dp": 0.331,
+   "grid": 0.331,
+   "mc": 0.3258,
+   "counts": [
+    33,
+    67
+   ],
+   "x12diff": 6.661338147750939e-16
+  },
+  {
+   "t": 80,
+   "score": "1-1",
+   "dp": 0.3352,
+   "grid": 0.3352,
+   "mc": 0.3352,
+   "counts": [
+    34,
+    66
+   ],
+   "x12diff": 2.220446049250313e-16
+  }
+ ],
+ "poolBound": [
+  {
+   "qf": 0.05,
+   "perKr": [
+    0.8587,
+    0.9023,
+    0.9023
+   ]
+  },
+  {
+   "qf": 0.1,
+   "perKr": [
+    0.8609,
+    0.9046,
+    0.9046
+   ]
+  },
+  {
+   "qf": 0.15,
+   "perKr": [
+    0.863,
+    0.9069,
+    0.9069
+   ]
+  },
+  {
+   "qf": 0.2,
+   "perKr": [
+    0.8652,
+    0.9091,
+    0.9091
+   ]
+  },
+  {
+   "qf": 0.25,
+   "perKr": [
+    0.8674,
+    0.9114,
+    0.9114
+   ]
+  },
+  {
+   "qf": 0.3,
+   "perKr": [
+    0.8696,
+    0.9137,
+    0.9137
+   ]
+  },
+  {
+   "qf": 0.35,
+   "perKr": [
+    0.8717,
+    0.916,
+    0.916
+   ]
+  },
+  {
+   "qf": 0.4,
+   "perKr": [
+    0.8739,
+    0.9183,
+    0.9183
+   ]
+  },
+  {
+   "qf": 0.45,
+   "perKr": [
+    0.8761,
+    0.9206,
+    0.9206
+   ]
+  },
+  {
+   "qf": 0.5,
+   "perKr": [
+    0.8783,
+    0.9228,
+    0.9228
+   ]
+  },
+  {
+   "qf": 0.55,
+   "perKr": [
+    0.8804,
+    0.9251,
+    0.9251
+   ]
+  },
+  {
+   "qf": 0.6,
+   "perKr": [
+    0.8826,
+    0.9274,
+    0.9274
+   ]
+  },
+  {
+   "qf": 0.65,
+   "perKr": [
+    0.8848,
+    0.9297,
+    0.9297
+   ]
+  },
+  {
+   "qf": 0.7,
+   "perKr": [
+    0.887,
+    0.932,
+    0.932
+   ]
+  },
+  {
+   "qf": 0.75,
+   "perKr": [
+    0.8891,
+    0.9343,
+    0.9343
+   ]
+  },
+  {
+   "qf": 0.8,
+   "perKr": [
+    0.8913,
+    0.9365,
+    0.9365
+   ]
+  },
+  {
+   "qf": 0.85,
+   "perKr": [
+    0.8935,
+    0.9388,
+    0.9388
+   ]
+  },
+  {
+   "qf": 0.9,
+   "perKr": [
+    0.8957,
+    0.9411,
+    0.9411
+   ]
+  },
+  {
+   "qf": 0.95,
+   "perKr": [
+    0.8978,
+    0.9434,
+    0.9434
+   ]
+  }
+ ],
+ "poolBoundMax": 0.9457,
+ "pool20": {
+  "n": 20,
+  "worst": [
+   0.8965,
+   0.9393,
+   0.9303
+  ],
+  "mean": [
+   0.8792,
+   0.9235,
+   0.9215
+  ]
+ },
+ "constants": [
+  {
+   "name": "SUB",
+   "value": "SUB_",
+   "file": "src/engine/football/sim.ts",
+   "line": 14,
+   "note": ""
+  },
+  {
+   "name": "PRE_SUBS",
+   "value": "30",
+   "file": "src/engine/football/sim.ts",
+   "line": 23,
+   "note": "opening auction, 3 s at ×1"
+  },
+  {
+   "name": "HT_SUBS",
+   "value": "20",
+   "file": "src/engine/football/sim.ts",
+   "line": 24,
+   "note": ""
+  },
+  {
+   "name": "CLOSE_SUBS",
+   "value": "20",
+   "file": "src/engine/football/sim.ts",
+   "line": 25,
+   "note": ""
+  },
+  {
+   "name": "GOAL_HALT",
+   "value": "12",
+   "file": "src/engine/football/sim.ts",
+   "line": 26,
+   "note": "18 game seconds"
+  },
+  {
+   "name": "RED_HALT",
+   "value": "16",
+   "file": "src/engine/football/sim.ts",
+   "line": 27,
+   "note": ""
+  },
+  {
+   "name": "B_LIQ",
+   "value": "200000",
+   "file": "src/engine/football/sim.ts",
+   "line": 28,
+   "note": "kr per unit logit"
+  },
+  {
+   "name": "MU_TRADES",
+   "value": "8",
+   "file": "src/engine/football/sim.ts",
+   "line": 29,
+   "note": "crowd trades per game minute (2 per real second at ×1)"
+  },
+  {
+   "name": "BETA_HAWKES",
+   "value": "1 / 0.3",
+   "file": "src/engine/football/sim.ts",
+   "line": 30,
+   "note": "per game minute"
+  },
+  {
+   "name": "HALF_T",
+   "value": "1",
+   "file": "src/engine/football/sim.ts",
+   "line": 31,
+   "note": "transient flow half-life (game minutes)"
+  },
+  {
+   "name": "HALF_P",
+   "value": "15",
+   "file": "src/engine/football/sim.ts",
+   "line": 32,
+   "note": "persistent flow half-life"
+  },
+  {
+   "name": "NOISE_THETA",
+   "value": "3.2",
+   "file": "src/engine/football/sim.ts",
+   "line": 33,
+   "note": ""
+  },
+  {
+   "name": "NOISE_SD",
+   "value": "0.016",
+   "file": "src/engine/football/sim.ts",
+   "line": 34,
+   "note": ""
+  },
+  {
+   "name": "NOISE_CLIP",
+   "value": "0.02",
+   "file": "src/engine/football/sim.ts",
+   "line": 35,
+   "note": ""
+  },
+  {
+   "name": "OVERSHOOT_TAU",
+   "value": "0.125",
+   "file": "src/engine/football/sim.ts",
+   "line": 36,
+   "note": ""
+  },
+  {
+   "name": "HYST",
+   "value": "0.6",
+   "file": "src/engine/football/sim.ts",
+   "line": 37,
+   "note": "øre"
+  },
+  {
+   "name": "ATTR_LEN",
+   "value": "80",
+   "file": "src/engine/football/sim.ts",
+   "line": 38,
+   "note": "2 game minutes of substeps"
+  },
+  {
+   "name": "O25_MARGIN",
+   "value": "0.06",
+   "file": "src/engine/football/sim.ts",
+   "line": 42,
+   "note": ""
+  },
+  {
+   "name": "O25_LINE",
+   "value": "2.5",
+   "file": "src/engine/football/sim.ts",
+   "line": 43,
+   "note": ""
+  },
+  {
+   "name": "SUB",
+   "value": "0.025",
+   "file": "src/engine/football/params.ts",
+   "line": 6,
+   "note": "game minutes per substep"
+  },
+  {
+   "name": "SUBS_PER_MIN",
+   "value": "40",
+   "file": "src/engine/football/params.ts",
+   "line": 7,
+   "note": ""
+  },
+  {
+   "name": "DP_STEP",
+   "value": "0.25",
+   "file": "src/engine/football/params.ts",
+   "line": 8,
+   "note": "DP / MC resolution: 15 game seconds"
+  },
+  {
+   "name": "GRID_MAX",
+   "value": "10",
+   "file": "src/engine/football/dp.ts",
+   "line": 197,
+   "note": "extra goals per team; mass beyond is lumped at 10, never dropped"
+  },
+  {
+   "name": "GM",
+   "value": "GRID_MAX + 1",
+   "file": "src/engine/football/dp.ts",
+   "line": 198,
+   "note": ""
+  },
+  {
+   "name": "TOT_LINES",
+   "value": "[0.5, 1.5, 2.5, 3.5, 4.5]",
+   "file": "src/engine/football/display.ts",
+   "line": 12,
+   "note": ""
+  },
+  {
+   "name": "CS_N",
+   "value": "6",
+   "file": "src/engine/football/display.ts",
+   "line": 14,
+   "note": ""
+  },
+  {
+   "name": "NAMES",
+   "value": "['FCK', 'X', 'BIF']",
+   "file": "src/engine/football/display.ts",
+   "line": 40,
+   "note": ""
+  },
+  {
+   "name": "START_SALDO",
+   "value": "5000",
+   "file": "src/engine/book/portfolio.ts",
+   "line": 30,
+   "note": ""
+  },
+  {
+   "name": "MAX_STAKE",
+   "value": "1000",
+   "file": "src/engine/book/portfolio.ts",
+   "line": 31,
+   "note": ""
+  },
+  {
+   "name": "MAX_LIMITS",
+   "value": "3",
+   "file": "src/engine/book/portfolio.ts",
+   "line": 32,
+   "note": ""
+  },
+  {
+   "name": "POOL_TAKE",
+   "value": "0.1",
+   "file": "src/engine/book/portfolio.ts",
+   "line": 34,
+   "note": ""
+  },
+  {
+   "name": "STOP_REOPEN_GUARD",
+   "value": "7",
+   "file": "src/engine/book/portfolio.ts",
+   "line": 36,
+   "note": ""
+  },
+  {
+   "name": "STOP_ASK_OFFSET",
+   "value": "2",
+   "file": "src/engine/book/portfolio.ts",
+   "line": 38,
+   "note": ""
+  },
+  {
+   "name": "CS_MIN_P",
+   "value": "0.03",
+   "file": "src/state/match.ts",
+   "line": 25,
+   "note": ""
+  },
+  {
+   "name": "EXIT_CONTRACTS",
+   "value": "['1x2:F', '1x2:X', '1x2:B', O25_ID] as const",
+   "file": "src/state/match.ts",
+   "line": 27,
+   "note": ""
+  },
+  {
+   "name": "POOL_P0",
+   "value": "180000",
+   "file": "src/state/match.ts",
+   "line": 30,
+   "note": ""
+  },
+  {
+   "name": "POOL_PER_KR",
+   "value": "4",
+   "file": "src/state/match.ts",
+   "line": 31,
+   "note": ""
+  },
+  {
+   "name": "POOL_WHALE_CAP",
+   "value": "2000",
+   "file": "src/state/match.ts",
+   "line": 32,
+   "note": ""
+  },
+  {
+   "name": "POOL_N0",
+   "value": "3100",
+   "file": "src/state/match.ts",
+   "line": 33,
+   "note": ""
+  },
+  {
+   "name": "POOL_N_PER_TRADE",
+   "value": "9",
+   "file": "src/state/match.ts",
+   "line": 34,
+   "note": ""
+  },
+  {
+   "name": "POOL_BIAS",
+   "value": "[1.035, 0.985, 0.985]",
+   "file": "src/state/match.ts",
+   "line": 36,
+   "note": ""
+  },
+  {
+   "name": "POOL_TAU",
+   "value": "1",
+   "file": "src/state/match.ts",
+   "line": 37,
+   "note": "game minutes"
+  },
+  {
+   "name": "STEP",
+   "value": "STEP_",
+   "file": "src/engine/mc/paths.ts",
+   "line": 14,
+   "note": ""
+  },
+  {
+   "name": "MC_O25_LINE",
+   "value": "2.5",
+   "file": "src/engine/mc/paths.ts",
+   "line": 92,
+   "note": ""
+  },
+  {
+   "name": "OUTCOME_ID",
+   "value": "['1x2:F', '1x2:X', '1x2:B'] as const",
+   "file": "src/state/focus.ts",
+   "line": 12,
+   "note": ""
+  },
+  {
+   "name": "OUTCOME_LABEL",
+   "value": "['FCK vinder', 'Uafgjort', 'BIF vinder'] as const",
+   "file": "src/state/focus.ts",
+   "line": 13,
+   "note": ""
+  },
+  {
+   "name": "OUTCOME_SHORT",
+   "value": "['FCK', 'X', 'BIF'] as const",
+   "file": "src/state/focus.ts",
+   "line": 14,
+   "note": ""
+  },
+  {
+   "name": "O25_ID",
+   "value": "'tot:2.5:O'",
+   "file": "src/state/focus.ts",
+   "line": 15,
+   "note": ""
+  },
+  {
+   "name": "U25_ID",
+   "value": "'tot:2.5:U'",
+   "file": "src/state/focus.ts",
+   "line": 16,
+   "note": ""
+  },
+  {
+   "name": "RGB_OUTCOME",
+   "value": "['92,225,255', '150,158,172', '255,210,0'] as const",
+   "file": "src/state/focus.ts",
+   "line": 19,
+   "note": ""
+  },
+  {
+   "name": "RGB_O25",
+   "value": "['255,95,162', '150,158,172'] as const",
+   "file": "src/state/focus.ts",
+   "line": 20,
+   "note": ""
+  },
+  {
+   "name": "HEX_FOCUS",
+   "value": "{ '0': '#5ce1ff', '1': '#c8ced8', '2': '#ffd200', o25: '#ff5fa2' }",
+   "file": "src/state/focus.ts",
+   "line": 21,
+   "note": ""
+  }
+ ],
+ "params": {
+  "lamF": 1.4,
+  "lamB": 0.965,
+  "trailing": 1.18,
+  "leading": 0.9,
+  "redOwn": 0.7,
+  "redOpp": 1.18,
+  "theta": 0.2,
+  "sigma": 0.3,
+  "clip": 0.9,
+  "kickCorner": 0.08,
+  "kickChance": 0.12,
+  "kickShotOnTarget": 0.05,
+  "kappa": 0.6,
+  "tauE": 3,
+  "zoneDwell": 0.12,
+  "zoneMult": [
+   0,
+   0,
+   0.3,
+   0.9,
+   1.9,
+   2.9
+  ],
+  "cornerRate": 0.115,
+  "chanceRate": 0.07,
+  "shotRate": 0.27,
+  "beta": 0.55
+ },
+ "tests": {
+  "perFile": {
+   "football": 5,
+   "features": 3,
+   "totals": 4,
+   "demo": 1,
+   "handball": 29,
+   "mc": 4,
+   "book": 15,
+   "lib": 4
+  },
+  "total": 65
+ },
+ "commit": "a2420ce"
+}

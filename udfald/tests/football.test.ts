@@ -28,7 +28,7 @@ describe('football sim (bundled engine)', () => {
     expect(Math.abs(fck / n - 0.47)).toBeLessThan(0.035);
   });
 
-  it('1X2 asks sum to 103 ± 1 øre while open, and the price never flips on noise alone', async () => {
+  it('1X2 asks sum to 103 ± 1 points while open, and the price never flips on noise alone', async () => {
     const E = await engine();
     const s = new E.FootballSim({ seed: 'quiet', naturalGoals: false, naturalWhales: false, stoppage: 3, events: [] });
     let bad = 0;

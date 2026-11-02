@@ -480,7 +480,7 @@ Brugeren valgte tre funktioner fra fase 2-listen. Planen blev gennemgået af en 
 **Mål i alt og slutresultat**
 - **Én model:** `scoreGrid` (fremad-DP over manglende mål pr. hold, masse over 10 samlet i 10) giver 1X2, Over/Under og alle celler. Gitterets 1X2 er lig `price1x2` til 1e-11, Over er lig `totalsBack`.
 - **Over 2,5 er simulationens anden kurs:** fair pr. substep fra samme rate-gitter som 1X2, 6 % power-margin, hysterese 0,6 point, frosset under handelsstop og med eget gab ved genåbning (`gapO25`). Historikken ligger i egne arrays, så 1X2-historikken er uændret. Golden hashes for tre kampe er bit for bit de samme som før.
-- **Pris:** Over/Under-linjer 0,5–4,5 har 6 % margin. Én celle har ⌈100·p·1,15⌉, en region min(⌈100·Σp·1,10⌉, Σ celle-kurser − (n − 1)). Celler under 3 % og umulige celler er lukkede.
+- **Pris:** Over/Under-linjer 0,5–4,5 har 6 % margin. Én celle har ⌈100·p·1,15⌉, en region ⌈100·Σp·1,10⌉, med Σ celle-kurser som loft (et værn mod arbitrage, der ikke kan binde). Det oprindelige loft "Σ celle-kurser − (n − 1)" prissatte store regioner op til 2,6 point under fair chance og blev rettet under arbejdet med rapporten. Celler under 3 % og umulige celler er lukkede.
 - **Afregning:** Over afregnes ved det godkendte mål, der krydser linjen (annullerede VAR-mål tæller ikke). Et slutresultat afregnes til 0, så snart alle dets celler er umulige. Ved slutfløjt fejes resten.
 - **Rettet samtidig:** næste mål afregnes nu efter antal godkendte mål, som visningen navngiver det (før blev annullerede mål talt med). Ukendte kontrakter er aldrig åbne.
 - **Viften kan følge Over 2,5:** fokus er `0 | 1 | 2 | 'o25'`, og alt læser én `FocusSpec`. Stierne stratificeres efter Over/Under, så tally = pris ("35 Over · 65 Under").
@@ -488,7 +488,7 @@ Brugeren valgte tre funktioner fra fase 2-listen. Planen blev gennemgået af en 
 - **Pris for præcisionen:** Over 2,5 koster cirka 0,1 ms pr. substep (tre lag i DP'en mod 1X2's to), cirka 1 % CPU ved ×8.
 
 **Sikring**
-- Højst ét stop-loss og én "Sikr gevinst" pr. position, kun på 1X2 og Over/Under 2,5. Den ene annullerer den anden.
+- Højst ét stop-loss og én "Sikr gevinst" pr. position, kun på 1X2 og Over 2,5 (kontrakter med en linje i viften). Den ene annullerer den anden.
 - **Stop:** udløses, når ask − 2 ≤ niveau og markedet har været åbent mere end 7 substeps efter genåbning. Spread-udvidelse og overshoot kan altså ikke udløse det. Det sælger alt til aktuelt bid, "til første kurs efter stoppet".
 - **Sikr gevinst:** udløses, når bid ≥ niveau, så fill aldrig ligger under niveauet.
 - Aldrig under handelsstop. Ryddes, når andelene når 0. Et stop ved eller over en aktiv købsgrænse afvises (og omvendt).

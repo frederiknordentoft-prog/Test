@@ -1,0 +1,120 @@
+
+ RUN  v5.0.5 /home/user/Test/udfald
+
+ ✓ tests/football.test.ts > football sim (bundled engine) > is deterministic: same seed and timeline give the same hash 1140ms
+ ✓ tests/features.test.ts > features > totals and final score settle on confirmed goals; exits and the pool keep the saldo identity 2445ms
+ ✓ tests/features.test.ts > features > final-score regions are never priced below their fair chance, and get the 10 % margin 3053ms
+stdout | tests/football.test.ts > football sim (bundled engine) > calibration: about 2.7 goals per match and FCK wins about 47 %
+goals/match 2.6486666666666667 fck win 0.46266666666666667
+
+ ✓ tests/football.test.ts > football sim (bundled engine) > calibration: about 2.7 goals per match and FCK wins about 47 % 4816ms
+ ✓ tests/football.test.ts > football sim (bundled engine) > 1X2 asks sum to 103 ± 1 points while open, and the price never flips on noise alone 1569ms
+ ✓ tests/football.test.ts > football sim (bundled engine) > a scripted VAR goal reaches the scripted verdict and changes the score only then 1058ms
+stdout | tests/football.test.ts > football sim (bundled engine) > price calibration: in-play fair FCK prices match outcome frequencies by decile
+deciles 0.04/0.03(1148) 0.15/0.15(480) 0.24/0.24(577) 0.36/0.36(1003) 0.43/0.41(1636) - 0.69/0.72(243) 0.73/0.74(846) 0.83/0.80(297) 0.96/0.96(903)
+
+ ✓ tests/football.test.ts > football sim (bundled engine) > price calibration: in-play fair FCK prices match outcome frequencies by decile 5130ms
+ ✓ tests/totals.test.ts > totals and final scores > the score grid sums to 1, its 1X2 equals price1x2 and its Over equals totalsBack 95ms
+ ✓ tests/totals.test.ts > totals and final scores > Monte Carlo "3+ goals" is within 2 points of the grid, and its strands start at the ask and end at 0 or 100 974ms
+stdout | tests/demo.test.ts > demo90 > runs end to end: every scripted action fills, no requotes, about 90 s
+{
+ "seconds": 81.9,
+ "marks": {
+  "kickoff@0": 3,
+  "whale@9": 10.4,
+  "goal@31.17": 27.7,
+  "half@45": 33.6,
+  "second-half@45": 37.3,
+  "var-verdict@64.1": 60.3,
+  "goal@64.1": 60.3,
+  "goal@89.35": 72.8,
+  "fulltime@93": 79.9
+ },
+ "score": "2-1",
+ "log": [
+  "buy 1x2:F 531@47 249.57",
+  "limit-fill 1x2:F 555@18 99.90",
+  "buy byg:u0+m3 208@24 49.92",
+  "buy w:60-70:J 156@32 49.92",
+  "settle w:60-70:J @100 156.00",
+  "settle 1x2:F @100 1086.00",
+  "settle byg:u0+m3 @100 208.00"
+ ],
+ "staked": 449.31000000000006,
+ "paidOut": 1450,
+ "saldo": 6000.6900000000005,
+ "rejections": [],
+ "requotes": 0
+}
+
+ ✓ tests/demo.test.ts > demo90 > runs end to end: every scripted action fills, no requotes, about 90 s 16271ms
+ ✓ tests/handball.test.ts > handball: fixture and clock > uses the fixture seed and 0.75 s substeps (80 per minute, 4 800 per match) 3ms
+ ✓ tests/handball.test.ts > handball: fixture and clock > Φ is accurate 1ms
+ ✓ tests/handball.test.ts > handball: determinism > two independent runs with the same seed and timeline give identical snapshots and history 18ms
+ ✓ tests/handball.test.ts > handball: determinism > stepping one substep at a time equals stepTo, and stepping back replays from kick-off 12ms
+ ✓ tests/handball.test.ts > handball: determinism > the live sim and the fast Monte Carlo runner are the same chain (path 0) 56ms
+ ✓ tests/handball.test.ts > handball: determinism > the difference history changes only at goals and diffAt reads it 51ms
+ ✓ tests/handball.test.ts > handball: calibration over 200 seeded matches > mean total 58–64, AaH a mild favourite, 3–4 suspensions per team, ≈ 33 s attacks 80ms
+ ✓ tests/handball.test.ts > handball: calibration over 200 seeded matches > the analytic chain statistics agree: ≈ 61 goals, AaH ≈ +2 1ms
+ ✓ tests/handball.test.ts > handball: σ and μ > analytic σ per minute matches the simulated goal-difference spread within 10 % 187ms
+ ✓ tests/handball.test.ts > handball: passive play and power play > next-attack goal probability falls ≈ 58 → 49 → 41 → 30 % as the passes run out 1ms
+ ✓ tests/handball.test.ts > handball: passive play and power play > the sim counts passes down 4 → 0 at 2–4 s per pass, and a suspension gives 2:00 power play 15ms
+ ✓ tests/handball.test.ts > handball: Stern win prices vs Monte Carlo of the chain > 38:00 AaH 21–20, AaH ball: within ±3 pp 251ms
+ ✓ tests/handball.test.ts > handball: Stern win prices vs Monte Carlo of the chain > 30:00 15–15, GOG throws off: within ±3 pp 277ms
+ ✓ tests/handball.test.ts > handball: Stern win prices vs Monte Carlo of the chain > 50:00 AaH 26–28, AaH ball: within ±3 pp 115ms
+ ✓ tests/handball.test.ts > handball: Stern win prices vs Monte Carlo of the chain > passive play: within ±3 pp 293ms
+ ✓ tests/handball.test.ts > handball: Stern win prices vs Monte Carlo of the chain > handles τ → 0 and full time 1ms
+ ✓ tests/handball.test.ts > handball: trigger (first passage) vs Monte Carlo of the chain > 38:00 +1 → Aalborg +4 før 45': within ±3 pp 79ms
+ ✓ tests/handball.test.ts > handball: trigger (first passage) vs Monte Carlo of the chain > 38:00 +1 → Aalborg +4 før 50': within ±3 pp 110ms
+ ✓ tests/handball.test.ts > handball: trigger (first passage) vs Monte Carlo of the chain > 38:00 +1 → føringsskifte (−1) før 50': within ±3 pp 119ms
+ ✓ tests/handball.test.ts > handball: trigger (first passage) vs Monte Carlo of the chain > 38:00 +1, GOG ball → føringsskifte før slut: within ±3 pp 141ms
+ ✓ tests/handball.test.ts > handball: trigger (first passage) vs Monte Carlo of the chain > 50:00 0 → Aalborg +1 før 52': within ±3 pp 15ms
+ ✓ tests/handball.test.ts > handball: trigger (first passage) vs Monte Carlo of the chain > 45:00 −2, GOG ball → GOG +5 før slut: within ±3 pp 137ms
+ ✓ tests/handball.test.ts > handball: trigger (first passage) vs Monte Carlo of the chain > 20:00 +2, GOG ball → +4 før 35' (across halftime): within ±3 pp 120ms
+ ✓ tests/handball.test.ts > handball: trigger (first passage) vs Monte Carlo of the chain > is 1 at the level, 0 after the deadline, and grows with the deadline 1ms
+ ✓ tests/handball.test.ts > handball: quotes in øre > AaH / X / GOG asks sum to 104 ± 1 øre 1ms
+ ✓ tests/handball.test.ts > handball: quotes in øre > trigger ask carries an 8 % power-method margin and settles at 100 once hit 1ms
+ ✓ tests/handball.test.ts > handball: director and HALLEN20 > fast-forwards deterministically to 38:00 at AaH 21–20 1ms
+ ✓ tests/handball.test.ts > handball: director and HALLEN20 > Aalborg reaches +4 between 42:00 and 44:00 on a run of goals with GOG turnovers in between 2ms
+ ✓ tests/handball.test.ts > handball: director and HALLEN20 > forced goals, bias and naturalGoals: false behave as documented 40ms
+stdout | tests/mc.test.ts > Monte Carlo (bundled engine) > MC 1X2 shares agree with the DP pricer at several states
+mean |MC-DP| 0.0032 max 0.0104
+
+ ✓ tests/mc.test.ts > Monte Carlo (bundled engine) > MC 1X2 shares agree with the DP pricer at several states 997ms
+ ✓ tests/mc.test.ts > Monte Carlo (bundled engine) > 100 strands: tally equals the displayed price, start at the ask, end at 0 or 100 262ms
+ ✓ tests/mc.test.ts > Monte Carlo (bundled engine) > is stable: one game minute later without events, at most 5 of 100 strands change 465ms
+stdout | tests/mc.test.ts > Monte Carlo (bundled engine) > Byg: joint price from the same paths, survivors match the joint probability, correlation shows
+legP [ '0.421', '0.301' ] joint 0.170 naive 0.127
+
+ ✓ tests/mc.test.ts > Monte Carlo (bundled engine) > Byg: joint price from the same paths, survivors match the joint probability, correlation shows 257ms
+stdout | tests/totals.test.ts > totals and final scores > Over 2.5 is calibrated in play: per decile, realised within 3.5 points + 3 SE of the price
+o25 deciles (price→realised %): 7.2→7.6  17.3→17.1  28.0→28.3  34.6→34.9  39.4→40.5  44.3→44.1  47.2→47.5  49.4→50.7  61.8→61.3  77.2→77.1 · kickoff 47.3→48.1
+
+ ✓ tests/totals.test.ts > totals and final scores > Over 2.5 is calibrated in play: per decile, realised within 3.5 points + 3 SE of the price 5831ms
+ ✓ tests/book.test.ts > book > buys whole shares: 250 kr at 49 øre is 510 shares for 249,90 kr 4ms
+ ✓ tests/book.test.ts > book > sells at the bid and keeps the average cost of the rest 1ms
+ ✓ tests/book.test.ts > book > limit orders reserve funds, never fill in a halt, and fill at the first ask after a gap 3ms
+ ✓ tests/book.test.ts > book > rejects a limit above the current ask and a fourth active limit 1ms
+ ✓ tests/book.test.ts > book > settles to 100 or 0 and books the payout 1ms
+ ✓ tests/book.test.ts > book > grades a buy by closing-line value net of time 0ms
+ ✓ tests/book.test.ts > book > exits > validates sides of the bid, one of each kind, and a stop against an active buy limit 1ms
+ ✓ tests/book.test.ts > book > exits > a stop never fires in a halt, right after a reopen, or from a wider spread alone 1ms
+ ✓ tests/book.test.ts > book > exits > a stop sells everything at the first bid after the gap, and cancels the take 2ms
+ ✓ tests/book.test.ts > book > exits > a take fills at the bid, never below the level 1ms
+ ✓ tests/book.test.ts > book > exits > exits are cleared when the shares reach zero by a sale or a settlement 1ms
+ ✓ tests/book.test.ts > book > exits > suggests levels on the right side of the bid, within 1..99 0ms
+ ✓ tests/book.test.ts > book > pool > pays winning stake ÷ winning side × pool × 0.9, with the user in the sides 0ms
+ ✓ tests/book.test.ts > book > pool > a lone winner takes the pool less the take; an empty winning side refunds 0ms
+ ✓ tests/book.test.ts > book > pool > stakes leave the saldo, settle once, and count in the totals 1ms
+ ✓ tests/lib.test.ts > rng > hash32 is deterministic and spreads 12ms
+ ✓ tests/lib.test.ts > rng > mulberry32 matches the sibling implementation 1ms
+ ✓ tests/lib.test.ts > quote > power-method asks sum to 1 + overround and favour favourites 1ms
+ ✓ tests/lib.test.ts > quote > largest remainder sums exactly 1ms
+ ✓ tests/totals.test.ts > totals and final scores > golden hashes: the Over 2.5 quote did not change the 1X2 simulation 2346ms
+ ✓ tests/features.test.ts > features > pool: a krone staked on any side at any minute before halftime returns at most 0.95 in expectation 18142ms
+
+ Test Files  8 passed (8)
+      Tests  65 passed (65)
+   Start at  19:58:46
+   Duration  24.05s (tests 99%)
+

@@ -1,0 +1,223 @@
+{
+ "checks": [
+  {
+   "name": "host sandboxed: no page errors",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "host sandboxed: Monte Carlo runs",
+   "ok": true,
+   "detail": "mode=worker (blob) counts=47,29,24"
+  },
+  {
+   "name": "host plain: no page errors",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "host plain: Monte Carlo runs",
+   "ok": true,
+   "detail": "mode=worker (fil) counts=47,29,24"
+  },
+  {
+   "name": "CSP: 0 violations",
+   "ok": true,
+   "detail": "CSP\n0 overtrædelser"
+  },
+  {
+   "name": "fonts load from own files or data: URI",
+   "ok": true,
+   "detail": "Fonte\nEgne fontfiler virker"
+  },
+  {
+   "name": "worker detected in sandbox",
+   "ok": true,
+   "detail": "Konklusion\nKun blob-worker virker"
+  },
+  {
+   "name": "frame pacing at 1x CPU: p95 ≤ 20 ms",
+   "ok": true,
+   "detail": "p95 16.8 ms"
+  },
+  {
+   "name": "chrome still during goal (focus 0)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "goal registered (focus 0)",
+   "ok": true,
+   "detail": "BIF 1"
+  },
+  {
+   "name": "chrome still during goal (focus o25)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "goal registered (focus o25)",
+   "ok": true,
+   "detail": "BIF 1"
+  },
+  {
+   "name": "Over 2,5 chip focuses the fan on Over 2,5",
+   "ok": true,
+   "detail": "o25"
+  },
+  {
+   "name": "Over 2,5 buy fills",
+   "ok": true,
+   "detail": "212 shares"
+  },
+  {
+   "name": "share bar shows Over | Under",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "Sikring sets a stop-loss and a take-profit",
+   "ok": true,
+   "detail": "stop@32 take@72"
+  },
+  {
+   "name": "pool takes a stake on X",
+   "ok": true,
+   "detail": "1:100"
+  },
+  {
+   "name": "score map buys a final score",
+   "ok": true,
+   "detail": "cs:1-1"
+  },
+  {
+   "name": "new features: no page errors",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "tray shows payout",
+   "ok": true,
+   "detail": "212 kr"
+  },
+  {
+   "name": "buy fills after the 1.5 s lock",
+   "ok": true,
+   "detail": "212 shares"
+  },
+  {
+   "name": "position card with fader",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "reduced motion: no breathing",
+   "ok": true,
+   "detail": "none"
+  },
+  {
+   "name": "reduced motion: data updates",
+   "ok": true,
+   "detail": "40 → 55"
+  },
+  {
+   "name": "axe lobby: no critical",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "axe kamp: no critical",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "axe byg: no critical",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "axe maal: no critical",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "axe pulje: no critical",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "axe portefolje: no critical",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "axe afregning: no critical",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "axe hallen: no critical",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "axe kamp+sikring: no critical",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "demo reaches Afregning",
+   "ok": true,
+   "detail": "#afregning after 85 s"
+  },
+  {
+   "name": "demo shows Byg at halftime",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "demo trades: buy, limit fill, byg, window, settlements",
+   "ok": true,
+   "detail": "buy:1x2:F limit-fill:1x2:F buy:byg:u0+m3 buy:w:60-70:J settle:w:60-70:J settle:1x2:F settle:byg:u0+m3"
+  },
+  {
+   "name": "demo: no page errors",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "perf": {
+  "cpu1x": {
+   "frames": 403,
+   "p50": 16.699999999999818,
+   "p95": 16.799999999999727,
+   "long": 2,
+   "maxLong": 59,
+   "mcMs": 232.80000000004657
+  },
+  "cpu4x": {
+   "frames": 324,
+   "p50": 33.29999999999927,
+   "p95": 83.39999999999964,
+   "long": 46,
+   "maxLong": 357,
+   "mcMs": 231.30000000004657
+  }
+ },
+ "shots": [
+  "sikring-tray.png",
+  "kamp-664.png",
+  "kamp-744.png",
+  "kamp-844.png",
+  "o25-664.png",
+  "maal-664.png",
+  "pulje-664.png",
+  "o25-844.png",
+  "maal-844.png",
+  "pulje-844.png",
+  "demo-goal.png",
+  "demo-byg.png",
+  "demo-afregning.png"
+ ],
+ "failures": []
+}

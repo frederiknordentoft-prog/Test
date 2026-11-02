@@ -566,8 +566,11 @@ export class MatchStore {
   }
 
   /**
-   * Final score: one cell has a multiplicative 15 % margin; a region takes 10 % on the sum, capped by
-   * the sum of its cell asks less (n − 1), as double chance is capped by its legs.
+   * Final score: one cell has a multiplicative 15 % margin; a region takes 10 % on the sum. The
+   * region is also capped by the sum of its cell asks, so it never costs more than buying the cells
+   * one by one. (An earlier cap of "sum less (n − 1)" removed a point per extra cell even when a
+   * cell's rounding was near zero, and priced large regions below fair. With 15 % per cell against
+   * 10 % on the sum the cap cannot bind; it stays as a no-arbitrage guard.)
    */
   private csQuote(contract: string, cells: [number, number][]): Quote {
     const cp = cells.map(([h, a]) => this.disp.cells[h * CS_N + a]);
@@ -575,7 +578,7 @@ export class MatchStore {
     const cellAsk = (p: number) => Math.max(1, Math.min(99, Math.ceil(100 * p * 1.15 - 1e-9)));
     let ask: number;
     if (cells.length === 1) ask = cellAsk(ps);
-    else ask = Math.max(1, Math.min(99, Math.ceil(100 * ps * 1.1 - 1e-9), cp.reduce((x, p) => x + cellAsk(p), 0) - (cells.length - 1)));
+    else ask = Math.max(1, Math.min(99, Math.ceil(100 * ps * 1.1 - 1e-9), cp.reduce((x, p) => x + cellAsk(p), 0)));
     const bid = Math.max(1, Math.min(ask - 2, Math.floor(100 * ps * 0.92)));
     const label = cells.length === 1 ? `Slutresultat ${cellLabel(cells[0][0], cells[0][1])}` : `Slutresultat: ${cells.map(([h, a]) => cellLabel(h, a)).join(', ')}`;
     return { id: contract, label, ask, bid, p: ps };
@@ -726,9 +729,9 @@ export class MatchStore {
 
   /** Stop-loss or take-profit on a held position (1X2 or Over/Under 2.5). */
   placeExit(contract: string, kind: ExitKind, level: number): boolean {
-    const q = this.liveQuote(contract);
+    const q = (EXIT_CONTRACTS as readonly string[]).includes(contract) ? this.liveQuote(contract) : null;
     if (!q) {
-      this.toast('Sikring findes kun på 1X2 og Over/Under 2,5', 'bad');
+      this.toast('Sikring findes kun på 1X2 og Over 2,5', 'bad');
       return false;
     }
     const r = this.book.placeExit({ contract, kind, level, bid: q.bid, k: this.sim.k });

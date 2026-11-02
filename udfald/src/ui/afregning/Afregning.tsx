@@ -152,7 +152,7 @@ export function Afregning({ store }: { store: MatchStore }) {
           )}
           <ul className="af-list">
             {[...store.book.positions.values()].filter((p) => p.settled).map((p) => (
-              <li key={p.id}><span className="af-what">{p.label}<small className="num">{p.lots.reduce((s, l) => s + l.shares, 0)} andele</small></span><span className={`num ${p.settled?.value === 100 ? 'up' : 'down'}`}>{p.settled?.value === 100 ? `+${fmtKr(p.settled.payout)}` : '0 kr'}</span></li>
+              <li key={p.id}><span className="af-what">{p.label}<small className="num">{p.lots.reduce((s, l) => s + l.shares, 0)} andele{p.shares === 0 ? ' · solgt før afregning' : ''}</small></span>{p.shares === 0 ? <span className="num">solgt {fmtKr(p.proceeds)}</span> : <span className={`num ${p.settled?.value === 100 ? 'up' : 'down'}`}>{p.settled?.value === 100 ? `+${fmtKr(p.settled.payout)}` : '0 kr'}</span>}</li>
             ))}
           </ul>
           <button className="act primary" onClick={() => go('lobby')}>Til lobbyen</button>

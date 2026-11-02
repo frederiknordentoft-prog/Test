@@ -1,0 +1,285 @@
+{
+ "name": "13-genaabning-gab",
+ "height": 844,
+ "k": 1214,
+ "t": 29.624999999999385,
+ "phase": "1H",
+ "score": "1-0",
+ "focus": 0,
+ "halted": false,
+ "ask": [
+  70,
+  23,
+  10
+ ],
+ "bid": [
+  68,
+  21,
+  8
+ ],
+ "o25": {
+  "ask": [
+   59,
+   47
+  ],
+  "bid": [
+   57,
+   45
+  ],
+  "mid": 0.5634750765754256
+ },
+ "counts": [
+  69,
+  22,
+  9
+ ],
+ "rects": {
+  ".kb": [
+   0,
+   0,
+   390,
+   45
+  ],
+  ".ih": [
+   0,
+   45,
+   390,
+   86
+  ],
+  ".ih-label": [
+   16,
+   49,
+   92.5,
+   24
+  ],
+  ".ih-price": [
+   16,
+   73,
+   92.5,
+   56
+  ],
+  ".ih-futures": [
+   294.1,
+   53,
+   79.9,
+   20
+  ],
+  ".fan-wrap": [
+   0,
+   131,
+   390,
+   377
+  ],
+  ".ab": [
+   0,
+   508,
+   390,
+   58
+  ],
+  ".mv": [
+   0,
+   566,
+   390,
+   84
+  ],
+  ".mv-h": [
+   12,
+   575,
+   207.1,
+   18
+  ],
+  ".mv-bars": [
+   12,
+   601,
+   366,
+   32
+  ],
+  ".mv-ag": [
+   285.4,
+   570,
+   92.6,
+   28
+  ],
+  ".pc": [
+   10,
+   654,
+   370,
+   134
+  ],
+  ".pc-sikring": [
+   23,
+   712,
+   64.8,
+   30
+  ],
+  ".fader": [
+   23,
+   749,
+   344,
+   30
+  ],
+  ".bb": [
+   0,
+   792,
+   390,
+   52
+  ],
+  ".tray": null,
+  ".toasts": [
+   12,
+   52,
+   366,
+   0
+  ],
+  ".fan-head": [
+   118,
+   276.2,
+   10,
+   10
+  ]
+ },
+ "liveTexts": [
+  {
+   "text": "+29 point",
+   "x": 119.9705518527342,
+   "y": 40,
+   "align": "left",
+   "px": 120,
+   "py": 171
+  },
+  {
+   "text": "NU 29′",
+   "x": 123,
+   "y": 371,
+   "align": "center",
+   "px": 123,
+   "py": 502
+  },
+  {
+   "text": "0′",
+   "x": 10,
+   "y": 371,
+   "align": "left",
+   "px": 10,
+   "py": 502
+  },
+  {
+   "text": "90+",
+   "x": 324,
+   "y": 371,
+   "align": "right",
+   "px": 324,
+   "py": 502
+  },
+  {
+   "text": "69",
+   "x": 332,
+   "y": 44,
+   "align": "left",
+   "px": 332,
+   "py": 175
+  },
+  {
+   "text": "FCK",
+   "x": 358,
+   "y": 43,
+   "align": "left",
+   "px": 358,
+   "py": 174
+  },
+  {
+   "text": "22",
+   "x": 332,
+   "y": 339,
+   "align": "left",
+   "px": 332,
+   "py": 470
+  },
+  {
+   "text": "X",
+   "x": 352,
+   "y": 338,
+   "align": "left",
+   "px": 352,
+   "py": 469
+  },
+  {
+   "text": "9",
+   "x": 332,
+   "y": 355,
+   "align": "left",
+   "px": 332,
+   "py": 486
+  },
+  {
+   "text": "BIF",
+   "x": 344,
+   "y": 354,
+   "align": "left",
+   "px": 344,
+   "py": 485
+  },
+  {
+   "text": "Mål FCK",
+   "x": 332,
+   "y": 67,
+   "align": "left",
+   "px": 332,
+   "py": 198
+  },
+  {
+   "text": "→ 90",
+   "x": 332,
+   "y": 81,
+   "align": "left",
+   "px": 332,
+   "py": 212
+  },
+  {
+   "text": "Intet mål 10′",
+   "x": 332,
+   "y": 135.7291667405326,
+   "align": "left",
+   "px": 332,
+   "py": 266.7
+  },
+  {
+   "text": "→ 72",
+   "x": 332,
+   "y": 149.7291667405326,
+   "align": "left",
+   "px": 332,
+   "py": 280.7
+  },
+  {
+   "text": "Mål BIF",
+   "x": 332,
+   "y": 261.6770829107412,
+   "align": "left",
+   "px": 332,
+   "py": 392.7
+  },
+  {
+   "text": "→ 43",
+   "x": 332,
+   "y": 275.6770829107412,
+   "align": "left",
+   "px": 332,
+   "py": 406.7
+  },
+  {
+   "text": "▲ 27 point: mål FCK 28′",
+   "x": 20,
+   "y": 18,
+   "align": "left",
+   "px": 20,
+   "py": 149
+  }
+ ],
+ "text": "‹\nU\nFCK\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n–\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\nBIF\n29′\nÅBEN\nLyd\nFCK vinder ▾\nkurs\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n69 % chance\nodds 1,43 · sælg kurs 68\nForan vindertempo · +30 point\nFCK\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\nX\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\nBIF\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n\nEt mål er sandsynligt inden 55′ (52 %)\n\nEfter målet 20\n✓\n25′\npause\n90+\nFCK vinder · 555 andele @ kurs 45\nVed sejr 555 kr\nVærdi nu 377,40 kr\n▲ 127,65 kr\nsælg til kurs 68\nSikring\nAlt\n½\nIndsats hjem\nByg\nen fremtid\nMål\nOver 2,5 · 59\nPulje\nåben til pausen\nPortefølje\n+49,41 kr",
+ "toasts": [
+  "Gevinst sikret: solgt 512 @ kurs 54 · 276,48 kr",
+  "Stop-loss udløst: solgt 769 @ kurs 8"
+ ],
+ "log": 7
+}

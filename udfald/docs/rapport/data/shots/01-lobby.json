@@ -1,0 +1,60 @@
+{
+ "name": "01-lobby",
+ "height": 844,
+ "k": 1138,
+ "t": 27.724999999999493,
+ "phase": "1H",
+ "score": "0-0",
+ "focus": 0,
+ "halted": false,
+ "ask": [
+  43,
+  35,
+  25
+ ],
+ "bid": [
+  41,
+  33,
+  23
+ ],
+ "o25": {
+  "ask": [
+   33,
+   73
+  ],
+  "bid": [
+   31,
+   71
+  ],
+  "mid": 0.29951664642793446
+ },
+ "counts": [
+  42,
+  34,
+  24
+ ],
+ "rects": {
+  ".kb": null,
+  ".ih": null,
+  ".ih-label": null,
+  ".ih-price": null,
+  ".ih-futures": null,
+  ".fan-wrap": null,
+  ".ab": null,
+  ".mv": null,
+  ".mv-h": null,
+  ".mv-bars": null,
+  ".mv-ag": null,
+  ".pc": null,
+  ".pc-sikring": null,
+  ".fader": null,
+  ".bb": null,
+  ".tray": null,
+  ".toasts": null,
+  ".fan-head": null
+ },
+ "liveTexts": [],
+ "text": "UDFALD\nSaldo 5.000 kr\nSuperligaen · Parken\nFCK – Brøndby\n0–0 · 27′\nFCK · kurs 43\nTil kampen ›\nHerreligaen · Gigantium\nAalborg – GOG\n14–12 · 20′\nAalborg · kurs 72\nTil hallen ›\nSe demoen · 90 sek.\nPortefølje\n\nPrototype · fiktive kurser · ingen rigtige penge",
+ "toasts": [],
+ "log": 0
+}

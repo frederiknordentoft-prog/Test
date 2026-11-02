@@ -140,6 +140,25 @@ describe('features', () => {
     for (const p of store.book.positions.values()) expect(p.shares === 0 || p.settled !== null).toBe(true);
   });
 
+  it('final-score regions are never priced below their fair chance, and get the 10 % margin', async () => {
+    const E = await engine();
+    const { store, until } = harness(E, { ...E.FREE_PLAY });
+    const possible = (h: number, a: number) => (h === 5 || store.sim.h <= h) && (a === 5 || store.sim.a <= a);
+    const regions: ((h: number, a: number) => boolean)[] = [(h, a) => h - a >= 2, (h, a) => h >= 1 && a >= 1, (h, a) => a - h >= 2, (h, a) => h + a >= 4, (h, a) => h === a];
+    for (const m of [1, 20, 40, 60]) {
+      until(() => store.sim.t >= m && !store.sim.halted);
+      store.tick();
+      for (const f of regions) {
+        const cells: [number, number][] = [];
+        for (let h = 0; h < 6; h++) for (let a = 0; a < 6; a++) if (f(h, a) && possible(h, a)) cells.push([h, a]);
+        if (cells.length < 2) continue;
+        const q = store.quote(`cs:${cells.map(([h, a]) => `${h}-${a}`).join('.')}`)!;
+        expect(q.ask).toBeGreaterThanOrEqual(Math.min(99, Math.ceil(100 * q.p * 1.1 - 1e-9)));
+        expect(q.ask).toBeGreaterThan(100 * q.p);
+      }
+    }
+  });
+
   it('pool: a krone staked on any side at any minute before halftime returns at most 0.95 in expectation', async () => {
     const E = await engine();
     const worst: number[] = [0, 0, 0];

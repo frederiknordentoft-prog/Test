@@ -1,0 +1,152 @@
+{
+ "name": "18-portefolje",
+ "height": 1141,
+ "k": 2056,
+ "t": 50.19999999999822,
+ "phase": "2H",
+ "score": "1-0",
+ "focus": 0,
+ "halted": false,
+ "ask": [
+  73,
+  23,
+  7
+ ],
+ "bid": [
+  69,
+  19,
+  3
+ ],
+ "o25": {
+  "ask": [
+   41,
+   65
+  ],
+  "bid": [
+   37,
+   61
+  ],
+  "mid": 0.37393223459938835
+ },
+ "counts": [
+  72,
+  21,
+  7
+ ],
+ "rects": {
+  ".kb": null,
+  ".ih": null,
+  ".ih-label": null,
+  ".ih-price": null,
+  ".ih-futures": null,
+  ".fan-wrap": null,
+  ".ab": null,
+  ".mv": null,
+  ".mv-h": null,
+  ".mv-bars": null,
+  ".mv-ag": null,
+  ".pc": null,
+  ".pc-sikring": null,
+  ".fader": null,
+  ".bb": null,
+  ".tray": null,
+  ".toasts": null,
+  ".fan-head": null
+ },
+ "liveTexts": [
+  {
+   "text": "+29 point",
+   "x": 79.00714168023637,
+   "y": 40,
+   "align": "left",
+   "px": 79,
+   "py": 40
+  },
+  {
+   "text": "NU 35′",
+   "x": 123,
+   "y": 371,
+   "align": "center",
+   "px": 123,
+   "py": 371
+  },
+  {
+   "text": "0′",
+   "x": 10,
+   "y": 371,
+   "align": "left",
+   "px": 10,
+   "py": 371
+  },
+  {
+   "text": "90+",
+   "x": 324,
+   "y": 371,
+   "align": "right",
+   "px": 324,
+   "py": 371
+  },
+  {
+   "text": "Mål FCK",
+   "x": 332,
+   "y": 67,
+   "align": "left",
+   "px": 332,
+   "py": 67
+  },
+  {
+   "text": "→ 91",
+   "x": 332,
+   "y": 81,
+   "align": "left",
+   "px": 332,
+   "py": 81
+  },
+  {
+   "text": "Intet mål 10′",
+   "x": 332,
+   "y": 138.6116354837071,
+   "align": "left",
+   "px": 332,
+   "py": 138.6
+  },
+  {
+   "text": "→ 73",
+   "x": 332,
+   "y": 152.6116354837071,
+   "align": "left",
+   "px": 332,
+   "py": 152.6
+  },
+  {
+   "text": "Mål BIF",
+   "x": 332,
+   "y": 263.98609145481936,
+   "align": "left",
+   "px": 332,
+   "py": 264
+  },
+  {
+   "text": "→ 42",
+   "x": 332,
+   "y": 277.98609145481936,
+   "align": "left",
+   "px": 332,
+   "py": 278
+  },
+  {
+   "text": "Rolig handel · under 1 point på 2 kampmin",
+   "x": 20,
+   "y": 18,
+   "align": "left",
+   "px": 20,
+   "py": 18
+  }
+ ],
+ "text": "‹\nPortefølje\n1–0 · 50′\nSaldo\n4.388,79 kr\nVærdi af åbne\n456,84 kr\nResultat\n▲ 45,63 kr\nÅbne positioner\nFCK vinder\n555 andele @ kurs 45\nVærdi nu 382,95 kr\nVed sejr 555 kr\n▲ 133,20 kr\nSælg til kurs 69\nSælg alt · 382,95 kr\nSlutresultat 1–1\n277 andele @ kurs 18\nVærdi nu 41,55 kr\nVed sejr 277 kr\n▼ 8,31 kr\nSælg til kurs 15\nSælg alt · 41,55 kr\nSlutresultat 2–1\n294 andele @ kurs 17\nVærdi nu 32,34 kr\nVed sejr 294 kr\n▼ 17,64 kr\nSælg til kurs 11\nSælg alt · 32,34 kr\nKøbsgrænser\n\nHold fingeren i viften for at sætte en købsgrænse.\n\nSikring\n\nTryk Sikring på en position i kampen for at sætte stop-loss eller sikre gevinsten.\n\nParken-puljen\nDine indsatser\nX 200 kr\nLukket ved pausen · afgøres ved slutfløjt\nAfsluttet\nBIF vinder\nsolgt\nResultat\n▼ 138,42 kr\nOver 2,5 mål\nsolgt\nResultat\n▲ 76,80 kr\nAfregning (efter slutfløjt)",
+ "toasts": [
+  "Gevinst sikret: solgt 512 @ kurs 54 · 276,48 kr",
+  "Stop-loss udløst: solgt 769 @ kurs 8"
+ ],
+ "log": 8
+}

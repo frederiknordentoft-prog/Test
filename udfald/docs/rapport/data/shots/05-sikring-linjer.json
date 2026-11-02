@@ -1,0 +1,290 @@
+{
+ "name": "05-sikring-linjer",
+ "height": 844,
+ "k": 870,
+ "t": 21.024999999999874,
+ "phase": "1H",
+ "score": "0-0",
+ "focus": 2,
+ "halted": false,
+ "ask": [
+  44,
+  33,
+  26
+ ],
+ "bid": [
+  40,
+  29,
+  22
+ ],
+ "o25": {
+  "ask": [
+   38,
+   68
+  ],
+  "bid": [
+   34,
+   64
+  ],
+  "mid": 0.34332900545537154
+ },
+ "counts": [
+  43,
+  32,
+  25
+ ],
+ "rects": {
+  ".kb": [
+   0,
+   0,
+   390,
+   45
+  ],
+  ".ih": [
+   0,
+   45,
+   390,
+   86
+  ],
+  ".ih-label": [
+   16,
+   49,
+   92.5,
+   24
+  ],
+  ".ih-price": [
+   16,
+   73,
+   92.5,
+   56
+  ],
+  ".ih-futures": [
+   294.1,
+   67.5,
+   79.9,
+   20
+  ],
+  ".fan-wrap": [
+   0,
+   131,
+   390,
+   377
+  ],
+  ".ab": [
+   0,
+   508,
+   390,
+   58
+  ],
+  ".mv": [
+   0,
+   566,
+   390,
+   84
+  ],
+  ".mv-h": [
+   12,
+   575,
+   207.8,
+   18
+  ],
+  ".mv-bars": [
+   12,
+   601,
+   366,
+   32
+  ],
+  ".mv-ag": [
+   267.4,
+   570,
+   110.6,
+   28
+  ],
+  ".pc": [
+   10,
+   654,
+   370,
+   134
+  ],
+  ".pc-sikring": [
+   23,
+   712,
+   115.9,
+   30
+  ],
+  ".fader": [
+   23,
+   749,
+   344,
+   30
+  ],
+  ".bb": [
+   0,
+   792,
+   390,
+   52
+  ],
+  ".tray": null,
+  ".toasts": [
+   12,
+   52,
+   366,
+   0
+  ],
+  ".fan-head": [
+   118,
+   366.7,
+   10,
+   10
+  ]
+ },
+ "liveTexts": [
+  {
+   "text": "Stop 17",
+   "x": 117,
+   "y": 307.56066139489354,
+   "align": "right",
+   "px": 117,
+   "py": 438.6
+  },
+  {
+   "text": "Sikr gevinst 40",
+   "x": 117,
+   "y": 162.3577732923723,
+   "align": "right",
+   "px": 117,
+   "py": 293.4
+  },
+  {
+   "text": "NU 21′",
+   "x": 123,
+   "y": 371,
+   "align": "center",
+   "px": 123,
+   "py": 502
+  },
+  {
+   "text": "0′",
+   "x": 10,
+   "y": 371,
+   "align": "left",
+   "px": 10,
+   "py": 502
+  },
+  {
+   "text": "90+",
+   "x": 324,
+   "y": 371,
+   "align": "right",
+   "px": 324,
+   "py": 502
+  },
+  {
+   "text": "25",
+   "x": 332,
+   "y": 44,
+   "align": "left",
+   "px": 332,
+   "py": 175
+  },
+  {
+   "text": "BIF",
+   "x": 358,
+   "y": 43,
+   "align": "left",
+   "px": 358,
+   "py": 174
+  },
+  {
+   "text": "43",
+   "x": 332,
+   "y": 339,
+   "align": "left",
+   "px": 332,
+   "py": 470
+  },
+  {
+   "text": "FCK",
+   "x": 352,
+   "y": 338,
+   "align": "left",
+   "px": 352,
+   "py": 469
+  },
+  {
+   "text": "32",
+   "x": 332,
+   "y": 355,
+   "align": "left",
+   "px": 332,
+   "py": 486
+  },
+  {
+   "text": "X",
+   "x": 352,
+   "y": 354,
+   "align": "left",
+   "px": 352,
+   "py": 485
+  },
+  {
+   "text": "Mål BIF",
+   "x": 332,
+   "y": 134.77182298230431,
+   "align": "left",
+   "px": 332,
+   "py": 265.8
+  },
+  {
+   "text": "→ 49",
+   "x": 332,
+   "y": 148.77182298230431,
+   "align": "left",
+   "px": 332,
+   "py": 279.8
+  },
+  {
+   "text": "Intet mål 10′",
+   "x": 332,
+   "y": 251.55100345889534,
+   "align": "left",
+   "px": 332,
+   "py": 382.6
+  },
+  {
+   "text": "→ 24",
+   "x": 332,
+   "y": 265.55100345889537,
+   "align": "left",
+   "px": 332,
+   "py": 396.6
+  },
+  {
+   "text": "Mål FCK",
+   "x": 332,
+   "y": 296,
+   "align": "left",
+   "px": 332,
+   "py": 427
+  },
+  {
+   "text": "→ 10",
+   "x": 332,
+   "y": 310,
+   "align": "left",
+   "px": 332,
+   "py": 441
+  },
+  {
+   "text": "Rolig handel · under 1 point på 2 kampmin",
+   "x": 20,
+   "y": 18,
+   "align": "left",
+   "px": 20,
+   "py": 149
+  }
+ ],
+ "text": "‹\nU\nFCK\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n–\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\nBIF\n21′\nÅBEN\nLyd\nBIF vinder ▾\nkurs\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n25 % chance\nodds 3,85 · sælg kurs 22\nFCK\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\nX\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\nBIF\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n\nEt mål er sandsynligt inden 50′ (53 %)\n\nOver 2,5 · kurs 38\n20′\npause\n90+\nBIF vinder · 769 andele @ kurs 26\nVed sejr 769 kr\nVærdi nu 169,18 kr\n▼ 30,76 kr\nsælg til kurs 22\nStop 17\nSikr 40\nAlt\n½\nByg\nen fremtid\nMål\nOver 2,5 · 38\nPulje\nåben til pausen\nPortefølje\n−97,96 kr",
+ "toasts": [],
+ "log": 5
+}

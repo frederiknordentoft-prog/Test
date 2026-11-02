@@ -1,0 +1,45 @@
+PASS  host sandboxed: no page errors
+PASS  host sandboxed: Monte Carlo runs · mode=worker (blob) counts=47,29,24
+PASS  host plain: no page errors
+PASS  host plain: Monte Carlo runs · mode=worker (fil) counts=47,29,24
+PASS  CSP: 0 violations · CSP
+0 overtrædelser
+PASS  fonts load from own files or data: URI · Fonte
+Egne fontfiler virker
+PASS  worker detected in sandbox · Konklusion
+Kun blob-worker virker
+perf cpu1x {"frames":403,"p50":16.699999999999818,"p95":16.799999999999727,"long":2,"maxLong":59,"mcMs":232.80000000004657}
+perf cpu4x {"frames":324,"p50":33.29999999999927,"p95":83.39999999999964,"long":46,"maxLong":357,"mcMs":231.30000000004657}
+PASS  frame pacing at 1x CPU: p95 ≤ 20 ms · p95 16.8 ms
+PASS  chrome still during goal (focus 0)
+PASS  goal registered (focus 0) · BIF 1
+PASS  chrome still during goal (focus o25)
+PASS  goal registered (focus o25) · BIF 1
+PASS  Over 2,5 chip focuses the fan on Over 2,5 · o25
+PASS  Over 2,5 buy fills · 212 shares
+PASS  share bar shows Over | Under
+PASS  Sikring sets a stop-loss and a take-profit · stop@32 take@72
+PASS  pool takes a stake on X · 1:100
+PASS  score map buys a final score · cs:1-1
+PASS  new features: no page errors
+PASS  tray shows payout · 212 kr
+PASS  buy fills after the 1.5 s lock · 212 shares
+PASS  position card with fader
+PASS  reduced motion: no breathing · none
+PASS  reduced motion: data updates · 40 → 55
+PASS  axe lobby: no critical
+PASS  axe kamp: no critical
+PASS  axe byg: no critical
+PASS  axe maal: no critical
+PASS  axe pulje: no critical
+PASS  axe portefolje: no critical
+PASS  axe afregning: no critical
+PASS  axe hallen: no critical
+PASS  axe kamp+sikring: no critical
+PASS  demo reaches Afregning · #afregning after 85 s
+PASS  demo shows Byg at halftime
+PASS  demo trades: buy, limit fill, byg, window, settlements · buy:1x2:F limit-fill:1x2:F buy:byg:u0+m3 buy:w:60-70:J settle:w:60-70:J settle:1x2:F settle:byg:u0+m3
+PASS  demo: no page errors
+
+All QA checks passed.
+QA-exit 0
