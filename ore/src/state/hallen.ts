@@ -177,7 +177,7 @@ export class HallenStore {
       p = winProbs(s)[i];
     }
     const r = this.book.buy({ contract: id, label, kr, ask, k: s.k, t: s.t, mid: p });
-    if (r.ok) this.toast(`Købt ${r.shares} andele @ ${ask} · ved ramning ${r.shares} kr`, 'good');
+    if (r.ok) this.toast(`Købt ${r.shares} andele @ kurs ${ask} · ved ramning ${r.shares} kr`, 'good');
     else this.toast(r.reason, 'bad');
     this.publish();
   }

@@ -58,7 +58,7 @@ export function Kampen({ store, onLogoLong }: { store: MatchStore; onLogoLong: (
             setTray({
               kind: 'buy',
               title: 'Næste mål',
-              note: `${v.d.branches[idx]?.label ?? ''}: sker det, går ${OUTCOME_LABEL[v.focus]} til ≈ ${Math.round(v.d.branches[idx]?.price ?? 0)} øre.`,
+              note: `${v.d.branches[idx]?.label ?? ''}: sker det, går ${OUTCOME_LABEL[v.focus]} til ≈ kurs ${Math.round(v.d.branches[idx]?.price ?? 0)}.`,
               contracts: [
                 { id: ng[0].id, label: 'Næste mål FCK', side: 'FCK' },
                 { id: ng[1].id, label: 'Ingen flere mål', side: 'Ingen' },
@@ -132,11 +132,11 @@ function Instrumenthoved({ v, store }: { v: MatchView; store: MatchStore }) {
     <section className="ih" aria-label="Pris">
       <div className="ih-left">
         <button className="ih-label" onClick={() => store.setFocus(((f + 1) % 3) as Focus)} aria-label={`${OUTCOME_LABEL[f]}. Tryk for næste udfald`}>{OUTCOME_LABEL[f]} ▾</button>
-        <span className={`ih-price num f${f}`}><Roller value={q.ask} /><small>øre</small></span>
+        <span className={`ih-price num f${f}`}><small className="ih-unit">kurs</small><Roller value={q.ask} /></span>
       </div>
       <div className="ih-right">
-        {counts && <span className="ih-futures"><b className={`num f${f}`}>{counts[f]}</b> af 100 fremtider</span>}
-        <span className="ih-sub">{early ? `${q.ask} øre → 1 kr hvis ${OUTCOME_SHORT[f] === 'X' ? 'uafgjort' : `${OUTCOME_SHORT[f]} vinder`}` : `odds ${(100 / q.ask).toFixed(2).replace('.', ',')} · sælg ${q.bid}`}</span>
+        <span className="ih-futures"><b className={`num f${f}`}>{counts ? counts[f] : Math.round(q.p * 100)} %</b> chance</span>
+        <span className="ih-sub">{early ? `udbetaler 100 hvis ${OUTCOME_SHORT[f] === 'X' ? 'uafgjort' : `${OUTCOME_SHORT[f]} vinder`}` : `odds ${(100 / q.ask).toFixed(2).replace('.', ',')} · sælg kurs ${q.bid}`}</span>
         {v.ghostStatus && <span className="ih-ghost">{v.ghostStatus}</span>}
       </div>
     </section>
@@ -211,7 +211,7 @@ function Andelsbar({ v, store, onTap, onDouble, setHold }: { v: MatchView; store
           key={q.id}
           className={`ab-seg s${i} ${v.focus === i ? 'on' : ''}`}
           style={{ flexGrow: q.ask }}
-          aria-label={`${OUTCOME_LABEL[i]} ${q.ask} øre. Tryk for at købe, hold for hurtigkøb`}
+          aria-label={`${OUTCOME_LABEL[i]} kurs ${q.ask}. Tryk for at købe, hold for hurtigkøb`}
           onPointerDown={(e) => down(e, i as Focus)}
           onPointerMove={move}
           onPointerUp={up}
@@ -268,7 +268,7 @@ function Maalvejret({ v, store, onWindow, onAfterGoal }: { v: MatchView; store: 
               role="listitem"
               className={`mv-bar ${w.running ? 'run' : ''} ${w.settled ? `st-${w.settled}` : ''} ${inSel ? 'sel' : ''}`}
               disabled={!w.open}
-              aria-label={`Mål ${w.a}–${w.b >= 90 ? '90+' : w.b} minutter: ${Math.round(w.p * 100)} procent. Ja ${w.ja.ask} øre, tørvejr ${w.nej.ask} øre`}
+              aria-label={`Mål ${w.a}–${w.b >= 90 ? '90+' : w.b} minutter: ${Math.round(w.p * 100)} procent. Ja kurs ${w.ja.ask}, tørvejr kurs ${w.nej.ask}`}
               onPointerDown={(e) => {
                 if (!w.open) return;
                 (e.currentTarget.parentElement as HTMLElement).setPointerCapture?.(e.pointerId);
@@ -325,13 +325,13 @@ function PositionCard({ v, store }: { v: MatchView; store: MatchStore }) {
   return (
     <section className="pc" aria-label="Din position">
       <div className="pc-top">
-        <span className="pc-what">{pos.label} · <span className="num">{pos.shares}</span> andele @ <span className="num">{Math.round(pos.avg)}</span></span>
+        <span className="pc-what">{pos.label} · <span className="num">{pos.shares}</span> andele @ kurs <span className="num">{Math.round(pos.avg)}</span></span>
         <span className="pc-win">Ved sejr <b className="num">{fmtKr(pos.atWin)}</b></span>
       </div>
       <div className="pc-mid">
         <span className="pc-val">Værdi nu <b className="num">{fmtKr(pos.value)}</b></span>
         {Math.abs(pos.pnl) < 0.5 ? <span className="pc-pnl num">± 0 kr</span> : <span className={`pc-pnl num ${pos.pnl >= 0 ? 'up' : 'down'}`}>{pos.pnl >= 0 ? '▲' : '▼'} {fmtKr(Math.abs(pos.pnl))}</span>}
-        <span className="pc-bid">sælg til <span className="num">{pos.bid}</span></span>
+        <span className="pc-bid">sælg til kurs <span className="num">{pos.bid}</span></span>
       </div>
       <Fader pos={pos} store={store} halted={v.halted} />
     </section>

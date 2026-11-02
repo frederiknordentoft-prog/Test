@@ -120,7 +120,7 @@ export function drawLive(canvas: HTMLCanvasElement, dpr: number, g: Geo, inp: Li
     if (x < g.left + 8) continue;
     const v = e.gap[focus];
     c.fillStyle = 'rgba(232,237,242,0.75)';
-    c.fillText(`${v > 0 ? '+' : '−'}${Math.abs(v)} øre`, x + 4, g.top + 10);
+    c.fillText(`${v > 0 ? '+' : '−'}${Math.abs(v)} point`, x + 4, g.top + 10);
   }
 
   // Halt band at NU.
@@ -175,7 +175,7 @@ export function drawLive(canvas: HTMLCanvasElement, dpr: number, g: Geo, inp: Li
     c.stroke();
     c.fillStyle = '#c58bff';
     c.font = `600 10.5px ${FONT_UI}`;
-    c.fillText(`Køb ved ${l.level}`, g.left + 4, y - 4);
+    c.fillText(`Køb ved kurs ${l.level}`, g.left + 4, y - 4);
   }
   if (inp.draftLevel !== null) {
     const y = yOf(g, inp.draftLevel);
@@ -190,7 +190,7 @@ export function drawLive(canvas: HTMLCanvasElement, dpr: number, g: Geo, inp: Li
     c.fill();
     c.fillStyle = '#e4d4ff';
     c.font = `700 11.5px ${FONT_UI}`;
-    c.fillText(`Købsgrænse ${Math.round(inp.draftLevel)} øre`, g.left + 10, y - 11);
+    c.fillText(`Købsgrænse kurs ${Math.round(inp.draftLevel)}`, g.left + 10, y - 11);
   }
   c.setLineDash([]);
 
@@ -322,7 +322,7 @@ export function drawLive(canvas: HTMLCanvasElement, dpr: number, g: Geo, inp: Li
     c.beginPath();
     c.arc(x, yOf(g, p), 4, 0, Math.PI * 2);
     c.fill();
-    const label = `${inp.scrubT > 90 ? `90+${Math.ceil(inp.scrubT - 90)}` : Math.floor(inp.scrubT)}′ · ${Math.round(p)} øre`;
+    const label = `${inp.scrubT > 90 ? `90+${Math.ceil(inp.scrubT - 90)}` : Math.floor(inp.scrubT)}′ · kurs ${Math.round(p)}`;
     c.font = `700 11.5px ${FONT_NUM}`;
     const w = c.measureText(label).width + 16;
     const bx = Math.max(g.left, Math.min(g.right - w, x - w / 2));

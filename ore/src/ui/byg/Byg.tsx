@@ -127,7 +127,7 @@ export function Byg({ store }: { store: MatchStore }) {
           <p className="lead">Vælg op til tre ben. Hvert ben brænder de fremtider af, der ikke opfylder det. Det, der er tilbage, er prisen.</p>
           <div className="byg-count" aria-live="polite">
             <b className="num">{legs.length ? survivors : 100}</b> af 100 fremtider tilbage
-            {q && !q.tooUnlikely && <span className="num"> → {q.ask} øre</span>}
+            {q && !q.tooUnlikely && <span className="num"> → kurs {q.ask}</span>}
           </div>
           <canvas ref={cv} className="byg-canvas" role="img" aria-label={`${survivors} af 100 simulerede fremtider opfylder de valgte ben.`} />
           <div className="byg-legs">
@@ -148,16 +148,16 @@ export function Byg({ store }: { store: MatchStore }) {
                 <p className="tray-note">For usandsynlig at bygge: under 5 % af fremtiderne.</p>
               ) : (
                 <>
-                  <p className="byg-ticker num"><b>{q.label}</b> · {q.ask} øre · odds {(100 / q.ask).toFixed(2).replace('.', ',')}</p>
+                  <p className="byg-ticker num"><b>{q.label}</b> · kurs {q.ask} · odds {(100 / q.ask).toFixed(2).replace('.', ',')}</p>
                   {legs.length > 1 && (
-                    <p className="tray-note num">Hver for sig {Math.round(q.naive * 100)} øre · samlet {Math.round(q.joint * 100)} øre{lift >= 1.15 ? ' · benene hænger sammen og trækker hinanden op' : lift <= 0.87 ? ' · benene trækker hinanden ned' : ''}</p>
+                    <p className="tray-note num">Hver for sig {Math.round(q.naive * 100)} % · samlet {Math.round(q.joint * 100)} %{lift >= 1.15 ? ' · benene hænger sammen og trækker hinanden op' : lift <= 0.87 ? ' · benene trækker hinanden ned' : ''}</p>
                   )}
                   <div className="chips" role="group" aria-label="Indsats">
                     {[25, 50, 100, 250].map((c) => <button key={c} className={c === stake ? 'on' : ''} aria-pressed={c === stake} onClick={() => setStake(c)}><span className="num">{c}</span> kr</button>)}
                   </div>
                   <div className="tray-pay"><span>Udbetaling ved sejr</span><b className="num">{fmtKr(shares)}</b></div>
                   {pending ? (
-                    pending.state === 'lock' ? <div className="lock" role="status"><span className="lock-ring" aria-hidden="true" /> Låser prisen {pending.lockedAsk} øre …</div>
+                    pending.state === 'lock' ? <div className="lock" role="status"><span className="lock-ring" aria-hidden="true" /> Låser kurs {pending.lockedAsk} …</div>
                     : <div className="requote"><span>Kursen flyttede sig – acceptér {pending.newAsk}?</span><button className="tray-cancel" onClick={() => store.cancelPending()}>Annullér</button><button className="tray-buy" onClick={() => store.acceptRequote()}>Acceptér</button></div>
                   ) : (
                     <button className="tray-buy wide" disabled={!store.isOpen(q.id) || shares < 1} onClick={() => store.requestBuy(q.id, stake)}>Køb {stake} kr · ved sejr {fmtKr(shares)}</button>

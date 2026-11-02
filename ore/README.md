@@ -1,6 +1,6 @@
 # ØRE · prototype
 
-Mobil sportsbook-prototype. Hver kamp vises som 100 simulerede fremtider, og en andel koster 0–100 øre. Ved slutfløjt er hver andel 1 kr eller 0 værd. Alle kurser er fiktive, der er ingen backend og ingen rigtige penge.
+Mobil sportsbook-prototype. Hver kamp vises som 100 simulerede fremtider. Prisen er en **kurs** fra 0 til 100, ligesom en obligation: kurs 55 betyder, at en andel koster 55 øre og betaler 1 kr, hvis udfaldet sker. Kursen ligger lige over chancen (54 %), fordi husets andel ligger oveni. Brandet hedder ØRE. Alle kurser er fiktive, der er ingen backend og ingen rigtige penge.
 
 Planen ligger i `docs/PLAN.md`. Research, konceptspec og kritik ligger også i `docs/`.
 

@@ -20,7 +20,7 @@
 .ih-left { display: flex; flex-direction: column; }
 .ih-label { font-size: 13px; color: var(--text-2); text-align: left; min-height: 24px; }
 .ih-price { font-weight: 640; font-size: 56px; line-height: 56px; letter-spacing: -0.02em; display: inline-flex; align-items: baseline; }
-.ih-price small { font: 500 15px/1 var(--font-ui); color: var(--text-2); margin-left: 6px; letter-spacing: 0; }
+.ih-price small.ih-unit { font: 500 15px/1 var(--font-ui); color: var(--text-2); margin-right: 6px; letter-spacing: 0; }
 .ih-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; text-align: right; min-width: 0; }
 .ih-futures { font-size: 14px; color: var(--text); }
 .ih-futures b { font-weight: 700; }

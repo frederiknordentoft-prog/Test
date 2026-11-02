@@ -121,7 +121,7 @@ export function Afregning({ store }: { store: MatchStore }) {
           <ul className="af-list">
             {graded.map((gr, i) => (
               <li key={i}>
-                <span className="af-what">{gr.label}<small className="num">{minuteLabel(gr.t)} · @ {gr.price}</small></span>
+                <span className="af-what">{gr.label}<small className="num">{minuteLabel(gr.t)} · @ kurs {gr.price}</small></span>
                 <span className={`af-grade g-${gr.grade.replace(/[^a-zA-ZæøåÆØÅ]/g, '')}`}>{gr.grade}</span>
               </li>
             ))}

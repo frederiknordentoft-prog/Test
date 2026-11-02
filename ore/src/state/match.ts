@@ -216,7 +216,7 @@ export class MatchStore {
       const lots = this.book.positions.get(f.contract)?.lots;
       if (oi >= 0 && lots?.length) lots[lots.length - 1].baseline = this.baseline(oi as Focus);
     }
-    for (const f of fills) this.toast(`Købsgrænse fyldt: ${f.fill?.shares} andele @ ${f.fill?.price}${f.fill && f.fill.gapBetter > 0 ? ` · ${f.fill.gapBetter} øre bedre` : ''}`, 'good');
+    for (const f of fills) this.toast(`Købsgrænse fyldt: ${f.fill?.shares} andele @ kurs ${f.fill?.price}${f.fill && f.fill.gapBetter > 0 ? ` · ${f.fill.gapBetter} point bedre` : ''}`, 'good');
     // New events: settlement and listeners.
     while (this.seenEvents < sim.events.length) {
       const e = sim.events[this.seenEvents++];
@@ -466,7 +466,7 @@ export class MatchStore {
       this.toast(r.reason, 'bad');
       return;
     }
-    this.toast(`Købt ${r.shares} andele @ ${ask} · ved sejr ${fmtKr(r.shares)}`, 'good');
+    this.toast(`Købt ${r.shares} andele @ kurs ${ask} · ved sejr ${fmtKr(r.shares)}`, 'good');
     if (oi >= 0) this.freezeGhost(contract, oi as Focus);
     this.holdSpeed(1500);
   }
@@ -488,14 +488,14 @@ export class MatchStore {
       return;
     }
     const r = this.book.sell({ contract, shares, bid: q.bid, k: this.sim.k, t: this.sim.t });
-    if (r.ok) this.toast(`Solgt ${shares} andele @ ${q.bid} · ${fmtKr(r.kr)}`, 'good');
+    if (r.ok) this.toast(`Solgt ${shares} andele @ kurs ${q.bid} · ${fmtKr(r.kr)}`, 'good');
     else this.toast(r.reason, 'bad');
     this.publish();
   }
 
   placeLimit(focus: Focus, level: number, kr: number): void {
     const r = this.book.placeLimit({ contract: OUTCOME_ID[focus], label: OUTCOME_LABEL[focus], level, kr, k: this.sim.k, ask: this.sim.ask[focus] });
-    this.toast(r.ok ? `Købsgrænse sat: ${OUTCOME_SHORT[focus]} ved ${Math.round(level)} øre · ${kr} kr` : r.reason, r.ok ? 'info' : 'bad');
+    this.toast(r.ok ? `Købsgrænse sat: ${OUTCOME_SHORT[focus]} ved kurs ${Math.round(level)} · ${kr} kr` : r.reason, r.ok ? 'info' : 'bad');
     this.publish();
   }
 
@@ -532,7 +532,7 @@ export class MatchStore {
     while (k < g.t.length - 1 && g.t[k + 1] <= t) k++;
     const pace = g.v[k];
     const diff = Math.round(this.sim.askRaw[this.focus] - pace);
-    return diff >= 0 ? `Foran vindertempo · +${diff} øre` : `Bag vindertempo · ${diff} øre`;
+    return diff >= 0 ? `Foran vindertempo · +${diff} point` : `Bag vindertempo · ${diff} point`;
   }
 
   // --- Byg ---

@@ -31,8 +31,8 @@ export function Tray({ store, view, target, onClose, lastStake, setLastStake }: 
     return (
       <div className="tray" role="dialog" aria-label="Købsgrænse">
         {header}
-        <h2 className="tray-title">Købsgrænse · {OUTCOME_SHORT[target.focus]} ved {target.level} øre</h2>
-        <p className="tray-note">Fyldes automatisk, når prisen rammer {target.level} øre (nu {ask}). Under et handelsstop fyldes den til første pris efter stoppet.</p>
+        <h2 className="tray-title">Købsgrænse · {OUTCOME_SHORT[target.focus]} ved kurs {target.level}</h2>
+        <p className="tray-note">Fyldes automatisk, når kursen rammer {target.level} (nu {ask}). Under et handelsstop fyldes den til første pris efter stoppet.</p>
         <Chips stake={stake} setStake={setStake} lastStake={lastStake} />
         <div className="tray-pay"><span>Udbetaling ved sejr</span><b className="num">{fmtKr(shares)}</b></div>
         <div className="tray-actions">
@@ -75,12 +75,12 @@ export function Tray({ store, view, target, onClose, lastStake, setLastStake }: 
         </div>
       )}
       {target.note && <p className="tray-note">{target.note}</p>}
-      <p className="tray-price num">{c.label} · <b>{ask} øre</b> · odds {ask ? (100 / ask).toFixed(2).replace('.', ',') : '–'}</p>
+      <p className="tray-price num">{c.label} · <b>kurs {ask}</b> · odds {ask ? (100 / ask).toFixed(2).replace('.', ',') : '–'}</p>
       <Chips stake={stake} setStake={setStake} lastStake={lastStake} />
       <div className="tray-pay"><span>Udbetaling ved sejr</span><b className="num">{fmtKr(shares)}</b><small className="num">{shares} andele for {fmtKr(cost)}</small></div>
       {pending && pending.contract === c.id ? (
         pending.state === 'lock' ? (
-          <div className="lock" role="status"><span className="lock-ring" aria-hidden="true" /> Låser prisen {pending.lockedAsk} øre …</div>
+          <div className="lock" role="status"><span className="lock-ring" aria-hidden="true" /> Låser kurs {pending.lockedAsk} …</div>
         ) : (
           <div className="requote" role="alertdialog" aria-label="Kursen flyttede sig">
             <span>Kursen flyttede sig – acceptér {pending.newAsk}?</span>

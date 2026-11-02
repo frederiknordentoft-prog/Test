@@ -21,13 +21,13 @@ export function Lobby({ derby, hallen, onLogoLong }: { derby: MatchStore; hallen
             <span className="lc-league">Superligaen · Parken</span>
             <span className="lc-row"><b>FCK – Brøndby</b><span className="num">{v.h}–{v.a} · {v.minute}</span></span>
             <MiniLine store={derby} />
-            <span className="lc-row"><span className="lc-price num"><b className="f0">{v.d.outcomes[0].ask}</b> øre FCK</span><span className="go">Til kampen ›</span></span>
+            <span className="lc-row"><span className="lc-price num">FCK · kurs <b className="f0">{v.d.outcomes[0].ask}</b></span><span className="go">Til kampen ›</span></span>
           </button>
           <button className="card live-card" onClick={() => go('hallen')}>
             <span className="lc-league">Herreligaen · Gigantium</span>
             <span className="lc-row"><b>Aalborg – GOG</b><span className="num">{hv.h}–{hv.a} · {hv.minute}</span></span>
             <MiniScope store={hallen} />
-            <span className="lc-row"><span className="lc-price num"><b className="aah">{hv.asks[0]}</b> øre Aalborg</span><span className="go">Til hallen ›</span></span>
+            <span className="lc-row"><span className="lc-price num">Aalborg · kurs <b className="aah">{hv.asks[0]}</b></span><span className="go">Til hallen ›</span></span>
           </button>
           <div className="demo-row">
             <button className="act primary" onClick={() => go('demo')}>Se demoen · 90 sek.</button>

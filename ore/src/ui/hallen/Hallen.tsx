@@ -181,7 +181,7 @@ export function HallenScreen({ store, demo }: { store: HallenStore; demo: boolea
       <section className="trig" aria-label="Trigger">
         <div className="trig-row">
           <span className="trig-q"><b style={{ color: TRIG }}>{levelLabel}</b> før {tr.deadline >= 60 ? 'slut' : `${tr.deadline}′`}?</span>
-          <span className="num trig-p"><b>{v.triggerAsk || '–'}</b> øre · {Math.round(v.triggerP * 100)} af 100</span>
+          <span className="num trig-p">kurs <b>{v.triggerAsk || '–'}</b> · {Math.round(v.triggerP * 100)} % chance</span>
         </div>
         <div className="chips">
           {deadlines.map((d) => <button key={d} className={tr.deadline === d ? 'on' : ''} aria-pressed={tr.deadline === d} onClick={() => store.setTrigger({ deadline: d })}>før {d >= 60 ? 'slut' : `${d}′`}</button>)}
@@ -191,7 +191,7 @@ export function HallenScreen({ store, demo }: { store: HallenStore; demo: boolea
       </section>
       <div className="ab hb" role="group" aria-label="Pris pr. udfald">
         {(['A', 'X', 'G'] as const).map((k, i) => (
-          <button key={k} className={`ab-seg h${i}`} style={{ flexGrow: v.asks[i] }} onClick={() => store.buy(k, stake)} aria-label={`${HB_LABELS[i]} ${v.asks[i]} øre. Tryk for at købe for ${stake} kr`}>
+          <button key={k} className={`ab-seg h${i}`} style={{ flexGrow: v.asks[i] }} onClick={() => store.buy(k, stake)} aria-label={`${HB_LABELS[i]} kurs ${v.asks[i]}. Tryk for at købe for ${stake} kr`}>
             <span className="ab-l">{['AaH', 'X', 'GOG'][i]}</span>
             <span className="ab-v num">{v.asks[i]}</span>
           </button>

@@ -148,7 +148,7 @@ export class FootballSim {
     if (this.phase === 'pre' && this.phaseK >= PRE_SUBS) {
       this.phase = '1H';
       this.phaseK = 0;
-      this.emit('kickoff', { text: `Åbner ${Math.round(this.ask[0])} øre` });
+      this.emit('kickoff', { text: `Åbner kurs ${Math.round(this.ask[0])}` });
     } else if (this.phase === 'HT' && this.phaseK >= (this.tl.htSubs ?? HT_SUBS)) {
       this.phase = '2H';
       this.phaseK = 0;

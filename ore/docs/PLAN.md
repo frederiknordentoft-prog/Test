@@ -453,3 +453,12 @@ C er den smukkeste, men dens glatning får stierne til at stige *før* målet. D
 - **Håndbold-triggeren** "+4 før 45′" fra 38′ ved +1 koster 24 øre, ikke de 42 i KONCEPT.md, fordi σ er udledt af kæden: 0,65 og ikke 1,0.
 - **Theta, stop-loss/take-profit og totaler som enkeltmarked** er ikke med (fase 2).
 - **Forståelsestest** med 5 Oddset-brugere er ikke udført. Den er manuel og ligger efter levering.
+
+---
+
+## 17. Prisenhed: kurs (2. nov. 2026)
+
+Brugeren valgte "kurs" i stedet for "øre" som prisenhed i brugerfladen: "FCK kurs 55 · 54 % chance".
+- **Prisændringer og gab** hedder "point".
+- **Sandsynligheder** står i procent ved prisen, og "X af 100 fremtider" bliver i viften og i Byg.
+- **Uændret:** motor, kvoter og tal (kurs 55 = 55 øre pr. andel, der betaler 1 kr). Brandet ØRE består.

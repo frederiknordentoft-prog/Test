@@ -29,9 +29,9 @@ export function Portefolje({ store }: { store: MatchStore }) {
           <ul className="pf-list">
             {open.map((p) => (
               <li key={p.id}>
-                <div className="pf-row"><b>{p.label}</b><span className="num">{p.shares} andele @ {Math.round(p.avg)}</span></div>
+                <div className="pf-row"><b>{p.label}</b><span className="num">{p.shares} andele @ kurs {Math.round(p.avg)}</span></div>
                 <div className="pf-row sub num"><span>Værdi nu {fmtKr(p.value)}</span><span>Ved sejr {fmtKr(p.atWin)}</span><span className={p.pnl >= 0 ? 'up' : 'down'}>{p.pnl >= 0 ? '▲' : '▼'} {fmtKr(Math.abs(p.pnl))}</span></div>
-                <div className="pf-row"><span className="tray-note">Sælg til {p.bid} øre</span><button className="act" disabled={!store.isOpen(p.id)} onClick={() => store.sell(p.id, p.shares)}>Sælg alt · {fmtKr((p.shares * p.bid) / 100)}</button></div>
+                <div className="pf-row"><span className="tray-note">Sælg til kurs {p.bid}</span><button className="act" disabled={!store.isOpen(p.id)} onClick={() => store.sell(p.id, p.shares)}>Sælg alt · {fmtKr((p.shares * p.bid) / 100)}</button></div>
               </li>
             ))}
           </ul>
@@ -39,7 +39,7 @@ export function Portefolje({ store }: { store: MatchStore }) {
           {limits.length === 0 && <p className="tray-note">Hold fingeren i viften for at sætte en købsgrænse.</p>}
           <ul className="pf-list">
             {limits.map((l) => (
-              <li key={l.id}><div className="pf-row"><b>{l.label} ved {l.level} øre</b><span className="num">{l.kr} kr reserveret</span></div><div className="pf-row"><span /><button className="act" onClick={() => store.cancelLimit(l.id)}>Annullér</button></div></li>
+              <li key={l.id}><div className="pf-row"><b>{l.label} ved kurs {l.level}</b><span className="num">{l.kr} kr reserveret</span></div><div className="pf-row"><span /><button className="act" onClick={() => store.cancelLimit(l.id)}>Annullér</button></div></li>
             ))}
           </ul>
           <h2>Afsluttet</h2>

@@ -150,7 +150,7 @@ export function display(sim: FootballSim, focus: 0 | 1 | 2): Display {
 /** Explains the focused price move over the last 2 game minutes in plain Danish. */
 export function cause(sim: FootballSim, focus: 0 | 1 | 2): { text: string; key: string } | null {
   const [ev, tm, pr, fl] = sim.attribution(focus);
-  const arrow = (v: number) => `${v >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(v))} øre`;
+  const arrow = (v: number) => `${v >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(v))} point`;
   const recent = sim.events.filter((e) => sim.t - e.t <= 2 && (sim.k - e.k) <= 80 * 3);
   const score = `${sim.h}–${sim.a}`;
   if (Math.abs(ev) >= 1) {
@@ -164,7 +164,7 @@ export function cause(sim: FootballSim, focus: 0 | 1 | 2): { text: string; key: 
   const comps: [number, string][] = [[tm, 'tid'], [pr, 'pres'], [fl, 'flow']];
   comps.sort((x, y) => Math.abs(y[0]) - Math.abs(x[0]));
   const [v, kind] = comps[0];
-  if (Math.abs(v) < 1) return { text: 'Rolig handel · under 1 øre på 2 kampmin', key: 'calm' };
+  if (Math.abs(v) < 1) return { text: 'Rolig handel · under 1 point på 2 kampmin', key: 'calm' };
   if (kind === 'tid') return { text: `${arrow(v)}: tiden løber (${score})`, key: 'time' };
   if (kind === 'pres') {
     const presser: 0 | 1 = sim.pi >= 0 ? 0 : 1;
