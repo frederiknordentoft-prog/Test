@@ -351,7 +351,7 @@ function PositionCard({ v, store, onSikring }: { v: MatchView; store: MatchStore
     return (
       <section className="pc empty" aria-label="Din position">
         {any.length ? (
-          <p>{any.length} åben{any.length === 1 ? '' : 'e'} position{any.length === 1 ? '' : 'er'} · værdi {fmtKr(v.value)}. <button className="link" onClick={() => go('portefolje')}>Se porteføljen</button></p>
+          <p>{any.length} {any.length === 1 ? 'åben position' : 'åbne positioner'} · værdi {fmtKr(v.value)}. <button className="link" onClick={() => go('portefolje')}>Se porteføljen</button></p>
         ) : (
           <p><b>Hold på et udfald</b> i baren ovenfor for at købe, eller tryk for at vælge indsats. Langt tryk i viften sætter en købsgrænse.</p>
         )}

@@ -244,7 +244,10 @@ F['kal.o25.punkter'] = num(st['o25Kickoff']['samples'])
 F['kal.o25.maxAfvigelse'] = num(max(abs(r['y'] - r['p']) for r in st['calO25']) * 100, 1)
 F['kal.1x2.maxAfvigelse'] = num(max(abs(r['y'] - r['p']) for r in st['cal1x2'] if r['n'] >= 300) * 100, 1)
 F['mc.maxAfvigelse'] = num(max(abs(r['mc'] - r['dp']) for r in st['mcVsDp']) * 100, 1)
-F['grid.maxAfvigelse1x2'] = f"{max(r['x12diff'] for r in st['mcVsDp']):.0e}".replace('e-', 'e−')
+_g = max(r['x12diff'] for r in st['mcVsDp'])
+_e = math.floor(math.log10(_g))
+_sup = str.maketrans('0123456789-', '⁰¹²³⁴⁵⁶⁷⁸⁹⁻')
+F['grid.maxAfvigelse1x2'] = f"{num(_g / 10 ** _e, 1)} · 10{str(_e).translate(_sup)}"
 F['pulje.graense'] = num(st['poolBoundMax'], 3)
 F['pulje.20.kampe'] = str(st['pool20']['n'])
 for i, nm in enumerate(['fck', 'x', 'bif']):

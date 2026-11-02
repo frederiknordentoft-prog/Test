@@ -108,7 +108,7 @@ function cover() {
     <div><b>Sikring</b>Stop-loss og Sikr gevinst på positionen, med en vagt mod gab ved genåbning.</div>
     <div><b>Parken-puljen</b>En totalisatorpulje på resultatet mod et simuleret publikum, låst ved pausen.</div>
   </div>
-  <div class="meta"><b>Prototype · fiktive kurser · ingen rigtige penge</b><br>2. november 2026 · commit ${esc(fakta.commit)}<br>Alle tal og billeder stammer fra én deterministisk kørsel af appen.</div>
+  <div class="meta"><b>Prototype · fiktive kurser · ingen rigtige penge</b><br>2. november 2026 · commit ${esc(fakta.commit)}<br>Alle tal om kampen og alle billeder fra derbyet stammer fra én deterministisk kørsel af appen.</div>
   <div class="hero"><img src="../img/07-over25-vifte.jpg" alt=""></div>
 </section>`;
 }

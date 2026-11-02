@@ -79,6 +79,20 @@ node qa/qa.cjs
 
 Statistiske tests bruger et rolldown-bundt af motoren (`tests/setup/bundle.ts`), fordi Vitests TS-transform gør de varme løkker cirka 8 gange langsommere end den rigtige app.
 
+## Rapporten
+
+`docs/UDFALD-rapport.pdf` beskriver spillet og de nye mekanismer i detaljer, med screenshots. Del I er til alle, Del II er maskinrummet, og bilagene har ordliste, kontraktnøgler og konstanter. Kilderne ligger i `docs/rapport/`. Alle tal om kampen og alle billeder fra derbyet kommer fra én deterministisk kørsel (`docs/rapport/scripts/story.js`), som både node og browseren afspiller, og browserens handler skal matche node-kørslen handel for handel.
+
+```bash
+npx vitest run
+node docs/rapport/scripts/data.mjs
+node docs/rapport/scripts/mc20.mjs
+node docs/rapport/scripts/shoot.cjs
+python3 docs/rapport/scripts/fakta.py
+node docs/rapport/build.mjs
+python3 docs/rapport/scripts/verify.py
+```
+
 ## Kalibrering (målt)
 
 **Fodbold:**

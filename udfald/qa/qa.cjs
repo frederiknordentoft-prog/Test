@@ -85,7 +85,10 @@ const ff = (m) => `(async () => { const st = window.__udfald.derby; st.stop(); s
     await f.evaluate(ff(20));
     for (const rate of [1, 4]) {
       await cdp.send('Emulation.setCPUThrottlingRate', { rate });
-      await f.evaluate(() => { window.__lt = []; try { new PerformanceObserver((l) => l.getEntries().forEach((e) => window.__lt.push(Math.round(e.duration)))).observe({ type: 'longtask' }); } catch (_) {} window.__d = []; let last = 0; const loop = (t) => { if (last) window.__d.push(t - last); last = t; if (window.__d.length < 2000) requestAnimationFrame(loop); }; requestAnimationFrame(loop); });
+      // One observer and one frame loop per rate: the previous ones are stopped first, so nothing is counted twice.
+      await f.evaluate(() => { if (window.__po) window.__po.disconnect(); window.__stopLoop = true; });
+      await page.waitForTimeout(100);
+      await f.evaluate(() => { window.__lt = []; try { window.__po = new PerformanceObserver((l) => l.getEntries().forEach((e) => window.__lt.push(Math.round(e.duration)))); window.__po.observe({ type: 'longtask' }); } catch (_) {} window.__d = []; window.__stopLoop = false; const d = window.__d; let last = 0; const loop = (t) => { if (window.__stopLoop) return; if (last) d.push(t - last); last = t; if (d.length < 2000) requestAnimationFrame(loop); }; requestAnimationFrame(loop); });
       await page.waitForTimeout(7000);
       const r = await f.evaluate(() => { const a = window.__d.slice(5).sort((x, y) => x - y); const q = (p) => a[Math.floor(a.length * p)]; return { frames: a.length, p50: q(0.5), p95: q(0.95), long: window.__lt.length, maxLong: Math.max(0, ...window.__lt), mcMs: window.__udfald.derby.mc.lastMs }; });
       report.perf[`cpu${rate}x`] = r;
