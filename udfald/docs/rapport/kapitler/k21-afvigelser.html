@@ -1,88 +1,63 @@
 <h1 class="kapitel" id="k21" data-nr="21">Afvigelser og kendte begrænsninger</h1>
-<p class="ingress">Kapitlet samler det, der ikke er som planlagt, og det, der ikke virker, som man kunne vente. Hvert punkt står i sin egen boks med tal og kilde, og de fleste er beskrevet nærmere i det kapitel, der henvises til.</p>
+<p class="ingress">Kapitlet samler det, der ikke er som planlagt, og det, der ikke virker, som man kunne vente. De fire vigtigste punkter står i hver sin boks, og tabellen samler alle punkter med tal og kapitel.</p>
 
-<h2 id="k21-rettet">Rettet under rapportarbejdet</h2>
-<div class="callout advarsel"><b>Regionsloftet.</b> En region på kortet over slutresultater havde loftet Σ cellekurser − (<i>n</i> − 1), efter mønster fra dobbeltchancen. Fradraget tog et point pr. ekstra celle, også når en celles oprunding var tæt på 0, så store regioner fik en kurs under fair chance. Med det gamle loft kostede {{gammelFejl.region}} ({{q20.m4.n}} celler) ved 20′ kurs {{gammelFejl.kurs}} for en fair chance på {{gammelFejl.fair}} point, altså {{gammelFejl.under}} point under. Loftet er nu summen af cellekurserne. Det er et værn mod arbitrage, som ikke kan binde, så alle regioner får de fulde 10 %. En ny regressionstest kræver det for fem regioner ved 1′, 20′, 40′ og 60′ (kapitel 16).</div>
-<!-- kilde: src/state/match.ts:568-585; git diff a2420ce fbac034 -- src/state/match.ts (linje 578 før: … − (cells.length − 1)); tests/features.test.ts:143-160; docs/PLAN.md:483 -->
+<h2 id="k21-vigtigste">De fire vigtigste</h2>
+<div class="callout advarsel"><b>Regionsloftet, rettet under rapportarbejdet.</b> En region på kortet over slutresultater havde loftet Σ cellekurser − (<i>n</i> − 1). Fradraget tog et point pr. ekstra celle, også når en celles oprunding var tæt på 0, så store regioner fik en kurs under fair chance. Ved 20′ kostede {{gammelFejl.region}} ({{q20.m4.n}} celler) kurs {{gammelFejl.kurs}} for en fair chance på {{gammelFejl.fair}} point, altså {{gammelFejl.under}} point under. Loftet er nu summen af cellekurserne, og en ny regressionstest kræver, at ingen region ligger under fair (kapitel 16).</div>
+<!-- kilde: src/state/match.ts:568-585; git diff a2420ce fbac034 -- src/state/match.ts (linje 578 før: … − (cells.length − 1)); tests/features.test.ts:143-160 -->
 <!-- data: story.json quotes20 regions (Mindst 4 mål: n 26, p 0,164, oldCap 14, oldAsk 14, ask 19) -->
 
-<h2 id="k21-fundet">Fundet og ikke rettet</h2>
-<div class="callout advarsel"><b>Grænse og stop i samme gab.</b> En købsgrænse og et stop-loss på samme kontrakt kan begge springes over af ét gab. I en kørsel af historiekampen med BIF købt for {{koeb.bif.indsats}}, en købsgrænse på {{kant.graense.niveau}} for {{kant.graense.indsats}} og et stop på 17 faldt BIF's kurs fra {{foerMaal.bifKurs}} til {{genaabning1.bifKurs}} over FCK-målet. Grænsen fyldte straks ved genåbningen: {{kant.graense.andele}} andele til kurs {{kant.graense.kurs}}, <span class="ui">{{kant.graense.bedre}} point bedre</span>. 8 substeps senere solgte stoppet alle {{kant.stop.andele}} andele til kurs {{kant.stop.kurs}}, også dem, grænsen lige havde købt. Det er ikke rettet og foreslås som næste opgave.</div>
-<!-- kilde: src/state/match.ts:258-282, 718-723, 731-741; src/engine/book/portfolio.ts:116-157, 189-205, 222-244 -->
-<!-- data: edge.json (samme seed og kamp som historien; simulationen læser ikke bogen) -->
+<div class="callout advarsel"><b>Købsgrænse og stop i samme gab, ikke rettet.</b> I en kørsel af historiekampen med BIF købt for {{koeb.bif.indsats}}, en købsgrænse på {{kant.graense.niveau}} for {{kant.graense.indsats}} og et stop på {{stop.bif.niveau}} sprang BIF's kurs fra {{foerMaal.bifKurs}} til {{genaabning1.bifKurs}} over FCK-målet. Grænsen fyldte straks ved genåbningen: {{kant.graense.andele}} andele til kurs {{kant.graense.kurs}}, <span class="ui">{{kant.graense.bedre}} point bedre</span>. {{stop.bif.substepsEfter}} substeps senere, da vagten var udløbet, solgte stoppet alle {{kant.stop.andele}} andele til salgskurs {{kant.stop.kurs}} for {{kant.stop.kr}}, også dem, grænsen lige havde købt. Reglen mod stop og grænse på samme kontrakt afviser kun et stop på eller over grænsen, og grænsen venter ikke på vagten. Det foreslås som næste opgave at lade grænsen vente på samme vagt eller afvise et grænsekøb, når betingelsen for et aktivt stop på kontrakten allerede er opfyldt.</div>
+<!-- kilde: src/state/match.ts:258-282, 718-723, 731-741; src/engine/book/portfolio.ts:35-38, 116-157, 189-205, 222-244 -->
+<!-- data: edge.json (samme seed og kamp som historien; log: buy k 831: 769 @ 26 = 199,94 kr; limit-fill k 1192: 1111 @ 9 = 99,99 kr, better 11; sell k 1200: 1880 @ 8 = 150,40 kr, via stop) -->
+
+<div class="callout advarsel"><b>Puljens skøn midt i halvlegen.</b> Modellens chance gange puljens odds lige nu kan midt i halvlegen ligge over grænsen fra kapitel 18: højst {{pulje.skoen.max.bif}} for BIF og {{pulje.skoen.max.x}} for X, og mindst én side lå over i ca. {{pulje.skoen.overGraense}} af første halvleg. Det skyldes, at siderne glattes over ét kampminut. Udbetalingen afgøres ved pausen, hvor siderne sættes til modellens fair chance med hjemmebias, og dér var værdien FCK {{pulje.lukning.ev.fck}}, X {{pulje.lukning.ev.x}} og BIF {{pulje.lukning.ev.bif}} (kapitel 18).</div>
+<!-- kilde: src/state/match.ts:403-439, 451-470 -->
+
+<div class="callout advarsel"><b>Ingen Sikring på Under 2,5, med vilje.</b> Sikring findes kun på de fire kontrakter med en linje i viften: FCK, X, BIF og Over 2,5. Viftens fokus kan kun være Over, så Under har ingen linje at vise niveauerne på. Brugerfladen viste aldrig Sikring på Under, men storen tog tidligere imod den. Det blev rettet under rapportarbejdet, og nu svarer storen <span class="ui">Sikring findes kun på 1X2 og Over 2,5</span> (kapitel 17).</div>
+<!-- kilde: src/state/match.ts:26-27, 730-741; src/state/focus.ts:54-78, 102-108; src/ui/kamp/Kampen.tsx:372; git diff a2420ce fbac034 -- src/state/match.ts (placeExit brugte før liveQuote, som også kender tot:2.5:U) -->
+
+<h2 id="k21-alle">Alle punkter</h2>
 <table class="t">
-  <thead><tr><th>Kampur</th><th>Hændelse</th><th class="n">Andele</th><th class="n">Kurs</th><th class="n">Beløb</th></tr></thead>
+  <thead><tr><th>Punkt</th><th>Hvad</th><th>Tal</th><th class="n">Kapitel</th></tr></thead>
   <tbody>
-    <tr><td>{{koeb.bif.minut}}</td><td>Køb af BIF; grænse {{kant.graense.niveau}} og stop 17 sat</td><td class="n">{{koeb.bif.andele}}</td><td class="n">{{koeb.bif.kurs}}</td><td class="n">{{koeb.bif.kr}}</td></tr>
-    <tr><td>{{maal1.ur}}</td><td>FCK-mål, handelsstop</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
-    <tr><td>{{genaabning1.ur}}</td><td>Genåbning, grænsen fylder</td><td class="n">{{kant.graense.andele}}</td><td class="n">{{kant.graense.kurs}}</td><td class="n">99,99 kr</td></tr>
-    <tr><td>{{stop.bif.ur}}</td><td>Stoppet sælger alt</td><td class="n">{{kant.stop.andele}}</td><td class="n">{{kant.stop.kurs}}</td><td class="n">{{kant.stop.kr}}</td></tr>
+    <tr><th colspan="4">Rettet under rapportarbejdet</th></tr>
+    <tr><td>Regionsloftet</td><td>Store regioner fik en kurs under fair chance</td><td>kurs {{gammelFejl.kurs}} mod fair {{gammelFejl.fair}}</td><td class="n">16</td></tr>
+    <tr><td>Sikring på Under 2,5</td><td>Storen tog imod den, selvom brugerfladen aldrig tilbød den</td><td>–</td><td class="n">17</td></tr>
+    <tr><th colspan="4">Fundet og ikke rettet</th></tr>
+    <tr><td>Grænse og stop i samme gab</td><td>Grænsen fylder ved genåbningen, og stoppet sælger også de nye andele</td><td>{{kant.graense.andele}} købt, {{kant.stop.andele}} solgt</td><td class="n">17</td></tr>
+    <tr><td>Byg-kursen</td><td>Regnes kun, når benene vælges, og kan købes uændret efter et mål</td><td>26 efter FCK-målet, genberegnet 46</td><td class="n">9</td></tr>
+    <tr><td>Stop mod grænse</td><td>Sammenlignes uden de 2 point, stoppet bruger, så et stop 1–2 point under en grænse udløses før eller samtidig med den</td><td>–</td><td class="n">17</td></tr>
+    <tr><td>Årsagschippen</td><td>Bogfører et rødt kort som tid og viser kort efter et handelsstop gabet som købs- eller salgspres</td><td><span class="ui">▲ 23 point: købspres på FCK</span> i 18 kampsekunder</td><td class="n">15</td></tr>
+    <tr><td>Afregningens flod</td><td>Prikkerne placeres, som om FCK lå øverst</td><td>–</td><td class="n">10</td></tr>
+    <tr><td>Træk-karakter sent i kampen</td><td>Under 10 kampminutter før slut trækkes kun en del af tidens effekt fra</td><td>–</td><td class="n">19</td></tr>
+    <tr><td>Slutresultat under 3 %</td><td>Kan ikke sælges, fordi salg bruger købets åbent-tjek</td><td>–</td><td class="n">16</td></tr>
+    <tr><td>Ugyldig <code>cs:</code>-nøgle</td><td>En celle uden for 0–5 får to funktioner til at kalde hinanden i ring; brugerfladen danner aldrig sådan en nøgle</td><td>–</td><td class="n">B</td></tr>
+    <tr><th colspan="4">Kendte begrænsninger</th></tr>
+    <tr><td>Puljens skøn</td><td>Over grænsen midt i halvlegen, men ikke ved pausen</td><td>højst {{pulje.skoen.max.bif}}, ca. {{pulje.skoen.overGraense}} af tiden</td><td class="n">18</td></tr>
+    <tr><td>Ingen Sikring på Under 2,5</td><td>Kun kontrakter med en linje i viften</td><td>4 kontrakter</td><td class="n">17</td></tr>
+    <tr><td>Refusion i puljen</td><td>Kan ikke nås i en kamp, fordi publikum altid har penge på alle tre sider</td><td>mindste side {{pulje.lukning.bif}}</td><td class="n">18</td></tr>
+    <tr><td>5+ er samlet</td><td>5–1 og 7–1 er samme celle; gitteret samler alt over 10 ekstra mål pr. hold i 10</td><td>6 × 6 celler</td><td class="n">16</td></tr>
+    <tr><td>Intet marked for de fleste målkontrakter</td><td>Prissat direkte fra modellen, så samme udbetaling kan få to kurser</td><td>Mindst 4 mål {{q20.m4.kurs}}, Over 3,5 {{q20.tot35O.kurs}}</td><td class="n">16</td></tr>
+    <tr><td>Over 2,5 ved kickoff</td><td>Fair-prisen ligger lidt under den faktiske hyppighed</td><td>–</td><td class="n">16</td></tr>
+    <tr><td>Hallen</td><td>Intet salg, ingen Sikring og ingen købsgrænser</td><td>–</td><td class="n">B</td></tr>
+    <tr><th colspan="4">Afvigelser fra planen</th></tr>
+    <tr><td>Basisrater</td><td>Lavere basisrater og ét fælles pres, fordi pres og excitation lægger mål oveni</td><td>1,4 og 0,965 mod 1,60 og 1,10</td><td class="n">13</td></tr>
+    <tr><td>Likviditet <code>B_LIQ</code></td><td>Markedet er dobbelt så følsomt for ordrer</td><td>{{k.B_LIQ}} mod ca. 400.000 kr</td><td class="n">15</td></tr>
+    <tr><td>Støjklip</td><td>Klippet i logit i stedet for i point</td><td>±0,02 logit (0,5 point ved 50 %) mod ±0,45 point</td><td class="n">15</td></tr>
+    <tr><td><code>ouExpect</code> uden spark</td><td>Sparkene og presklippet er ikke med i forventningen; planen havde en offline-tabel</td><td>–</td><td class="n">14</td></tr>
+    <tr><td>Puljen følger fair</td><td>Publikum følger modellens fair chance, ikke mid, så man ikke kan spille mod en hval og få over 0,95 pr. krone</td><td>bias 1,035 / 0,985 / 0,985</td><td class="n">18</td></tr>
+    <tr><td>Puljetesten</td><td>Betinget forventning ved pausen i stedet for realiseret udfald, som over 300 kampe har en standardfejl på 0,08</td><td>{{pulje.20.kampe}} kampe, værst {{pulje.20.vaerst.x}}</td><td class="n">18</td></tr>
+    <tr><td>Monte Carlo-testen</td><td>Tillader 1,2 point i gennemsnit, planen 1</td><td>målt 0,3</td><td class="n">20</td></tr>
+    <tr><td>1X2-kalibreringen</td><td>1.200 kampe og 10 point pr. interval, planen 2.000 kampe og ±3 point</td><td>højst {{kal.1x2.maxAfvigelse}} point</td><td class="n">20</td></tr>
+    <tr><td>Monte Carlo-tid</td><td>Langsommere end planens tidlige måling; kørslen ligger i en worker og blokerer ikke tegningen</td><td>{{perf.mc}} mod 45–70 ms</td><td class="n">20</td></tr>
+    <tr><td>Ydelse ved 4× CPU</td><td>p95 over målet på 33 ms, målt uden GPU og uden telefon</td><td>{{perf.4x.p95.tidligere}} og {{perf.4x.p95}}</td><td class="n">20</td></tr>
+    <tr><td>LoAF</td><td>Lange animationsframes måles ikke, kun lange opgaver</td><td>–</td><td class="n">20</td></tr>
+    <tr><td>NU-linjen</td><td>Står ved 36 % af viftens tegneflade, ikke 52 %, så fremtiden får knap to tredjedele</td><td>–</td><td class="n">–</td></tr>
+    <tr><td>Mindre tekniske valg</td><td>React højst 4 gange i sekundet (plan 2), Monte Carlo hver 8. tick (plan hver 3.), tællerbaseret hash i stedet for mulberry32, fast 85/15-deling i årsagschippen</td><td>–</td><td class="n">12, 15</td></tr>
+    <tr><td>Håndboldtrigger</td><td><span class="ui">Aalborg +4 før 45′</span> fra 38′ ved +1 koster mindre end i konceptet, fordi σ er udledt af kæden</td><td>kurs 24 mod 42</td><td class="n">–</td></tr>
+    <tr><td>Forståelsestest</td><td>Planens test med fem rigtige spillere er ikke udført</td><td>–</td><td class="n">–</td></tr>
   </tbody>
 </table>
-<!-- data: edge.json log (buy k 831: 769 @ 26 = 199,94 kr; limit-fill k 1192: 1111 @ 9 = 99,99 kr, better 11; sell k 1200: 1880 @ 8 = 150,40 kr, via stop); k 1180, 1192 og 1200 er maal1.k, genaabning1.k og stop.bif.k -->
-<p>Reglen mod stop og grænse på samme kontrakt afviser kun et stop på eller over grænsen, og 17 ligger under 20. Årsagen ligger i genåbningens substep. <code>afterStep</code> tjekker Sikring før købsgrænser, men stoppet venter på vagten, der kræver mere end {{k.STOP_REOPEN_GUARD}} substeps efter genåbningen. Grænsen har ingen vagt og fylder med det samme til den første kurs efter gabet. Den køber altså til en kurs, hvor stoppets betingelse, kurs − {{k.STOP_ASK_OFFSET}} ≤ niveau, allerede er opfyldt. Mulige rettelser er at lade grænsen vente på samme vagt eller at afvise et grænsekøb, når betingelsen for et aktivt stop på kontrakten er opfyldt.</p>
-<!-- kilde: src/state/match.ts:258-282; src/engine/book/portfolio.ts:35-38, 116-121, 136-157, 196-199, 222-244 -->
-
-<div class="callout advarsel"><b>Byg-kursen opdateres ikke.</b> En bygget fremtid prissættes én gang, når benene vælges, og kursen gemmes. Den regnes ikke om, mens kampen kører, heller ikke efter et mål, og den kan købes og sælges til den gemte kurs, så længe handlen er åben (kapitel 9). Genskabt med motorbundtet på historiens seed: kursen 26 for FCK vinder + Mindst 3 mål fra 24′ stod uændret og kunne købes efter FCK-målet, der løftede FCK's kurs {{genaabning1.gabFCK}} point. En ny beregning efter genåbningen gav 46.</div>
-<!-- kilde: src/state/match.ts:122-123, 543-551, 604-618, 705-716, 785-810; src/ui/byg/Byg.tsx:34-36, 163 -->
-<!-- data: genskabt med tests/.cache/engine.mjs og FREE_PLAY: setLegs([u0, m3]) ved t 24,02 gav kurs 26; efter genåbningen (t 29,67, 1–0) gav quote() stadig 26 og isOpen true; en ny beregning med samme formel (setLegs igen) gav 46; genskabt igen under faktatjekket med samme resultat -->
-
-<div class="callout advarsel"><b>Øvrige fund.</b> Fundet ved at læse koden under rapportarbejdet og ikke rettet:
-<ul>
-<li><b>Stop og grænse</b> sammenlignes uden de 2 point, stoppet bruger. Et stop 1–2 point under en grænse udløses før eller samtidig med den (kapitel 17).</li>
-<li><b>Årsagschippen</b> bogfører et rødt kort som tid. Cirka 2 kampminutter efter et handelsstop viser den desuden i et kort tidsrum gabet som købs- eller salgspres: i historien <span class="ui">▲ 23 point: købspres på FCK</span> i 18 kampsekunder fra 30:46 (kapitel 15).</li>
-<li><b>Prikkerne i Afregningens flod</b> placeres, som om FCK lå øverst, men båndet for FCK ligger nederst (kapitel 10).</li>
-<li><b>Træk-karakteren</b> for et køb mindre end 10 kampminutter før slut trækker kun en del af tidens effekt fra (kapitel 19).</li>
-<li><b>En slutresultat-position under 3 %</b> kan ikke sælges, fordi salg bruger samme åbent-tjek som køb (kapitel 16).</li>
-<li><b>En ugyldig <code>cs:</code>-nøgle</b> med en celle uden for 0–5 får <code>isOpen</code> og <code>closedReason</code> til at kalde hinanden i ring, til kaldstakken løber over. Brugerfladen danner aldrig sådan en nøgle (bilag B).</li>
-</ul></div>
-<!-- kilde: src/engine/book/portfolio.ts:120-121, 142, 196-199, 234; src/engine/football/sim.ts:200, 214-221, 498, 549-569; src/ui/afregning/Afregning.tsx:32-50, 63-75; src/state/match.ts:696-702; src/ui/afregning/Afregning.tsx:86-92; src/state/match.ts:595-601, 615, 705-710; src/state/focus.ts:122-134 -->
-<!-- data: genskabt med tests/.cache/engine.mjs: isOpen('cs:9-9') giver "Maximum call stack size exceeded"; cause(sim, 0) på historiens seed viser "▲ 23 point: købspres på FCK" fra substep 1260 (t 30,77) til 1271, dvs. 80 substeps efter målet (1180) til 80 efter genåbningen (1192) -->
-
-<h2 id="k21-bevidst">Bevidste begrænsninger</h2>
-<div class="callout advarsel"><b>Sikring kun på 1X2 og Over 2,5.</b> Sikring findes kun på de fire kontrakter, der har en linje i viften: FCK, X, BIF og Over 2,5. Under 2,5 har ingen linje, fordi viftens fokus kun kan være Over, og får hverken stop-loss eller Sikr gevinst. Brugerfladen viste altid kun Sikring-chippen på de fire, men storen tog tidligere imod Sikring på Under 2,5 gennem <code>placeExit</code>. Det blev rettet under rapportarbejdet, og nu svarer storen <span class="ui">Sikring findes kun på 1X2 og Over 2,5</span>.</div>
-<!-- kilde: src/state/match.ts:26-27, 730-741; src/state/focus.ts:54-78, 102-108; src/ui/kamp/Kampen.tsx:372; git diff a2420ce fbac034 -- src/state/match.ts (placeExit brugte før liveQuote, som også kender tot:2.5:U); README.md:28 -->
-
-<div class="callout advarsel"><b>Refusion i puljen sker ikke i praksis.</b> Reglen siger, at alle får deres indsats tilbage, hvis ingen har penge på det rigtige resultat. Publikums penge fordeles efter modellens fair chance med hjemmebias, og den chance er over 0 for alle tre resultater, så længe der er spilletid tilbage. Ved lukningen i historien var den mindste side BIF med {{pulje.lukning.bif}}. Reglen er testet i bogen, men kan ikke nås i en kamp (kapitel 18).</div>
-<!-- kilde: src/engine/book/portfolio.ts:40-49; src/state/match.ts:403-439; tests/book.test.ts:120-123 -->
-
-<div class="callout advarsel"><b>5+ er samlet.</b> Kortet over slutresultater har 6 × 6 celler, hvor 5 betyder 5 eller flere mål til holdet. 5–1 og 7–1 er samme celle, og et resultat som 6–0 kan ikke købes for sig. Gitteret bag kortet samler desuden alle ekstra mål over 10 pr. hold i 10, uden at sandsynlighed går tabt (kapitel 16).</div>
-<!-- kilde: src/engine/football/display.ts:13-14, 73-76; src/state/focus.ts:112-147; src/engine/football/dp.ts:197-198 -->
-
-<div class="callout advarsel"><b>Modellens øvrige grænser.</b>
-<ul>
-<li><b>Intet marked for de fleste målkontrakter.</b> Regioner og Over/Under-linjerne 0,5, 1,5, 3,5 og 4,5 prissættes direkte fra modellens chance med fast margin. Samme udbetaling kan derfor få to kurser: ved 20′ kostede regionen med mindst 4 mål {{q20.m4.kurs}} og Over 3,5 {{q20.tot35O.kurs}} (kapitel 16).</li>
-<li><b>Ingen excitation fra fremtidige mål.</b> DP'en og Monte Carlo lader kun eksisterende excitation henfalde. Over 2,5 ligger derfor lidt lavt ved kickoff, {{kal.o25.kickoffPris}} mod {{kal.o25.kickoffFaktisk}} (kapitel 13).</li>
-<li><b>Hallen har intet salg.</b> En håndboldkontrakt holdes til afregning, og der er ingen Sikring eller købsgrænser (bilag B).</li>
-</ul></div>
-<!-- kilde: src/engine/football/display.ts:77-87; src/state/match.ts:568-585; src/engine/football/dp.ts:46-48; src/engine/mc/paths.ts:162-166; src/state/hallen.ts:156-183 -->
-
-<h2 id="k21-plan">Afvigelser fra planen</h2>
-<div class="callout advarsel"><b>NU ved 36 %, ikke 52 %.</b> Planen satte NU fast ved cirka 52 % af viftens bredde. Koden placerer NU ved 36 % af tegnefladen, der går fra 10 px inde til venstre til en margen på 66 px i højre side, så fremtiden får knap to tredjedele af fladen. Ændringen er ikke beskrevet i planen.</div>
-<!-- kilde: src/render/fan/geometry.ts:7, 10-13; src/ui/kamp/Fan.tsx:55; docs/PLAN.md:109 -->
-
-<div class="callout advarsel"><b>Basisrater og intensitet.</b> Planen havde basisrater på 1,60 for FCK og 1,10 for BIF og et pres pr. hold, e<sup>π<sub><i>i</i></sub></sup>. Koden bruger 1,4 og 0,965, fordi pres og excitation lægger mål oveni, og ét fælles pres, der indgår som e<sup>±π/2</sup>. Planens F1-krav var 2,7 ± 0,15 mål og FCK-sejr i 48 % ± 3 point over 1.000 kampe. Testen kræver i stedet 47 % ± 3,5 point over 1.500 kampe, og målingen gav {{kal.maalPrKamp}} mål og {{kal.fckSejr}} (kapitel 13).</div>
-<!-- kilde: docs/PLAN.md:211-214, 343; src/engine/football/params.ts:13, 39-41; src/engine/football/sim.ts:293; tests/football.test.ts:15-29 -->
-
-<div class="callout advarsel"><b>Puljen følger fair, ikke mid.</b> Planen lod publikums fordeling følge den viste mid, glattet. Mid bærer hvalernes vedvarende ordrestrøm, så man kunne spille imod en hval og få over 0,95 pr. krone igen. Publikum følger derfor modellens fair chance med en lille hjemmebias (1,035 / 0,985 / 0,985), glattet med en tidskonstant på 1 kampminut og sat direkte til målet under handelsstop og ved lukning. Fair chance er en martingal, så forventet udbytte pr. krone er højst 0,9 · 1,035 / 0,985 ≈ {{pulje.graense}} på enhver side (kapitel 18).</div>
-<!-- kilde: docs/PLAN.md:500; src/state/match.ts:35-37, 403-439 -->
-
-<div class="callout advarsel"><b>Puljetesten måler betinget forventning.</b> Planen ville måle 300 kampe med realiseret udfald. Over 300 kampe har den realiserede udbetaling pr. krone en standardfejl på cirka 0,08 og kan ikke skelne 0,90 fra 0,95. Testen kører i stedet {{pulje.20.kampe}} kampe gennem den rigtige store til pausen og regner forventet udbytte pr. krone for en indsats på 100 kr ud fra modellens chance ved lukningen. De værste værdier var {{pulje.20.vaerst.fck}} for FCK, {{pulje.20.vaerst.x}} for X og {{pulje.20.vaerst.bif}} for BIF, alle under grænsen på 0,95. Testen antager, at modellens chance ved pausen er rigtig.</div>
-<!-- kilde: docs/PLAN.md:501; tests/features.test.ts:162-187 -->
-<!-- data: stats.json pool20 -->
-
-<div class="callout advarsel"><b>Ydelse ved 4× CPU.</b> Planens mål var p95 ≤ 33 ms for intervallet mellem frames ved 4× CPU-drosling. To QA-kørsler gav {{perf.4x.p95.tidligere}} og {{perf.4x.p95}}, og den længste opgave tog {{perf.4x.lang}}. Målingen er lavet i headless Chromium med software-tegning, og der findes ingen måling fra en telefon. Ved 1× var p95 {{perf.1x.p95}} (kapitel 20).</div>
-<!-- kilde: docs/PLAN.md:367, 424, 451; qa/qa.cjs:81-97 -->
-<!-- data: qa.txt (perf cpu4x p95 83,4, maxLong 357; cpu1x p95 16,8) -->
-
-<div class="callout advarsel"><b>Mindre afvigelser.</b>
-<ul>
-<li>React opdateres højst 4 gange i sekundet, ikke 2, og Monte Carlo køres hver 8. tick ved ×1 (hver 12. ved højere fart), ikke hver 3. (kapitel 12).</li>
-<li>Simulationen trækker sine tal fra en tællerbaseret hash, ikke fra planens mulberry32-strømme (kapitel 12).</li>
-<li>Årsagschippen deler resten fast 85/15 mellem flow og støj i stedet for at regne hvert led om (kapitel 15).</li>
-<li>Testen af 1X2-kalibreringen bruger 1.200 kampe og tillader 10 point pr. interval, hvor planen sagde 2.000 kampe og ±3 point pr. decil (kapitel 20).</li>
-<li>Demoen varer cirka 85 s, ikke 90, og QA's screenshots er til gennemsyn, ikke pixel-sammenligning.</li>
-<li>Håndboldtriggeren <span class="ui">Aalborg +4 før 45′</span> fra 38′ ved +1 koster kurs 24, ikke 42 som i konceptet, fordi σ er udledt af kæden: 0,65 i stedet for 1,0 (PLAN §16).</li>
-<li>Forståelsestesten med 5 Oddset-brugere er ikke udført.</li>
-</ul></div>
-<!-- kilde: docs/PLAN.md:205, 227, 229, 237, 343, 449-455; src/state/match.ts:486-502, 823-834; src/engine/football/sim.ts:139-146, 549-569; tests/football.test.ts:65-91 -->
+<!-- kilde: Byg: src/state/match.ts:543-551, 604-618, 785-810 (genskabt med tests/.cache/engine.mjs: setLegs([u0, m3]) ved t 24,02 gav 26, efter genåbningen stadig 26 og isOpen true, ny beregning 46). Stop/grænse: src/engine/book/portfolio.ts:120-121, 142, 196-199, 234. Årsagschip: src/engine/football/sim.ts:200, 214-221, 498, 549-569 (cause(sim, 0) viser "▲ 23 point: købspres på FCK" fra substep 1260 til 1271). Flod: src/ui/afregning/Afregning.tsx:32-50, 63-75. Træk: src/state/match.ts:696-702. Under 3 %: src/state/match.ts:595-601, 615, 705-710. cs-nøgle: src/state/focus.ts:122-134 (isOpen('cs:9-9') giver "Maximum call stack size exceeded"). Refusion: src/engine/book/portfolio.ts:40-49; tests/book.test.ts:120-123. 5+: src/engine/football/display.ts:13-14, 73-76; src/engine/football/dp.ts:197-198. Målkontrakter: src/engine/football/display.ts:77-87; src/state/match.ts:568-585. Kickoff: src/engine/football/dp.ts:46-48; src/engine/mc/paths.ts:162-166. Hallen: src/state/hallen.ts:156-183 -->
+<!-- kilde: Basisrater: docs/PLAN.md:211-214; src/engine/football/params.ts:13, 39-41; src/engine/football/sim.ts:293. B_LIQ: docs/PLAN.md §8; src/engine/football/sim.ts:28. Støj: src/engine/football/sim.ts:33-35. ouExpect: src/engine/football/dp.ts (kapitel 14); docs/PLAN.md §8. Pulje: docs/PLAN.md:500-501; src/state/match.ts:35-37, 403-439; tests/features.test.ts:162-187. MC-test: tests/mc.test.ts:7-21; docs/PLAN.md:229. Kalibrering: tests/football.test.ts:65-91; docs/PLAN.md:343. Ydelse og LoAF: docs/PLAN.md:367, 424, 426, 451; qa/qa.cjs:81-97. NU: src/render/fan/geometry.ts:7, 10-13; src/ui/kamp/Fan.tsx:55; docs/PLAN.md:109. Mindre: docs/PLAN.md:205, 227, 237, 449; src/state/match.ts:486-502, 823-834; src/engine/football/sim.ts:139-146, 549-569. Håndbold og forståelsestest: docs/PLAN.md:453-455 -->
+<!-- data: stats.json pool20 (worst 0,8965/0,9393/0,9303); qa.txt (perf, rettet måling) -->

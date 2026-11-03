@@ -1,50 +1,39 @@
 <h1 class="kapitel" id="bD" data-nr="D">Sådan er rapporten lavet</h1>
-<p class="ingress">Tallene, billederne og figurerne kommer fra én deterministisk kørsel af appen og fra test- og QA-kørslerne. Bilaget beskriver kildegrundlaget, hvordan tallene er hentet og kontrolleret, og hvordan rapporten bygges igen.</p>
+<p class="ingress">Tallene, billederne og figurerne kommer fra én deterministisk kørsel af appen og fra test- og QA-kørslerne. Bilaget beskriver kildegrundlaget, kontrollerne og kommandoerne.</p>
 
 <h2 id="bD-kilder">Kildegrundlag</h2>
-<p>Rapporten beskriver koden i <code>udfald/</code>. Data og testlog er kørt på arbejdskopien oven på commit {{commit}}, med rettelserne fra rapportarbejdet (kapitel 21). Rettelserne blev derefter committet sammen med rapportens kildefiler i commit fbac034. Planen og dens afvigelser står i <code>docs/PLAN.md</code>.</p>
-<!-- kilde: git log (a2420ce "Add total goals and final score …", fbac034 "Fix region pricing below fair, three UI details, and start the report"); docs/rapport/scripts/data.mjs:71 (regionstjekket fejler uden rettelsen), 344 (commit fra git rev-parse --short HEAD); data/vitest.txt (regressionstesten for regioner er med) -->
+<p>Rapporten beskriver koden i <code>udfald/</code>. Data og testlog er lavet på koden i commit fbac034, hvor regionsloftet er rettet (kapitel 21). QA-loggen og historiens billeder er taget igen, efter at QA's måling af lange opgaver og en stavefejl i appen var rettet (kapitel 20). Rapporten bygges i det følgende commit. Planen og dens afvigelser står i <code>docs/PLAN.md</code>.</p>
+<!-- kilde: git log (fbac034 "Fix region pricing below fair, three UI details, and start the report"; 0fef2b2 "Fix plural typo, stop double-counting long tasks in QA"; 1ce30f4 "reshoot the story screenshots after the plural fix; fresh QA log"); docs/rapport/scripts/data.mjs:71 (regionstjekket fejler uden rettelsen), 344 (stats.json commit er HEAD før fbac034, a2420ce, da data blev kørt på arbejdskopien med rettelsen); data/vitest.txt (regressionstesten for regioner er med) -->
 
 <h2 id="bD-historie">Historiekørslen</h2>
-<p>Kampen, rapporten følger, er fri kamp med seed <code>{{seed}}</code>, naturlige mål og hvaler og 3 minutters tillægstid. Handlerne står i <code>scripts/story.js</code>: køb af FCK, BIF, Over 2,5 og 1–1 lige efter 20:00, en puljeindsats på uafgjort, Sikring på BIF og Over 2,5 og et køb af 2–1 ved 35′. Hvert køb går gennem prislåsen: først forespørgslen, så et substep mere end 1,5 s senere på uret.</p>
-<!-- kilde: docs/rapport/scripts/story.js:1-80; src/engine/director/timeline.ts:31; src/state/match.ts:631-679 -->
-<p><code>scripts/data.mjs</code> kører den samme <code>MatchStore</code> som appen, men i Node på et virtuelt ur med 100 ms pr. tick. Historien køres med ét substep pr. tick. Scriptet skriver tre datafiler:</p>
+<p>Kampen er fri kamp med seed <code>{{seed}}</code>, naturlige mål og hvaler og 3 minutters tillægstid. Handlerne står i <code>scripts/story.js</code>, og hvert køb går gennem prislåsen. <code>scripts/data.mjs</code> kører den samme <code>MatchStore</code> som appen, men i Node på et virtuelt ur med ét substep pr. tick, og skriver tre filer:</p>
 <ul>
-<li><b><code>story.json</code>:</b> historien med en prøve for hvert 10. substep og ved hver hændelse, et detaljeret spor for substep 1.170–1.215 og 3.360–3.400, kurserne ved 20′ og 35′, bogens log, puljen ved lukning og træk-karaktererne.</li>
-<li><b><code>edge.json</code>:</b> gab-kanttilfældet fra kapitel 21, kørt på samme seed.</li>
-<li><b><code>stats.json</code>:</b> kalibrering, Monte Carlo mod DP, puljens grænse og 20-kampstabellen, konstanterne og antallet af tests. Kalibreringen bruger samme seeds og løkker som testene.</li>
+<li><b><code>story.json</code>:</b> historien, et detaljeret spor for substep 1170–1215 og 3360–3400, kurserne ved 20′ og 35′, bogens log, puljen og træk-karaktererne.</li>
+<li><b><code>edge.json</code>:</b> gab-kanttilfældet fra kapitel 21 på samme seed.</li>
+<li><b><code>stats.json</code>:</b> kalibrering, Monte Carlo mod DP, puljens grænse, konstanterne og antallet af tests, med samme seeds og løkker som testene.</li>
 </ul>
-<p>Scriptet stopper med en fejl, hvis et tal driver: målsnittet og Over 2,5 ved kickoff skal stemme med testloggen, historien skal ende {{slutresultat}} med to mål, stoppet på BIF skal udløses efter vagten, og Sikr gevinst på Over skal udløses.</p>
-<!-- kilde: docs/rapport/scripts/data.mjs:1-8, 26-39, 89-190, 195-206, 211-345 -->
+<p>Scriptet stopper, hvis et tal driver: målsnittet og Over 2,5 ved kickoff skal stemme med testloggen, historien skal ende {{slutresultat}}, og stoppet på BIF og Sikr gevinst på Over skal udløses.</p>
+<!-- kilde: docs/rapport/scripts/story.js:1-80; docs/rapport/scripts/data.mjs:1-8, 26-39, 89-190, 195-206, 211-345; src/engine/director/timeline.ts:31; src/state/match.ts:631-679 -->
 
 <h2 id="bD-browser">Browseren mod Node</h2>
-<p><code>scripts/shoot.cjs</code> afspiller den samme <code>story.js</code> i den byggede app i Playwright Chromium. Storen fryses, så kampen kun går frem, når scriptet kalder <code>tick</code>, og hvert billede venter på et nyt Monte Carlo-resultat for sit fokus. Til sidst sammenlignes browserens bog med <code>story.json</code> handel for handel: slags, substep, kontrakt, andele, kurs og beløb. Er der den mindste forskel, stopper scriptet. Det virker, fordi simulationen aldrig læser bogen, puljen eller Monte Carlo, og fordi hvert skridt, der læser en kurs, først får visningen til at regne forfra.</p>
-<!-- kilde: docs/rapport/scripts/shoot.cjs:1-12, 52-80, 263-270; docs/rapport/scripts/story.js:7-9, 31-36; src/engine/football/sim.ts:1-9 -->
-<p>Billederne fra kampen kommer fra historiekørslen. Lobbyen og Hallen tages i en anden kontekst, og demoens billeder tages, mens demoen kører i realtid. Hvert billede har en sidefil med substep, kurser og skærmtekst, så billedteksterne kan tjekkes mod det, skærmen viste.</p>
-<!-- kilde: docs/rapport/scripts/shoot.cjs:1-12; docs/rapport/data/shots/INDEX.md -->
+<p><code>scripts/shoot.cjs</code> afspiller den samme <code>story.js</code> i den byggede app i Playwright Chromium. Kampen går kun frem, når scriptet kalder <code>tick</code>, og hvert billede venter på et nyt Monte Carlo-resultat. Til sidst sammenlignes browserens bog med <code>story.json</code> handel for handel, og den mindste forskel stopper scriptet. Det virker, fordi simulationen aldrig læser bogen, puljen eller Monte Carlo. Hvert billede har en sidefil med substep, kurser og skærmtekst, så billedteksterne kan tjekkes.</p>
+<!-- kilde: docs/rapport/scripts/shoot.cjs:1-12, 52-80, 263-270; docs/rapport/scripts/story.js:7-9, 31-36; src/engine/football/sim.ts:1-9; docs/rapport/data/shots/INDEX.md -->
 
 <h2 id="bD-tekst">Fra data til tekst</h2>
-<p><code>scripts/fakta.py</code> laver faktaarket <code>fakta.json</code> med tallene om kampen, handlerne, kalibreringen og målingerne, formateret på dansk: decimalkomma, tusindtalspunktum, typografisk minus og ′ efter minutter. Kapitlerne henviser til tallene med nøgler, som <code>build.mjs</code> erstatter, så et tal kun findes ét sted.</p>
-<p>Hvert kapitel er skrevet ud fra kildekoden. I HTML-kilden står der efter hvert afsnit med regler eller formler en kommentar med fil og linje, og tal, der ikke er i faktaarket, har en kommentar med datafil og felt. Kommentarerne kommer ikke med i PDF'en. Kapitlerne er faktatjekket mod koden i en særskilt runde.</p>
-<!-- kilde: docs/rapport/scripts/fakta.py:1-49; docs/rapport/build.mjs:77-84; docs/rapport/STIL.md:44-49 -->
-
-<h2 id="bD-kontrol">Kontroller</h2>
-<ul>
-<li><b><code>scripts/lint.py</code></b> tjekker hvert kapitel for ukendte nøgler, forbudte ord, decimalpunktum i tal, ukendte billeder og figurer, inline styles og salgssprog.</li>
-<li><b><code>build.mjs</code></b> stopper på en ukendt nøgle eller figur.</li>
-<li><b><code>scripts/verify.py</code></b> tjekker den færdige PDF: A4, indlejrede fonte, ingen rester af nøgler, NaN eller undefined, at centrale tal og begreber står i teksten, og at sidernes hjørner er mørke.</li>
-</ul>
-<!-- kilde: docs/rapport/scripts/lint.py:1-37; docs/rapport/build.mjs:77-97, 147; docs/rapport/scripts/verify.py:1-72 -->
+<p><code>scripts/fakta.py</code> laver faktaarket <code>fakta.json</code> i dansk talformat, og kapitlerne henviser til tallene med nøgler, så hvert tal kun findes ét sted. Efter afsnit med regler, formler eller tal uden for faktaarket står en kommentar med kilden, som ikke kommer med i PDF'en. Kapitlerne er faktatjekket mod koden i en særskilt runde.</p>
+<p><code>scripts/lint.py</code> tjekker nøgler, forbudte ord, talformat og figurer. <code>build.mjs</code> stopper på en ukendt nøgle eller figur, og <code>scripts/verify.py</code> tjekker den færdige PDF for format, fonte, rester af nøgler og centrale tal.</p>
+<!-- kilde: docs/rapport/scripts/fakta.py:1-49; docs/rapport/build.mjs:77-97, 147; docs/rapport/STIL.md:44-49; docs/rapport/scripts/lint.py:1-37; docs/rapport/scripts/verify.py:1-72 -->
 
 <h2 id="bD-kommandoer">Kommandoer</h2>
 <p>Fra mappen <code>udfald/</code>, i denne rækkefølge:</p>
 <ol>
-<li><code>npx vitest run</code> kører testene og bygger motorbundtet <code>tests/.cache/engine.mjs</code>, som data-scriptet bruger. Loggen ligger som <code>docs/rapport/data/vitest.txt</code>.</li>
-<li><code>node docs/rapport/scripts/data.mjs</code> skriver <code>story.json</code>, <code>edge.json</code> og <code>stats.json</code>.</li>
-<li><code>npm run build</code> og <code>node qa/qa.cjs</code> bygger appen og kører QA. Loggen og rapporten ligger som <code>qa.txt</code> og <code>qa-report.json</code> i <code>docs/rapport/data/</code>.</li>
-<li><code>node docs/rapport/scripts/shoot.cjs</code> tager de 24 billeder og skriver deres sidefiler.</li>
-<li><code>python3 docs/rapport/scripts/fakta.py</code> skriver <code>fakta.json</code>. Den læser også QA-rapporten og billedernes sidefiler og skal derfor køre efter dem.</li>
-<li><code>node docs/rapport/build.mjs</code> samler kapitlerne, sætter tal, billeder og figurer ind og laver PDF'en i Chromium. Den laver PDF'en igen, til sidetallene i indholdsfortegnelsen står stille.</li>
-<li><code>python3 docs/rapport/scripts/verify.py</code> tjekker resultatet.</li>
+<li><code>npx vitest run</code>: testene og motorbundtet, som data-scriptet bruger.</li>
+<li><code>node docs/rapport/scripts/data.mjs</code>: de tre datafiler.</li>
+<li><code>node docs/rapport/scripts/mc20.mjs</code>: Monte Carlo-kørslen ved 20′ til figuren med stierne.</li>
+<li><code>npm run build</code> og <code>node qa/qa.cjs</code>: appen og QA.</li>
+<li><code>node docs/rapport/scripts/shoot.cjs</code>: billederne og deres sidefiler.</li>
+<li><code>python3 docs/rapport/scripts/fakta.py</code>: faktaarket, efter QA og billeder.</li>
+<li><code>node docs/rapport/build.mjs</code>: PDF'en, lavet igen, til sidetallene i indholdsfortegnelsen står stille.</li>
+<li><code>python3 docs/rapport/scripts/verify.py</code>: kontrol af PDF'en.</li>
 </ol>
-<!-- kilde: docs/rapport/scripts/data.mjs:1-8, 17; qa/qa.cjs:1-2; README.md:52-59; docs/rapport/scripts/shoot.cjs:1-12, 18-21; docs/rapport/scripts/fakta.py:1-17, 215-219, 257-264; docs/rapport/build.mjs:1-9, 180-194 -->
+<!-- kilde: docs/rapport/scripts/data.mjs:1-8, 17; docs/rapport/scripts/mc20.mjs:1; docs/rapport/build.mjs:30; qa/qa.cjs:1-2; README.md:52-59, 86-94; docs/rapport/scripts/shoot.cjs:1-12, 18-21; docs/rapport/scripts/fakta.py:1-17, 215-219, 257-264; docs/rapport/build.mjs:1-9, 180-194 -->

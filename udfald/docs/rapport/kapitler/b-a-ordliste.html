@@ -3,23 +3,33 @@
 
 <dl class="ord">
 <dt>1X2</dt>
-<dd>Kampens tre udfald: FCK vinder, uafgjort (X) og BIF vinder. Markedsfamilien hedder Resultat.</dd>
+<dd>Kampens tre udfald: FCK vinder, uafgjort (X) og BIF vinder.</dd>
 <dt>Afregning</dt>
-<dd>Når udfaldet er kendt, betaler hver andel 1 kr eller 0, og kontrakten lukkes. Mange kontrakter afregnes før slutfløjt, fx Over 2,5 ved det 3. godkendte mål.</dd>
+<dd>Når udfaldet er kendt, betaler hver andel 1 kr eller 0. Mange kontrakter afregnes før slutfløjt, fx Over 2,5 ved det 3. godkendte mål.</dd>
 <dt>Andel</dt>
-<dd>Det, du køber. En andel betaler 1 kr, hvis udfaldet sker, ellers 0. Du får hele andele: ⌊100 · indsats / kurs⌋.</dd>
+<dd>Det, man køber. En andel betaler 1 kr, hvis udfaldet sker, ellers 0. Man får hele andele: ⌊100 · indsats / kurs⌋.</dd>
 <dt>Andelsbar</dt>
 <dd>Bjælken under viften, hvor hvert felts bredde er kursen. Et tryk åbner ordresedlen, og hold og glid op køber uden om den. Et træk over to nabofelter giver dobbeltchance.</dd>
+<dt>Auktion</dt>
+<dd>De {{k.PRE_SUBS}} substeps før kampstart, 3 s ved ×1, hvor statuspillen viser <span class="ui">AUKTION</span>. Der kan handles, og puljen er åben.</dd>
+<dt>Bakke</dt>
+<dd>Et panel, der glider op fra bunden af kampskærmen, fx ordresedlen til et køb, Sikring eller <span class="ui">Næste mål</span>.</dd>
+<dt>Ben</dt>
+<dd>En betingelse i Byg en fremtid: et resultat, mindst <i>n</i> mål, begge scorer eller et mål i et vindue.</dd>
 <dt>Byg en fremtid</dt>
-<dd>Skærmen, hvor op til 3 ben (et resultat, mindst <i>n</i> mål, begge scorer eller et mål i et vindue) filtrerer de 100 fremtider. Kursen kommer fra Monte Carlo med 12 % margin.</dd>
+<dd>Skærmen, hvor op til 3 ben filtrerer de 100 fremtider. Kursen kommer fra Monte Carlo med 12 % margin, og kontrakten betaler kun, hvis alle ben holder.</dd>
 <dt>Chance</dt>
 <dd>Sandsynligheden i hele procent, der står ved kursen som <span class="ui">N % chance</span>. Det er markedets mid, og den er lig tallyen i viften.</dd>
+<dt>CLV</dt>
+<dd>Closing-line value: hvor meget mid flyttede sig efter et køb, målt i logit og fratrukket det, tiden alene ville have gjort. Grundlaget for træk-karakteren (kapitel 19).</dd>
 <dt>Dobbeltchance</dt>
 <dd>To naboudfald i én kontrakt: FCK eller X, eller X eller BIF.</dd>
 <dt>DP</dt>
 <dd>Dynamisk programmering. Prissætteren regner fair chance baglæns over kampur og målforskel i trin på 15 kampsekunder.</dd>
 <dt>Excitation</dt>
-<dd>Efter et godkendt mål lægges 0,6 til begge holds excitation <i>E</i>, og målintensiteten ganges med 1 + <i>E</i>. Tillægget henfalder med en tidskonstant på 3 kampminutter.</dd>
+<dd>Tillæg til begge holds målintensitet efter et godkendt mål: den ganges med 1 + <i>E</i>, hvor <i>E</i> stiger 0,6 og henfalder med en tidskonstant på 3 kampminutter.</dd>
+<dt>Fader</dt>
+<dd>Skyderen nederst på positionskortet, som på en mixerpult. Et træk mod venstre sælger en del af positionen eller det hele.</dd>
 <dt>Fair chance</dt>
 <dd>Modellens sandsynlighed for et udfald, uden margin, publikums flow og støj.</dd>
 <dt>Fokus</dt>
@@ -31,21 +41,23 @@
 <dt>Genåbning</dt>
 <dd>Når et handelsstop slutter, og kurserne springer til den nye pris.</dd>
 <dt>Godkendt mål</dt>
-<dd>Et mål, der står, også efter VAR. Kun godkendte mål afregner kontrakter og tæller i nøglerne for næste mål; <code>ag{n}</code> tæller også mål, der gik til VAR (bilag B).</dd>
+<dd>Et mål, der står, også efter VAR. Kun godkendte mål afregner kontrakter.</dd>
 <dt>Grenmærker</dt>
-<dd>Mærker i viften med kursen lige efter den næste begivenhed: mål FCK, intet mål eller mål BIF, inden for en horisont på højst 10 kampminutter.</dd>
+<dd>Mærker i viften med kursen lige efter den næste hændelse: mål FCK, intet mål eller mål BIF.</dd>
 <dt>Handelsstop</dt>
-<dd>Pause i handlen efter et mål (12 substeps), et rødt kort (16 substeps) og under VAR. Intet kan købes eller sælges, bortset fra <span class="ui">Målet står?</span> under VAR, og Sikring, købsgrænser og puljen venter.</dd>
+<dd>Pause i handlen efter et mål (12 substeps), et rødt kort (16 substeps) og under VAR. Intet kan handles, bortset fra <span class="ui">Målet står?</span> under VAR.</dd>
 <dt>Hval</dt>
-<dd>En stor ordre fra publikum, <span class="ui">storordre</span> i årsagschippen. I fri kamp kommer der cirka to pr. halvleg på 10.000–40.000 kr.</dd>
+<dd>En stor ordre fra publikum, <span class="ui">storordre</span> i årsagschippen, typisk 10.000–40.000 kr.</dd>
 <dt>Hysterese</dt>
 <dd>Kursen skifter først, når den rå kurs ligger mindst 0,6 point fra den viste, så støj ikke får den til at flimre.</dd>
 <dt>Kontraktnøgle</dt>
 <dd>Den interne tekst, der navngiver en kontrakt, fx <code>1x2:F</code> eller <code>tot:2.5:O</code>. Se bilag B.</dd>
 <dt>Kurs</dt>
-<dd>Prisen på en andel, fra 0 til 100. Kurs 45 betyder, at en andel koster 0,45 kr. Det er også købskursen. I derbyet er viste kurser heltal fra 1 til 99.</dd>
+<dd>Prisen på en andel, fra 0 til 100, og den pris, man køber til. Kurs 45 betyder, at en andel koster 0,45 kr. I derbyet er kurserne heltal fra 1 til 99.</dd>
 <dt>Købsgrænse</dt>
-<dd>En ordre, der køber, når kursen er på eller under et niveau. Pengene reserveres, der kan højst være 3 aktive, og de findes kun på 1X2. Efter et gab fylder den til den første kurs efter gabet.</dd>
+<dd>En ordre, der køber, når kursen er på eller under et niveau. Kun på 1X2 og højst 3 ad gangen. Efter et gab fylder den til den første kurs efter gabet.</dd>
+<dt>Logit</dt>
+<dd>logit(<i>p</i>) = ln(<i>p</i> / (1 − <i>p</i>)). Markedslaget og træk-karakteren regner i logit; 0,1 i logit er cirka 2,5 point ved 50 %.</dd>
 <dt>Margin</dt>
 <dd>Husets andel: det, kursen ligger over chancen. Undtagen på slutresultater fordeles den med power-metoden.</dd>
 <dt>Markedslag</dt>
@@ -57,50 +69,58 @@
 <dt>Mål og slutresultat</dt>
 <dd>Skærmen bag fanen <span class="ui">Mål</span>, med 6 × 6-kortet over slutresultater og Over/Under 0,5–4,5.</dd>
 <dt>Målvejret</dt>
-<dd>Båndet under andelsbaren med målchancen pr. 5-minuttersvindue og overskriften <span class="ui">Et mål er sandsynligt inden …</span>.</dd>
+<dd>Båndet under andelsbaren med målchancen pr. 5-minuttersvindue.</dd>
 <dt>NU</dt>
 <dd>Den lodrette linje i viften ved det aktuelle kampur. Til venstre er historikken, til højre fremtiderne.</dd>
 <dt>Odds</dt>
-<dd>En sekundær visning af kursen, 100 / kurs. Kurs 45 svarer til odds 2,22.</dd>
+<dd>En sekundær visning af kursen: 100 ÷ kurs.</dd>
 <dt>Over 2,5</dt>
-<dd>Kampens anden kurs. Den betaler, hvis kampen får 3 eller flere godkendte mål, og afregnes i det øjeblik, det 3. mål godkendes.</dd>
+<dd>Kampens anden kurs. Den betaler, hvis kampen får 3 eller flere godkendte mål, og afregnes, i det øjeblik det 3. mål godkendes.</dd>
 <dt>Overshoot</dt>
-<dd>Ved genåbning skyder mid lidt forbi den nye fair chance og falder tilbage med en tidskonstant på 0,125 kampminutter.</dd>
+<dd>Det lille udsving forbi den nye pris efter en genåbning. Det henfalder med en tidskonstant på 0,125 kampminutter.</dd>
 <dt>Parken-puljen</dt>
-<dd>En totalisatorpulje på 1X2 mod et simuleret publikum, åben til pausen. Vinderne deler puljen, når huset har taget 10 %. Jo færre penge på din side, jo mere får du. Kort: puljen.</dd>
+<dd>En totalisator på 1X2 mod et simuleret publikum, åben til pausen. Vinderne deler puljen, når huset har taget 10 %. Kort: puljen.</dd>
 <dt>Point</dt>
 <dd>Enheden for bevægelser i kursen, fx et gab på {{genaabning1.gabBIF}} point.</dd>
+<dt>Positionskort</dt>
+<dd>Kortet på kampskærmen med positionen i fokus: andele, købskurs, værdi nu og salgskurs, med Sikring-chippen og faderen.</dd>
 <dt>Power-metoden</dt>
-<dd>Måden, marginen lægges på: hver kurs er chancen opløftet i en eksponent under 1, valgt så kurserne summerer til 1 plus marginen. Favoritter får den mindste del.</dd>
+<dd>Måden, marginen lægges på: hver kurs er chancen opløftet i en eksponent under 1, så kurserne summerer til 1 plus marginen, og favoritter får den mindste del.</dd>
 <dt>Pres</dt>
-<dd>Ét tal for FCK's pres minus BIF's. Det er en tilfældig proces, der trækkes mod 0 og får spark af hjørnespark og chancer, og det løfter det pressende holds målintensitet.</dd>
+<dd>Ét tal for FCK's pres minus BIF's. Det trækkes mod 0, får spark af hjørnespark og chancer og løfter det pressende holds målintensitet.</dd>
 <dt>Prislås</dt>
-<dd>Et køb låser kursen i 1,5 s. Er kursen derefter højst den låste + 1, fylder købet til den laveste af de to; ellers bliver du spurgt om den nye kurs.</dd>
+<dd>Et køb låser kursen i 1,5 s. Er kursen derefter højst den låste + 1, fylder købet til den laveste af de to; ellers spørges der om den nye kurs.</dd>
+<dt>Region</dt>
+<dd>Flere celler på kortet over slutresultater, købt som én kontrakt. En region koster aldrig mere end cellerne købt hver for sig.</dd>
 <dt>Salgskurs</dt>
-<dd>Kursen, du sælger til (bid). For 1X2 og Over 2,5 ligger den 2 point under kursen i roligt spil, 4 ved fare og 6 lige efter en genåbning.</dd>
+<dd>Prisen, man sælger til (bid): kursen minus spreadet.</dd>
 <dt>Seed</dt>
 <dd>Teksten, der bestemmer en kamp. Samme seed og tidslinje giver samme kamp, handel for handel. Historiens seed er <code>{{seed}}</code>.</dd>
 <dt>Sikr gevinst</dt>
-<dd>Sikrings take-profit: sælger alle andele, når salgskursen når niveauet, så den aldrig sælger under niveauet.</dd>
+<dd>Sikrings take-profit: sælger alle andele, når salgskursen når niveauet, og aldrig under niveauet.</dd>
 <dt>Sikring</dt>
 <dd>Stop-loss og Sikr gevinst på en position i 1X2 eller Over 2,5. Højst én af hver, og når den ene udløses, annulleres den anden.</dd>
 <dt>Slutresultat</dt>
-<dd>En celle på 6 × 6-kortet, fx 1–1, hvor 5 betyder 5 eller flere. Flere celler kan købes samlet som en region.</dd>
+<dd>En celle på 6 × 6-kortet, fx 1–1, hvor 5 betyder 5 eller flere.</dd>
+<dt>Spread</dt>
+<dd>Afstanden mellem kurs og salgskurs. For 1X2 og Over 2,5 er den 2 eller 4 point (4 ved fare), mindst 6 lige efter en genåbning.</dd>
 <dt>Spøgelseslinjen</dt>
-<dd>Medianen af de vindende stier, frosset da du købte 1X2. Spøgelsesstatus siger, om kursen er foran eller bag vindertempoet.</dd>
+<dd>Medianen af de vindende stier, frosset ved et køb af 1X2. Spøgelsesstatus siger, om kursen er foran eller bag vindertempoet.</dd>
 <dt>Stop-loss</dt>
-<dd>Sælger alle andele, når kurs − 2 er på eller under niveauet og vagten er udløbet. Salget sker til salgskursen, som kan ligge langt under niveauet efter et gab.</dd>
+<dd>Sælger alle andele, når kurs − 2 er på eller under niveauet og vagten er udløbet. Salget sker til salgskursen, som efter et gab kan ligge langt under niveauet.</dd>
 <dt>Substep</dt>
 <dd>Simulationens mindste tidsskridt: 1,5 kampsekunder, 100 ms ved ×1. Et kampminut er 40 substeps.</dd>
 <dt>Tally</dt>
 <dd>Optællingen af stier ved slutfløjt i viftens højre kant, fx FCK · X · BIF eller Over · Under. Den er lig chancen i hele procent.</dd>
+<dt>Totalisator</dt>
+<dd>En pulje uden fast pris: alle indsatser lægges sammen, huset tager en fast andel, og resten deles mellem dem, der ramte rigtigt.</dd>
 <dt>Træk-karakter</dt>
-<dd>Afregningens vurdering af et 1X2-køb, fra <span class="ui">Brillant !!</span> til <span class="ui">Fejlkøb ??</span>. Den måler, hvor meget mid flyttede sig i din retning, fratrukket det, tiden alene ville have gjort.</dd>
+<dd>Afregningens vurdering af et 1X2-køb, fra <span class="ui">Brillant !!</span> til <span class="ui">Fejlkøb ??</span>, ud fra købets CLV.</dd>
 <dt>Vagten</dt>
-<dd>Et stop-loss venter, til der er gået mere end 7 substeps efter en genåbning, tidligst 12 kampsekunder, så det brede spread efter gabet kan falde til ro.</dd>
+<dd>Et stop-loss udløses tidligst 8 substeps efter en genåbning (kapitel 7 og 17).</dd>
 <dt>VAR</dt>
 <dd>Videotjek af et mål. Uret står stille, viften viser to spøgelseskurser, og kun <span class="ui">Målet står?</span> kan handles.</dd>
 <dt>Årsagschip</dt>
 <dd>Chippen ved prislinjen, der forklarer kursens bevægelse over de seneste 2 kampminutter, fx et mål, tiden eller en storordre.</dd>
 </dl>
-<!-- kilde: src/engine/book/portfolio.ts:62-66, 116-157, 179-244, 304-309; src/state/match.ts:26-27, 258-282, 403-470, 521, 663-679, 752-782; src/engine/football/sim.ts:23-38, 299-304, 411-425, 458-471, 534-547; src/engine/football/params.ts:6-8, 52-53; src/engine/football/display.ts:12-14, 128-198; src/engine/lib/quote.ts:1-17; src/state/focus.ts:12-16, 85, 102-108; src/ui/kamp/Kampen.tsx:165-166, 228-236; src/ui/byg/Byg.tsx:20-31, 147; docs/PLAN.md:470-472 -->
+<!-- kilde: src/engine/book/portfolio.ts:36-38, 62-66, 116-157, 179-244, 304-309; src/state/match.ts:26-27, 258-282, 403-470, 521, 568-585, 663-679, 752-782; src/engine/football/sim.ts:23-38, 171-174, 299-304, 411-425, 458-471, 534-547; src/engine/football/params.ts:6-8, 52-53; src/engine/football/display.ts:12-14, 128-198; src/engine/lib/quote.ts:1-17; src/state/focus.ts:12-16, 85, 102-108; src/ui/kamp/Kampen.tsx:20-43, 165-166, 228-236; src/ui/kamp/Tray.tsx; src/ui/byg/Byg.tsx:20-31, 147; docs/PLAN.md:470-472 -->

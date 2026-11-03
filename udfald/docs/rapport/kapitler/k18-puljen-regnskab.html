@@ -1,83 +1,67 @@
 <h1 class="kapitel" id="k18" data-nr="18">Parken-puljen: regnskab og forventet udbytte</h1>
-<p class="ingress">Puljen er et lille regnskab, som storen fører frem i hvert substep ud fra publikums handler i 1X2. Kapitlet gennemgår tilstanden, opdateringen, udbetalingen og grænsen for, hvad en krone i puljen kan forventes at give tilbage.</p>
+<p class="ingress">Puljen er et lille regnskab, som storen fører frem i hvert substep ud fra publikums handler i 1X2. Kapitlet viser opdateringen, udbetalingen og grænsen for det forventede udbytte pr. krone.</p>
 
 <h2 id="k18-tilstand">Tilstanden</h2>
-<p>Storen holder fire størrelser for publikum: puljens størrelse <i>P</i> (<code>poolP</code>), antallet af indsatser <i>N</i> (<code>poolN</code>), fordelingen <i>w</i> på FCK, X og BIF (<code>poolW</code>, summerer til 1) og efter pausen de frosne beløb <i>C</i> (<code>poolCrowdAtClose</code>). Publikums penge på side <i>i</i> er <i>C</i><sub><i>i</i></sub> = <i>P</i> · <i>w</i><sub><i>i</i></sub>. Dine indsatser ligger for sig i bogen som <code>poolStakes</code>, og <i>u</i><sub><i>i</i></sub> er din sum på side <i>i</i>.</p>
-<!-- kilde: src/state/match.ts:146-150, 156, 431-433; src/engine/book/portfolio.ts:20, 56, 248-253 -->
-<table class="t">
-  <thead><tr><th>Konstant</th><th class="n">Værdi</th><th>Betydning</th></tr></thead>
-  <tbody>
-    <tr><td><code>POOL_P0</code></td><td class="n">{{k.POOL_P0}}</td><td><i>P</i> før kampen</td></tr>
-    <tr><td><code>POOL_N0</code></td><td class="n">{{pulje.startN}}</td><td><i>N</i> før kampen</td></tr>
-    <tr><td><code>POOL_PER_KR</code></td><td class="n">4</td><td>kroner i puljen pr. krone, publikum køber for i markedet</td></tr>
-    <tr><td><code>POOL_WHALE_CAP</code></td><td class="n">2.000 kr</td><td>højst så meget af en hval tæller</td></tr>
-    <tr><td><code>POOL_N_PER_TRADE</code></td><td class="n">9</td><td>indsatser pr. køb</td></tr>
-    <tr><td><code>POOL_BIAS</code> ℓ</td><td class="n">1,035 / 0,985 / 0,985</td><td>hjemmebias for FCK / X / BIF</td></tr>
-    <tr><td><code>POOL_TAU</code> τ</td><td class="n">1 kampminut</td><td>publikums forsinkelse</td></tr>
-    <tr><td><code>POOL_TAKE</code></td><td class="n">{{k.POOL_TAKE}}</td><td>husets andel af puljen</td></tr>
-  </tbody>
-</table>
-<!-- kilde: src/state/match.ts:29-37; src/engine/book/portfolio.ts:33-34 -->
+<p>Storen holder fire størrelser for publikum: puljen <i>P</i>, antallet af indsatser <i>N</i>, fordelingen <i>w</i> på FCK, X og BIF og efter pausen de frosne beløb <i>C</i>. Publikums penge på side <i>i</i> er <i>C</i><sub><i>i</i></sub> = <i>P</i> · <i>w</i><sub><i>i</i></sub>. Spillerens indsatser ligger for sig i bogen, og <i>u</i><sub><i>i</i></sub> er spillerens sum på side <i>i</i>. Konstanterne står i bilag C.</p>
+<!-- kilde: src/state/match.ts:29-37, 146-150, 156, 431-433; src/engine/book/portfolio.ts:20, 33-34, 56, 248-253 -->
 
 <h2 id="k18-substep">Opdatering pr. substep</h2>
-<p><code>advancePool</code> kører i hvert substep, indtil puljen lukker (rækkefølgen står i kapitel 17). Først tælles substeppets handler fra publikum. Kun køb tæller, og en hval tæller højst som 2.000 kr:</p>
-<div class="formel"><i>P</i> ← <i>P</i> + 4 · kr′,  kr′ = min(kr; 2.000) for en hval, ellers kr<br><i>N</i> ← <i>N</i> + 9<span class="hvor">for hvert køb fra publikum i substeppet. Salg springes over.</span></div>
-<p>Derefter flytter fordelingen sig mod et mål, som er modellens fair chance med hjemmebiassen, normaliseret:</p>
-<div class="formel"><i>ŵ</i><sub><i>i</i></sub> = <i>f</i><sub><i>i</i></sub>ℓ<sub><i>i</i></sub> / Σ<sub><i>j</i></sub> <i>f</i><sub><i>j</i></sub>ℓ<sub><i>j</i></sub><br><i>w</i> ← <i>w</i> + α · (<i>ŵ</i> − <i>w</i>),  α = 1 − e<sup>−Δ<i>t</i>/τ</sup> = 1 − e<sup>−0,025</sup> ≈ 0,0247<br>α = 1 under handelsstop<span class="hvor">hvor <i>f</i> er modellens fair chance i substeppet, og Δ<i>t</i> = 0,025 kampminut er et substep. Uden for stop er <i>w</i> et eksponentielt glidende gennemsnit af målet med en tidskonstant på 40 substeps.</span></div>
-<!-- kilde: src/state/match.ts:403-408, 415-429; src/engine/football/params.ts:6 -->
-<p>Under et handelsstop handler publikum ikke, fordi markedet ikke handler, så <i>P</i> og <i>N</i> står stille. Til gengæld springer <i>w</i> helt til målet i hvert substep. Det sker allerede i målets eget substep, fordi målet og den nye fair chance regnes i <code>sim.step()</code>, før <code>advancePool</code> kører. I historien stod X i odds 2,71 ti substeps før FCK-målet og i 4,36 i målets substep, med samme puljestørrelse. Så længe stoppet varer, er puljen lukket for dine indsatser.</p>
+<p><code>advancePool</code> kører i hvert substep, indtil puljen lukker (kapitel 17). Først tælles substeppets køb fra publikum; salg tæller ikke:</p>
+<div class="formel"><i>P</i> ← <i>P</i> + 4 · min(kr; 2.000) for en hval, ellers <i>P</i> + 4 · kr<br><i>N</i> ← <i>N</i> + 9 pr. køb</div>
+<p>Derefter flytter fordelingen sig mod modellens fair chance <i>f</i> med hjemmebiassen ℓ = 1,035 for FCK og 0,985 for X og BIF, normaliseret:</p>
+<div class="formel"><i>ŵ</i><sub><i>i</i></sub> = <i>f</i><sub><i>i</i></sub>ℓ<sub><i>i</i></sub> / Σ<sub><i>j</i></sub> <i>f</i><sub><i>j</i></sub>ℓ<sub><i>j</i></sub><br><i>w</i> ← <i>w</i> + α · (<i>ŵ</i> − <i>w</i>),  α = 1 − e<sup>−0,025/τ</sup> ≈ 0,0247, τ = 1 kampminut<br>α = 1 under handelsstop<span class="hvor">0,025 kampminut er et substep, så <i>w</i> glattes med en tidskonstant på 40 substeps.</span></div>
+<!-- kilde: src/state/match.ts:29-37, 403-408, 415-429; src/engine/football/params.ts:6 -->
+<p>Under et handelsstop handler publikum ikke, så <i>P</i> og <i>N</i> står stille, mens <i>w</i> springer helt til målet. Det sker allerede i målets eget substep, fordi den nye fair chance regnes i <code>sim.step()</code>, før <code>advancePool</code> kører: i historien stod X's odds i 2,71 ti substeps før FCK-målet og i 4,36 i målets substep, med samme puljestørrelse. Under stoppet tager puljen ikke imod indsatser.</p>
 <!-- kilde: src/engine/football/sim.ts:209-223, 497-498; src/state/match.ts:410-413, 425-428 -->
 <!-- data: story.json series k 1170 (åben, total 398.040, odds X 2,7061), k 1180 (stoppet, total 398.040, odds X 4,3625) -->
-<p><b>Ved pausen</b> kalder <code>settleOn</code> <code>closePool</code> på hændelsen <code>half</code>. Fordelingen sættes til målet, <i>w</i> = <i>ŵ</i>, og publikums beløb fryses: <i>C</i> = <i>P</i> · <i>ŵ</i>. Derefter returnerer <code>advancePool</code> straks, og publikums side af puljen ændrer sig ikke mere.</p>
+<p><b>Ved pausen</b> sætter <code>closePool</code> fordelingen til målet, <i>w</i> = <i>ŵ</i>, og fryser publikums beløb som <i>C</i> = <i>P</i> · <i>ŵ</i>.</p>
 <!-- kilde: src/state/match.ts:396-398, 415-417, 435-439 -->
-<p><b>Hvalen</b> på {{hval3.kr}} på BIF ved {{hval3.minut}} viser kappet. Mellem substep 640 og 650 voksede puljen med 8.080 kr og 18 indsatser: 4 · 2.000 = 8.000 kr og 9 indsatser fra hvalen, 80 kr og 9 indsatser fra ét almindeligt køb på 20 kr. BIF's mid steg fra 23,9 % til 27,2 %, men BIF's andel af puljen stod på 23,4 % før og efter, fordi fordelingen følger fair chance, og den flyttede sig næsten ikke.</p>
-<!-- data: story.json series k 640 (total 326.840, n 4.018, BIF 76.419 kr, mid BIF 0,2393, fair BIF 0,2387), k 650 (334.920, 4.036, 78.344 kr, 0,2715, 0,2396); events id 10 (hval k 646, 33.320 kr). Handler k 641–650 genskabt med motorbundtet: k 646 hval 33.320 kr på BIF, k 647 køb 20 kr på FCK; salgene i k 643 og 647–650 tæller ikke. Andel: 76.419 / 326.840 = 0,2338; 78.344 / 334.920 = 0,2339 -->
 
-<h2 id="k18-indsats">Din indsats og oddsene</h2>
-<p>Dine penge indgår i siderne og i puljen: <i>S</i><sub><i>i</i></sub> = <i>C</i><sub><i>i</i></sub> + <i>u</i><sub><i>i</i></sub> og <i>T</i> = Σ<sub><i>i</i></sub> <i>S</i><sub><i>i</i></sub>. Oddsene på skærmen er udbetalingen pr. krone, hvis puljen lukkede nu. Skønnet over din udbetaling lægger den nye indsats <i>s</i> til både siden og puljen:</p>
+<h2 id="k18-indsats">Spillerens indsats og oddsene</h2>
+<p>Spillerens penge indgår i siderne: <i>S</i><sub><i>i</i></sub> = <i>C</i><sub><i>i</i></sub> + <i>u</i><sub><i>i</i></sub> og <i>T</i> = Σ<sub><i>i</i></sub> <i>S</i><sub><i>i</i></sub>. Oddsene på skærmen er udbetalingen pr. krone, hvis puljen lukkede nu, og skønnet lægger en ny indsats <i>s</i> til både siden og puljen:</p>
 <div class="formel">odds<sub><i>i</i></sub> = 0,9 · <i>T</i> / max(1; <i>S</i><sub><i>i</i></sub>)<br>skøn<sub><i>i</i></sub> = 0,9 · (<i>T</i> + <i>s</i>) · (<i>u</i><sub><i>i</i></sub> + <i>s</i>) / (<i>S</i><sub><i>i</i></sub> + <i>s</i>)</div>
 <!-- kilde: src/state/match.ts:451-470; src/ui/pulje/Pulje.tsx:23, 53, 72 -->
-<p>En indsats på 1–1.000 kr tages kun imod, når puljen er åben: den er ikke lukket, fasen er auktion eller første halvleg, og handlen er ikke stoppet. Antallet af indsatser på skærmen er <i>N</i> plus dine egne.</p>
+<p>En indsats på 1–1.000 kr tages imod under auktionen og første halvleg, når handlen ikke er stoppet.</p>
 <!-- kilde: src/engine/book/portfolio.ts:255-265; src/state/match.ts:410-413, 441-449, 462 -->
 
 <h2 id="k18-udbetaling">Udbetaling og refusion</h2>
 <p>Ved slutfløjt afregnes puljen én gang med de frosne beløb fra pausen. Vinder side <i>v</i>, er udbetalingen:</p>
 <div class="formel">udbetaling = <i>u</i><sub><i>v</i></sub> / <i>S</i><sub><i>v</i></sub> · <i>T</i> · 0,9,  hvis <i>S</i><sub><i>v</i></sub> &gt; 0<br>udbetaling = <i>u</i><sub>FCK</sub> + <i>u</i><sub>X</sub> + <i>u</i><sub>BIF</sub> (refusion),  hvis <i>S</i><sub><i>v</i></sub> = 0</div>
 <!-- kilde: src/engine/book/portfolio.ts:40-49, 267-275; src/state/match.ts:374-395 -->
-<p>Refusion kræver, at ingen har penge på vindersiden. Publikums beløb er <i>P</i> · <i>ŵ</i><sub><i>i</i></sub>, og <i>ŵ</i><sub><i>i</i></sub> er positiv, så længe modellens chance er det, så i praksis sker det ikke. I historien gav vores indsats på X: {{pulje.indsats}} / {{pulje.lukning.x}} · {{pulje.lukning.total}} · 0,9 = {{pulje.udbetaling}}.</p>
+<p>Refusion sker ikke i praksis, for publikums beløb <i>P</i> · <i>ŵ</i><sub><i>i</i></sub> er positive, så længe modellens chancer er det. I historien gav indsatsen på X {{pulje.indsats}} / {{pulje.lukning.x}} · {{pulje.lukning.total}} · 0,9 = {{pulje.udbetaling}}.</p>
 <!-- kilde: src/state/match.ts:404-408, 431-433; src/engine/book/portfolio.ts:47, 268-269 -->
 <!-- data: story.json final.poolResult (vinder 1, udbetaling 872,496) -->
 
 <h2 id="k18-graense">Grænsen for forventet udbytte</h2>
-<p>Udbetalingen afhænger kun af siderne ved lukning. Grænsen udledes derfor ved pausen og gælder bagud for enhver indsats:</p>
+<p>Udbetalingen afhænger kun af siderne ved lukning, så grænsen udledes dér:</p>
 <ol>
-<li><b>Siderne ved lukning.</b> Med <i>q</i> som modellens chancer ved pausen er publikums beløb <i>C</i><sub><i>i</i></sub> = <i>P</i> · <i>q</i><sub><i>i</i></sub>ℓ<sub><i>i</i></sub> / Σ<sub><i>j</i></sub> <i>q</i><sub><i>j</i></sub>ℓ<sub><i>j</i></sub>.</li>
-<li><b>Oddsene uden din indsats.</b> Nu er <i>T</i> = <i>P</i> og <i>S</i><sub><i>i</i></sub> = <i>C</i><sub><i>i</i></sub>, så odds<sub><i>i</i></sub> = 0,9 · Σ<sub><i>j</i></sub> <i>q</i><sub><i>j</i></sub>ℓ<sub><i>j</i></sub> / (<i>q</i><sub><i>i</i></sub>ℓ<sub><i>i</i></sub>). <i>P</i> går ud.</li>
-<li><b>Forventet udbytte.</b> En krone på side <i>i</i> giver odds<sub><i>i</i></sub> med chancen <i>q</i><sub><i>i</i></sub>, så <i>E</i><sub><i>i</i></sub> = 0,9 · Σ<sub><i>j</i></sub> <i>q</i><sub><i>j</i></sub>ℓ<sub><i>j</i></sub> / ℓ<sub><i>i</i></sub>. Også <i>q</i><sub><i>i</i></sub> går ud.</li>
-<li><b>Tælleren.</b> X og BIF har samme hældning, så Σ<sub><i>j</i></sub> <i>q</i><sub><i>j</i></sub>ℓ<sub><i>j</i></sub> = 0,985 + 0,05 · <i>q</i><sub>FCK</sub>. Den ligger mellem 0,985 og 1,035.</li>
-<li><b>Grænsen.</b> For X og BIF er <i>E</i> = 0,9 · (0,985 + 0,05 · <i>q</i><sub>FCK</sub>) / 0,985 ≤ 0,9 · 1,035 / 0,985 ≈ {{pulje.graense}}. For FCK er <i>E</i> = 0,9 · (0,985 + 0,05 · <i>q</i><sub>FCK</sub>) / 1,035 ≤ 0,90.</li>
-<li><b>Din egen indsats.</b> Med <i>x</i> kr på side <i>i</i> bliver <i>E</i><sub><i>i</i></sub> = <i>q</i><sub><i>i</i></sub> · 0,9 · (<i>T</i> + <i>x</i>) / (<i>S</i><sub><i>i</i></sub> + <i>x</i>). Da <i>S</i><sub><i>i</i></sub> &lt; <i>T</i>, er (<i>T</i> + <i>x</i>) / (<i>S</i><sub><i>i</i></sub> + <i>x</i>) &lt; <i>T</i> / <i>S</i><sub><i>i</i></sub>. Din indsats udvander altså din egen side og kommer oveni grænsen. På de andre sider løfter den udbyttet en anelse.</li>
-<li><b>Før pausen.</b> En indsats i 20′ betales også efter siderne ved pausen. Er modellens chance rigtig, er dens forventning et gennemsnit af <i>E</i><sub><i>i</i></sub> over de mulige forløb frem til pausen, og hvert af dem ligger under grænsen. Minuttet for indsatsen ændrer altså kun, hvad man ved, ikke grænsen.</li>
+<li><b>Siderne.</b> Med <i>q</i> som modellens chancer ved pausen er <i>C</i><sub><i>i</i></sub> = <i>P</i> · <i>q</i><sub><i>i</i></sub>ℓ<sub><i>i</i></sub> / Σ<sub><i>j</i></sub> <i>q</i><sub><i>j</i></sub>ℓ<sub><i>j</i></sub>.</li>
+<li><b>Oddsene uden spillerens indsats.</b> <i>T</i> = <i>P</i> og <i>S</i><sub><i>i</i></sub> = <i>C</i><sub><i>i</i></sub>, så odds<sub><i>i</i></sub> = 0,9 · Σ<sub><i>j</i></sub> <i>q</i><sub><i>j</i></sub>ℓ<sub><i>j</i></sub> / (<i>q</i><sub><i>i</i></sub>ℓ<sub><i>i</i></sub>), og <i>P</i> går ud.</li>
+<li><b>Forventet udbytte.</b> <i>E</i><sub><i>i</i></sub> = <i>q</i><sub><i>i</i></sub> · odds<sub><i>i</i></sub> = 0,9 · Σ<sub><i>j</i></sub> <i>q</i><sub><i>j</i></sub>ℓ<sub><i>j</i></sub> / ℓ<sub><i>i</i></sub>, så også <i>q</i><sub><i>i</i></sub> går ud.</li>
+<li><b>Grænsen.</b> X og BIF har samme ℓ, så Σ<sub><i>j</i></sub> <i>q</i><sub><i>j</i></sub>ℓ<sub><i>j</i></sub> = 0,985 + 0,05 · <i>q</i><sub>FCK</sub> ≤ 1,035. For X og BIF er <i>E</i> ≤ 0,9 · 1,035 / 0,985 ≈ {{pulje.graense}}, for FCK <i>E</i> ≤ 0,90.</li>
+<li><b>Spillerens egen indsats.</b> Med <i>x</i> kr på side <i>i</i> bliver <i>E</i><sub><i>i</i></sub> = <i>q</i><sub><i>i</i></sub> · 0,9 · (<i>T</i> + <i>x</i>) / (<i>S</i><sub><i>i</i></sub> + <i>x</i>), som er mindre, fordi <i>S</i><sub><i>i</i></sub> &lt; <i>T</i>. Indsatsen udvander sin egen side.</li>
+<li><b>Før pausen.</b> En indsats i 20′ betales også efter siderne ved pausen. Er modellens chance rigtig, er dens forventning et gennemsnit af <i>E</i><sub><i>i</i></sub> over forløbene frem til pausen, som hver ligger under grænsen.</li>
 </ol>
 <!-- kilde: src/state/match.ts:36, 403-408, 435-439, 451-470; src/engine/book/portfolio.ts:44-49; docs/PLAN.md:500 -->
-<p>Historien bekræfter regnestykket. Ved pausen var <i>q</i><sub>FCK</sub> = {{pulje.lukning.fair.fck}}. Så giver trin 5 {{pulje.lukning.ev.bif}} for X og BIF og {{pulje.lukning.ev.fck}} for FCK, og det var også BIF's og FCK's værdi ved lukning. X lå på {{pulje.lukning.ev.x}}, fordi vores egne {{pulje.indsats}} stod på X.</p>
-<!-- data: story.json poolClose: fair [0,7206; 0,2135; 0,0658], sider [379.542,74; 107.228,91; 32.988,35] kr, total 519.760 kr, bruger [0; 200; 0]. Trin 5: 0,9 · (0,985 + 0,05 · 0,7206) / 0,985 = 0,9329 og / 1,035 = 0,8879. Faktisk fair · odds: FCK 0,8882, X 0,9314, BIF 0,9333 -->
+<p>Ved pausen i historien var <i>q</i><sub>FCK</sub> = {{pulje.lukning.fair.fck}}, og trin 3 og 4 giver {{pulje.lukning.ev.bif}} for X og BIF og {{pulje.lukning.ev.fck}} for FCK, præcis BIF's og FCK's værdi ved lukning. X lå på {{pulje.lukning.ev.x}}, fordi historiens {{pulje.indsats}} stod der (trin 5).</p>
+<!-- data: story.json poolClose: fair [0,7206; 0,2135; 0,0658], sider [379.542,74; 107.228,91; 32.988,35] kr, total 519.760 kr, bruger [0; 200; 0]. Trin 4: 0,9 · (0,985 + 0,05 · 0,7206) / 0,985 = 0,9329 og / 1,035 = 0,8879. Faktisk fair · odds: FCK 0,8882, X 0,9314, BIF 0,9333 -->
 
-<figure class="fig" data-fig="pulje-graense"><figcaption><b>Figur:</b> Grænsen 0,9 · Σ(<i>q</i> · ℓ) / ℓ<sub><i>i</i></sub> som funktion af FCK's chance ved pausen, før din egen indsats. Figuren deler resten 55:45 mellem X og BIF, men fordelingen er ligegyldig, fordi de to har samme hældning og derfor samme linje. Selv ved 95 % til FCK ligger X og BIF under {{pulje.graense}}, og FCK når aldrig over 0,90.</figcaption></figure>
+<figure class="fig" data-fig="pulje-graense"><figcaption><b>Figur:</b> Grænsen 0,9 · Σ(<i>q</i> · ℓ) / ℓ<sub><i>i</i></sub> som funktion af FCK's chance ved pausen. X og BIF deler linje, og ingen linje når over grænsen: {{pulje.graense}} for X og BIF, 0,90 for FCK.</figcaption></figure>
 
-<h2 id="k18-fair">Hvorfor fair og ikke mid</h2>
-<p>Planen lod publikum følge den viste mid, glattet. Men mid bærer hvalernes vedvarende ordrestrøm med en halveringstid på 15 kampminutter (kapitel 15). Efter en hval på BIF ville publikum så lægge for mange penge på BIF, og FCK og X ville få for høje odds i forhold til modellens chance. Man kunne spille imod hvalen og få over 0,95 pr. krone igen. Derfor følger publikum fair chance. En hval lægger nu højst 8.000 kr direkte til puljen og flytter ikke fordelingen, som eksemplet ovenfor viser. Afvigelsen fra planen står i PLAN §19.</p>
-<!-- kilde: docs/PLAN.md:500; src/state/match.ts:403-408, 422; src/engine/football/sim.ts:32, 333-340 -->
-
-<h2 id="k18-skoen">Skønnet undervejs</h2>
-<p>Figuren nedenfor viser modellens chance gange de aktuelle odds gennem første halvleg. Det er ikke det, en krone giver, for oddsene ændrer sig frem til pausen. Kurverne kan ligge over grænsen, fordi <i>w</i> halter cirka et kampminut efter fair chance: stiger en sides chance hurtigt, står dens odds stadig højt et stykke tid. I {{pulje.skoen.overGraense}} af målepunkterne i første halvleg lå mindst én side over 0,946, og BIF nåede {{pulje.skoen.max.bif}}. Ved pausen sættes siderne til målet, og de tre værdier, der tæller, ligger under grænsen.</p>
+<h2 id="k18-skoen">Skønnet midt i halvlegen</h2>
+<p>Modellens chance gange puljens odds lige nu kan midt i halvlegen ligge over grænsen: højst {{pulje.skoen.max.bif}} for BIF og {{pulje.skoen.max.x}} for X, og mindst én side lå over i ca. {{pulje.skoen.overGraense}} af første halvleg. Siderne glattes over ét kampminut, så en side, hvis chance stiger hurtigt, beholder høje odds et stykke tid. Men udbetalingen afgøres ved pausen (trin 6), hvor siderne sættes til modellens fair chance med hjemmebias, og dér var værdien FCK {{pulje.lukning.ev.fck}}, X {{pulje.lukning.ev.x}} og BIF {{pulje.lukning.ev.bif}}.</p>
 <!-- kilde: src/state/match.ts:425-428, 435-439 -->
 <!-- data: story.json series med 0,4 < t ≤ 45, hvert 10. substep (fakta pulje.skoen.*) -->
 
-<figure class="fig" data-fig="pulje-halvleg"><figcaption><b>Figur:</b> Puljen i første halvleg: modellens chance gange puljens odds lige nu for FCK (cyan), X (grå) og BIF (gul), med den strukturelle grænse {{pulje.graense}} stiplet. Prikkerne til højre er værdierne ved lukning: FCK {{pulje.lukning.ev.fck}}, X {{pulje.lukning.ev.x}} og BIF {{pulje.lukning.ev.bif}}.</figcaption></figure>
+<figure class="fig" data-fig="pulje-halvleg"><figcaption><b>Figur:</b> Puljen i første halvleg: modellens chance gange puljens odds lige nu for FCK (cyan), X (grå) og BIF (gul), med grænsen {{pulje.graense}} stiplet. Prikkerne til højre er værdierne ved lukning.</figcaption></figure>
+
+<h2 id="k18-fair">Hvorfor fair og ikke mid</h2>
+<p>Planen lod publikum følge den viste mid, glattet. Men mid bærer hvalernes vedvarende ordrestrøm med en halveringstid på 15 kampminutter (kapitel 15), så efter en hval kunne man spille imod den og få over 0,95 pr. krone igen. Derfor følger publikum fair chance (PLAN §19). Hvalen på {{hval3.kr}} på BIF ved {{hval3.minut}} lagde 4 · 2.000 = 8.000 kr til puljen og løftede BIF's mid fra 23,9 % til 27,2 %, men BIF's andel af puljen stod på 23,4 % før og efter.</p>
+<!-- kilde: docs/PLAN.md:500; src/state/match.ts:403-408, 422; src/engine/football/sim.ts:32, 333-340 -->
+<!-- data: story.json series k 640 (total 326.840, n 4.018, BIF 76.419 kr, mid BIF 0,2393, fair BIF 0,2387), k 650 (334.920, 4.036, 78.344 kr, 0,2715, 0,2396); events id 10 (hval k 646, 33.320 kr). Handler k 641–650 genskabt med motorbundtet: k 646 hval 33.320 kr på BIF, k 647 køb 20 kr på FCK; salgene i k 643 og 647–650 tæller ikke. Andel: 76.419 / 326.840 = 0,2338; 78.344 / 334.920 = 0,2339 -->
 
 <h2 id="k18-test">Testen</h2>
-<p>Testen i <code>tests/features.test.ts</code> spiller {{pulje.20.kampe}} kampe i fri kamp med seeds <code>pool-0</code> til <code>pool-19</code> gennem den rigtige store frem til pausen. Ved lukning regner den for hver side forventningen for en indsats på 100 kr, <i>q</i><sub><i>i</i></sub> · 0,9 · (<i>T</i> + 100) / (<i>S</i><sub><i>i</i></sub> + 100), med modellens chance ved pausen som <i>q</i>. Både den værste værdi og middelværdien skal være højst 0,95.</p>
+<p>Testen i <code>tests/features.test.ts</code> spiller {{pulje.20.kampe}} kampe (seeds <code>pool-0</code> til <code>pool-19</code>) gennem den rigtige store til pausen. Ved lukning regner den forventningen for en indsats på 100 kr på hver side med formlen i trin 5 og kræver, at både den værste værdi og middelværdien er højst 0,95.</p>
 <table class="t">
   <thead><tr><th>Side</th><th class="n">Værste</th><th class="n">Middel</th><th class="n">Grænse uden egen indsats</th></tr></thead>
   <tbody>
@@ -88,5 +72,5 @@
 </table>
 <!-- kilde: tests/features.test.ts:162-187 -->
 <!-- data: stats.json pool20 (genskabt af scripts/data.mjs med de samme 20 seeds og 100 kr) -->
-<p>Planen ville måle 300 kampe med realiseret udfald. Over 300 kampe har den realiserede udbetaling pr. krone en standardfejl på cirka 0,08 og kan ikke skelne 0,90 fra 0,95. Udbetalingen ligger fast ved lukning, så den betingede forventning ved lukning er det rigtige mål, uden støj fra udfaldet. Testen måler puljens konstruktion og antager, at modellens chance ved pausen er rigtig (kalibreringen står i kapitel 20).</p>
+<p>Planen ville måle 300 kampe med realiseret udfald, men standardfejlen på cirka 0,08 pr. krone kan ikke skelne 0,90 fra 0,95. Den betingede forventning ved lukning har ingen støj fra udfaldet, men antager, at modellens chance ved pausen er rigtig (kapitel 20).</p>
 <!-- kilde: docs/PLAN.md:501; tests/features.test.ts:170-180 -->
