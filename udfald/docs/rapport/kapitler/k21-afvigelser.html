@@ -50,7 +50,7 @@
     <tr><td>Monte Carlo-testen</td><td>Tillader 1,2 point i gennemsnit, planen 1</td><td>målt 0,3</td><td class="n">20</td></tr>
     <tr><td>1X2-kalibreringen</td><td>1.200 kampe og 10 point pr. interval, planen 2.000 kampe og ±3 point</td><td>højst {{kal.1x2.maxAfvigelse}} point</td><td class="n">20</td></tr>
     <tr><td>Monte Carlo-tid</td><td>Langsommere end planens tidlige måling; kørslen ligger i en worker og blokerer ikke tegningen</td><td>{{perf.mc}} mod 45–70 ms</td><td class="n">20</td></tr>
-    <tr><td>Ydelse ved 4× CPU</td><td>p95 over målet på 33 ms, målt uden GPU og uden telefon</td><td>{{perf.4x.p95.tidligere}} og {{perf.4x.p95}}</td><td class="n">20</td></tr>
+    <tr><td>Ydelse ved 4× CPU</td><td>p95 over målet på 33 ms, målt uden GPU og uden telefon</td><td>{{perf.4x.p95}} (tidligere {{perf.4x.p95.tidligere}})</td><td class="n">20</td></tr>
     <tr><td>LoAF</td><td>Lange animationsframes måles ikke, kun lange opgaver</td><td>–</td><td class="n">20</td></tr>
     <tr><td>NU-linjen</td><td>Står ved 36 % af viftens tegneflade, ikke 52 %, så fremtiden får knap to tredjedele</td><td>–</td><td class="n">–</td></tr>
     <tr><td>Mindre tekniske valg</td><td>React højst 4 gange i sekundet (plan 2), Monte Carlo hver 8. tick (plan hver 3.), tællerbaseret hash i stedet for mulberry32, fast 85/15-deling i årsagschippen</td><td>–</td><td class="n">12, 15</td></tr>

@@ -76,13 +76,13 @@
   <thead><tr><th>Måling</th><th class="n">1× CPU</th><th class="n">4× CPU</th><th class="n">Planen</th></tr></thead>
   <tbody>
     <tr><td>p95, frame-interval</td><td class="n">{{perf.1x.p95}}</td><td class="n">{{perf.4x.p95}}</td><td class="n">≤ 16,7 ms / ≤ 33 ms</td></tr>
-    <tr><td>p50, frame-interval</td><td class="n">16,7 ms</td><td class="n">33,4 ms</td><td class="n">–</td></tr>
-    <tr><td>Lange opgaver</td><td class="n">6 (længste 74 ms)</td><td class="n">30 (længste {{perf.4x.lang}})</td><td class="n">ingen LoAF over 50 ms</td></tr>
-    <tr><td>Monte Carlo, én kørsel</td><td class="n">{{perf.mc}}</td><td class="n">204 ms</td><td class="n">45–70 ms (tidlig måling)</td></tr>
+    <tr><td>p50, frame-interval</td><td class="n">{{perf.1x.p50}}</td><td class="n">{{perf.4x.p50}}</td><td class="n">–</td></tr>
+    <tr><td>Lange opgaver</td><td class="n">{{perf.1x.antalLange}} (længste {{perf.1x.lang}})</td><td class="n">{{perf.4x.antalLange}} (længste {{perf.4x.lang}})</td><td class="n">ingen LoAF over 50 ms</td></tr>
+    <tr><td>Monte Carlo, én kørsel</td><td class="n">{{perf.mc}}</td><td class="n">{{perf.4x.mc}}</td><td class="n">45–70 ms (tidlig måling)</td></tr>
   </tbody>
 </table>
-<!-- data: qa.txt og qa-report.json perf, rettet måling (perf cpu1x: frames 395, p50 16,7, p95 16,8, long 6, maxLong 74, mcMs 202,1; perf cpu4x: frames 120, p50 33,4, p95 316,6, long 30, maxLong 380, mcMs 203,5); 66,7 ms ved 4× er fra en tidligere QA-kørsel (scripts/fakta.py:263) -->
-<p>Den gamle måling talte lange opgaver dobbelt ved 4×, fordi observatøren og frame-løkken fra 1×-målingen kørte videre. Det er rettet i <code>qa/qa.cjs</code>, og tallene her er fra den rettede måling. Ved 1× ligger p95 0,1 ms over planens 16,7 ms, men under QA-grænsen på 20 ms. Ved 4× når appen ikke målet, og p95 svinger meget: {{perf.4x.p95}} her mod {{perf.4x.p95.tidligere}} i en tidligere kørsel. QA har ingen grænse for 4×.</p>
+<!-- data: qa.txt og qa-report.json perf, rettet måling på ledig maskine (nøglerne perf.*); 66,7 og 83,4 ms ved 4× er fra to tidligere kørsler med den gamle måling, hvor p95 ikke var påvirket af dobbelttællingen -->
+<p>Den gamle måling talte lange opgaver dobbelt ved 4×, fordi observatøren og frame-løkken fra 1×-målingen kørte videre. Det er rettet i <code>qa/qa.cjs</code>, og tallene her er fra den rettede måling. Ved 1× ligger p95 0,1 ms over planens 16,7 ms, men under QA-grænsen på 20 ms. Ved 4× når appen ikke målet, og p95 svinger mellem kørsler: {{perf.4x.p95}} her mod {{perf.4x.p95.tidligere}} i to tidligere kørsler. En kørsel, mens andre processer belastede maskinen, gav over 300 ms og er ikke brugt. QA har ingen grænse for 4×.</p>
 <!-- kilde: qa/qa.cjs:85-97 (én observatør og én frame-løkke pr. rate, de forrige stoppes først); git show 0fef2b2 -- qa/qa.cjs -->
 <p>Monte Carlo kører i en worker, en baggrundstråd i browseren. En kørsel fra 20′ simulerer 5.000 stier over cirka 290 trin og kører derefter de 100 udvalgte stier igen for at gemme deres punkter. Storen beder om en ny kørsel hver 8. tick, altså hver 800 ms ved ×1, så {{perf.mc}} er færdig i god tid, og kørslen blokerer ikke tegningen. Planen noterede 45–70 ms pr. kørsel efter en tidlig optimering (PLAN §15); forskellen er ikke undersøgt.</p>
 <!-- kilde: src/engine/mc/paths.ts:224-262, 308-328; src/engine/football/params.ts:8 (DP_STEP 0,25 kampminut; (93 − 20) / 0,25 = 292 trin); src/state/match.ts:486-502; src/engine/mc/client.ts:79-82; docs/PLAN.md:426 -->

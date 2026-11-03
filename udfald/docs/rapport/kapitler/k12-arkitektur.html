@@ -37,7 +37,7 @@
 <figure class="fig" data-fig="tidsskala"><figcaption><b>Figur:</b> Tidsskalaen. Et kampminut er 40 substeps og varer 4 s ved ×1. De lange streger er DP-trinene på 15 kampsekunder.</figcaption></figure>
 
 <h2 id="k12-opdatering">Opdatering af skærmen</h2>
-<p>Efter hvert substep kører storen Sikring, puljen, købsgrænserne og afregningen, i den rækkefølge (kapitel 17). Visningslaget regnes helt hver 3. tick og lige efter en hændelse; ellers kopieres kun 1X2- og Over 2,5-kurserne, som køb læser.</p>
+<p>Efter hvert substep kører storen Sikring, puljen, købsgrænserne og afregningen, i den rækkefølge (kapitel 17). Visningslaget regnes helt hver 3. tick og lige efter en hændelse; ellers kopieres kun 1X2- og Over/Under 2,5-kurserne, som køb læser.</p>
 <!-- kilde: src/state/match.ts:221-246, 258-320 -->
 <p><code>frame</code> går hver tick til canvas-lagene, som tegnes imperativt. <code>view</code> er de grove tal til React og bygges højst 4 gange i sekundet (planen sagde 2), men straks ved en hændelse eller handling. Viftens stier tegnes kun om ved et nyt Monte Carlo-resultat, et mål, et skift af fokus eller en stor kursbevægelse.</p>
 <!-- kilde: src/state/match.ts:1-6, 286-292, 823-834; src/ui/kamp/Kampen.tsx:14-15; src/ui/kamp/Fan.tsx:57-65, 104-116; docs/PLAN.md:449 -->

@@ -8,8 +8,8 @@ PASS  fonts load from own files or data: URI · Fonte
 Egne fontfiler virker
 PASS  worker detected in sandbox · Konklusion
 Kun blob-worker virker
-perf cpu1x {"frames":395,"p50":16.699999999999818,"p95":16.800000000000182,"long":6,"maxLong":74,"mcMs":202.09999999962747}
-perf cpu4x {"frames":120,"p50":33.399999999999636,"p95":316.60000000000036,"long":30,"maxLong":380,"mcMs":203.5}
+perf cpu1x {"frames":408,"p50":16.699999999999818,"p95":16.800000000000182,"long":1,"maxLong":57,"mcMs":140.19999999995343}
+perf cpu4x {"frames":300,"p50":16.700000000000728,"p95":49.899999999999636,"long":13,"maxLong":217,"mcMs":121.5}
 PASS  frame pacing at 1x CPU: p95 ≤ 20 ms · p95 16.8 ms
 PASS  chrome still during goal (focus 0)
 PASS  goal registered (focus 0) · BIF 1
