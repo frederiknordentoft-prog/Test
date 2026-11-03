@@ -1,77 +1,67 @@
 <h1 class="kapitel" id="k4" data-nr="4">Køb, salg og købsgrænser</h1>
-<p class="ingress">Du køber hele andele til kursen og sælger dem til salgskursen, når handlen er åben. Et køb låser kursen i 1,5 sekund. En købsgrænse ligger i viften og venter på en lavere kurs.</p>
+<p class="ingress">Du køber hele andele til kursen og sælger dem til salgskursen. Et køb låser kursen i 1,5 sekund, og en købsgrænse venter i viften på en lavere kurs.</p>
 
 <h2 id="k4-ordreseddel">Ordresedlen</h2>
 <section class="duo">
   <div class="txt">
-    <p>Tryk på et udfald i andelsbaren, så åbner <b>ordresedlen</b>. Øverst står porteføljens værdi og din saldo. Derunder står kontrakten med kurs og odds, fx <span class="ui">FCK vinder · kurs 45 · odds 2,22</span>. Odds er kun en ekstra visning: 100 delt med kursen.</p>
-    <p>Indsatsen vælger du med chips på 25, 50, 100, 250 og 500 kr. Den mulige udbetaling står med store tal. Den er altid antallet af andele i kroner, fordi hver andel betaler 1 kr. Under den står, hvor mange andele du får, og hvad de koster.</p>
-    <p>Ved {{koeb.fck.minut}} købte vi FCK for {{koeb.fck.indsats}} til kurs {{koeb.fck.kurs}}. Det gav {{koeb.fck.andele}} andele for {{koeb.fck.kr}}. Vinder FCK, udbetaler de {{koeb.fck.andele}} kr.</p>
-    <p>Når du trykker <span class="ui">Køb 250 kr</span>, bliver knappen til en låsering med teksten <span class="ui">Låser kurs 45 …</span>. Ordresedlen minder dig også om genvejen: <span class="ui">Hold på en resultatflise for at købe hurtigt.</span></p>
+    <p>Tryk på et udfald i andelsbaren, så åbner <b>ordresedlen</b> med kontraktens kurs og odds, fx <span class="ui">FCK vinder · kurs 45 · odds 2,22</span>. Odds er kun en ekstra visning: 100 delt med kursen.</p>
+    <p>Indsatsen vælger du med chips på 25, 50, 100, 250 og 500 kr. Den mulige udbetaling står med store tal og er altid antallet af andele i kroner, fordi hver andel betaler 1 kr.</p>
+    <p>Du får kun hele andele, og resten af indsatsen bliver på saldoen. Ved {{koeb.fck.minut}} købte vi FCK for {{koeb.fck.indsats}} til kurs {{koeb.fck.kurs}}. Det gav {{koeb.fck.andele}} andele for {{koeb.fck.kr}}, og vinder FCK, udbetaler de {{koeb.fck.andele}} kr.</p>
+    <p>Når du trykker <span class="ui">Køb 250 kr</span>, bliver knappen til en låsering: <span class="ui">Låser kurs 45 …</span>.</p>
   </div>
-  <figure class="phone" data-shot="04-koeb-laasering"><figcaption><b>Ordresedlen ved 20′.</b> FCK vinder til kurs {{koeb.fck.kurs}} med 250 kr valgt. Sedlen viser <span class="ui">Udbetaling ved sejr {{koeb.fck.andele}} kr</span> og <span class="ui">{{koeb.fck.andele}} andele for {{koeb.fck.kr}}</span>. Låseringen holder kursen, mens købet går igennem.</figcaption></figure>
+  <figure class="phone" data-shot="04-koeb-laasering"><figcaption><b>Ordresedlen ved 20′.</b> FCK vinder med 250 kr valgt. Udbetalingen står med store tal, og låseringen holder kursen, mens købet går igennem.</figcaption></figure>
 </section>
-<!-- kilde: src/ui/kamp/Tray.tsx:11, 22-27, 82-87, 99-110 -->
+<!-- kilde: src/ui/kamp/Tray.tsx:11, 22-27, 82-87, 99-110; src/engine/book/portfolio.ts:62-73 (hele andele) -->
 
 <h2 id="k4-laas">Prislåsen</h2>
 <p>Låsen varer 1,5 sekund. Imens kører kampen i normal fart (×1), så låsen svarer til 15 substeps eller 22,5 kampsekunder. Bagefter sammenligner spillet den låste kurs med kursen nu:</p>
 <ul>
-  <li><b>Kursen er højst 1 point over den låste:</b> købet fyldes til den laveste af de to. Du betaler aldrig mere end den låste kurs, og er kursen faldet, får du den lavere.</li>
-  <li><b>Kursen er steget 2 point eller mere:</b> sedlen spørger <span class="ui">Kursen flyttede sig – acceptér N?</span> med knapperne <span class="ui">Annullér</span> og <span class="ui">Acceptér</span>. Accepterer du, fyldes købet til kursen i det øjeblik.</li>
-  <li><b>Handlen er stoppet, når låsen udløber,</b> fx efter et mål: købet annulleres med beskeden <span class="ui">Handlen er stoppet</span>.</li>
+  <li><b>Højst 1 point over den låste:</b> købet fyldes til den laveste af de to. Du betaler aldrig mere end den låste kurs.</li>
+  <li><b>2 point eller mere over:</b> sedlen spørger <span class="ui">Kursen flyttede sig – acceptér N?</span>. Accepterer du, fyldes købet til kursen i det øjeblik.</li>
+  <li><b>Handlen er stoppet,</b> fx efter et mål: købet annulleres med beskeden <span class="ui">Handlen er stoppet</span>.</li>
 </ul>
-<p>Et gennemført køb giver en kort besked. I historien var den låste kurs {{laastKurs}}, og købet gik igennem til samme kurs: <span class="ui">Købt {{koeb.fck.andele}} andele @ kurs {{koeb.fck.kurs}} · ved sejr {{koeb.fck.andele}} kr</span>.</p>
 <!-- kilde: src/state/match.ts:210-214, 631-642, 644-656, 663-679, 681-694 -->
-<!-- data: story.json lockedAsk, toasts[0] -->
-
-<h2 id="k4-andele">Hele andele og grænser for indsatsen</h2>
-<p>Du køber kun hele andele, og resten af indsatsen bliver på saldoen. Derfor kostede købet for {{koeb.fck.indsats}} kun {{koeb.fck.kr}}.</p>
-<div class="formel">andele = ⌊100 · <i>S</i> / <i>kurs</i>⌋ <span class="hvor">hvor <i>S</i> er indsatsen i kr. Andelene koster andele · <i>kurs</i>/100 kr.</span></div>
-<ul>
-  <li><b>Saldo:</b> du starter med {{k.START_SALDO}} i fiktive penge. Penge, der er reserveret til en købsgrænse, kan ikke bruges, så længe grænsen er aktiv.</li>
-  <li><b>Højst {{k.MAX_STAKE}} pr. køb.</b> Ordresedlens chips går op til 500 kr. De 1.000 kr når du kun med hold-for-indsats.</li>
-  <li><b>Dækning:</b> mangler der penge, når låsen udløber, står der <span class="ui">Ikke nok på saldoen</span>, og intet bliver købt.</li>
-</ul>
+<p>Et køb er højst {{k.MAX_STAKE}}, og det beløb når du kun med hold-for-indsats, for chipsene går til 500 kr. Penge, der er reserveret til en købsgrænse, kan ikke bruges. Mangler der penge, når låsen udløber, bliver intet købt: <span class="ui">Ikke nok på saldoen</span>.</p>
 <!-- kilde: src/engine/book/portfolio.ts:30-32, 62-73, 84-97; src/ui/kamp/Tray.tsx:11, 177-188; src/ui/kamp/HoldToStake.tsx:5 -->
 
 <h2 id="k4-hold">Hold for indsats</h2>
 <section class="duo">
   <div class="txt">
-    <p>Du kan også købe uden ordresedlen. Hold fingeren på et udfald i andelsbaren. Efter et kvart sekund dukker en ring op, og indsatsen stiger et trin for hver 0,28 sekund: 10, 25, 50, 100, 250, 500 og 1.000 kr.</p>
-    <p>Over fingeren står et kort med indsats, antal andele og udbetaling, regnet efter samme regel som på ordresedlen. Kortet fortæller også, hvad du kan gøre:</p>
+    <p>Du kan også købe uden ordresedlen. Hold fingeren på et udfald i andelsbaren. Efter et kvart sekund dukker en ring op, og indsatsen stiger et trin for hver 0,28 sekund: 10, 25, 50, 100, 250, 500 og 1.000 kr. Et kort over fingeren viser indsats, andele og udbetaling.</p>
     <ul>
-      <li><b>Glid op</b> og slip for at købe. Købet går gennem den samme prislås på 1,5 sekund.</li>
+      <li><b>Glid op</b> og slip for at købe, gennem den samme prislås.</li>
       <li><b>Glid til venstre</b> og slip for at annullere.</li>
-      <li><b>Slip uden at glide,</b> så åbner ordresedlen i stedet.</li>
+      <li><b>Slip uden at glide,</b> så åbner ordresedlen.</li>
     </ul>
-    <p>Greben er lånt fra talebeskeder i beskedapps: du holder for at optage og glider for at sende eller fortryde. Teksten på kortet skifter undervejs til <span class="ui">Slip for at købe</span> eller <span class="ui">Slip for at annullere</span>, så du ved, hvad der sker, før du slipper.</p>
+    <p>Kortets tekst skifter til <span class="ui">Slip for at købe</span> eller <span class="ui">Slip for at annullere</span>. Grebet er lånt fra talebeskeder (kapitel 11).</p>
   </div>
-  <figure class="phone" data-shot="24-hold-for-indsats"><figcaption><b>Hold for indsats.</b> Fingeren holder på BIF, mens FCK er i fokus. Ringen er nået til 250 kr, og ved BIF-kurs 26 giver det <span class="ui">961 andele · udbetaling 961 kr</span>. Nederst står <span class="ui">Glid op for at købe · venstre for at annullere</span>.</figcaption></figure>
+  <figure class="phone" data-shot="24-hold-for-indsats"><figcaption><b>Hold for indsats.</b> Fingeren holder på BIF, mens FCK er i fokus. Ringen er nået til 250 kr, og ved BIF-kurs 26 giver det <span class="ui">961 andele · udbetaling 961 kr</span>.</figcaption></figure>
 </section>
 <!-- kilde: src/ui/kamp/HoldToStake.tsx:5-27; src/ui/kamp/Kampen.tsx:192-240 -->
 <!-- data: shots/24-hold-for-indsats.json (BIF kurs 26, ⌊25.000/26⌋ = 961) -->
 
 <h2 id="k4-salg">Salg med faderen</h2>
-<p>Du sælger til salgskursen, som står på positionskortet: <span class="ui">sælg til kurs N</span>. Salget sker straks til salgskursen i det øjeblik, uden prislås.</p>
-<p>Under kortet ligger en <b>fader</b> som på en mixerpult. Knappen står yderst til højre, når du ejer alle andele. Træk den mod venstre for at sælge en del, så viser en udlæsning, hvad der sker: <span class="ui">Sælg N → X kr nu · M kører videre (ved sejr M kr)</span>. Skalaen har op til tre magnetiske hak:</p>
+<p>Du kan sælge 1X2, Over 2,5 og de fleste andre kontrakter når som helst, undtagen under handelsstop. Salget sker straks til salgskursen, uden prislås. Salgskursen står på positionskortet: <span class="ui">sælg til kurs N</span>. Et slutresultat under 3 % chance, puljen og Hallens kontrakter kan ikke sælges (kapitel 6, 8 og 9).</p>
+<p>Under kortet ligger en <b>fader</b> som på en mixerpult. Træk den mod venstre for at sælge en del, så viser en udlæsning <span class="ui">Sælg N → X kr nu · M kører videre (ved sejr M kr)</span>. Skalaen har op til tre magnetiske hak:</p>
 <ul>
-  <li><span class="ui">Alt</span> yderst til venstre sælger hele positionen.</li>
+  <li><span class="ui">Alt</span> sælger hele positionen.</li>
   <li><span class="ui">½</span> sælger halvdelen.</li>
-  <li><span class="ui">Indsats hjem</span> sælger lige nok andele til at få indsatsen tilbage. Hakket findes kun, når positionen er mere værd end indsatsen. Ligger det tæt på midten, står der <span class="ui">Indsats hjem ≈ ½</span>.</li>
+  <li><span class="ui">Indsats hjem</span> sælger lige nok andele til at få indsatsen tilbage. Hakket findes kun, når positionen er mere værd end indsatsen.</li>
 </ul>
-<p>Når du slipper, kommer en bekræftelse med <span class="ui">Fortryd</span> og <span class="ui">Sælg N → X kr</span>. Under et handelsstop er faderen slået fra med teksten <span class="ui">Salg åbner efter stoppet</span>. I Porteføljen kan du også sælge alt med ét tryk (kapitel 10).</p>
+<p>Når du slipper, kommer en bekræftelse med <span class="ui">Fortryd</span> og <span class="ui">Sælg N → X kr</span>. Under et handelsstop er faderen slået fra med teksten <span class="ui">Salg åbner efter stoppet</span>. I Porteføljen kan du sælge alt med ét tryk (kapitel 10).</p>
 <!-- kilde: src/ui/kamp/Kampen.tsx:390-469; src/state/match.ts:705-716; src/ui/portefolje/Portefolje.tsx:37 -->
+<!-- kilde: undtagelser fra salg: src/state/match.ts:25, 599 (slutresultat under CS_MIN_P lukket), 705-711 (isOpen styrer salg); src/state/hallen.ts:156-183 (Hallen har kun køb); puljen: kapitel 8 -->
 
 <h2 id="k4-graenser">Købsgrænser</h2>
 <section class="duo">
   <div class="txt">
-    <p>En <b>købsgrænse</b> er en ordre, der venter på en lavere kurs. Hold fingeren i viften i knap et halvt sekund, så dukker en violet linje op med <span class="ui">Købsgrænse kurs N</span>. Træk den op eller ned til det niveau, du vil købe til. Den kan ikke trækkes højere end 1 point under kursen nu. Slip, og en lille ordreseddel spørger efter indsatsen: <span class="ui">Sæt købsgrænse · 100 kr</span>.</p>
-    <p>Grænsen står derefter i viften som en stiplet violet linje, <span class="ui">Køb ved kurs N</span>. Indsatsen reserveres på saldoen, til grænsen fyldes eller annulleres. Du kan have højst {{k.MAX_LIMITS}} aktive grænser, og de findes kun på FCK, X og BIF, ikke på Over 2,5.</p>
-    <p>Grænsen fyldes, når kursen når niveauet, og antallet af andele regnes ved den kurs, den fyldes til. Under et handelsstop venter den. Springer kursen forbi niveauet i et gab, fyldes grænsen til <b>første kurs efter genåbningen</b>, og den kan være langt bedre end grænsen.</p>
+    <p>En <b>købsgrænse</b> er en ordre, der venter på en lavere kurs. Hold fingeren i viften i knap et halvt sekund, så dukker en violet linje op med <span class="ui">Købsgrænse kurs N</span>. Træk den til det niveau, du vil købe til, højst 1 point under kursen nu. Slip, og en lille ordreseddel spørger efter indsatsen.</p>
+    <p>Grænsen står derefter i viften som en stiplet violet linje, og indsatsen er reserveret, til grænsen fyldes eller annulleres. Du kan have højst {{k.MAX_LIMITS}} aktive grænser, og kun på FCK, X og BIF.</p>
+    <p>Grænsen fyldes, når kursen når niveauet, og under et handelsstop venter den. Springer kursen forbi niveauet i et gab, fyldes grænsen til <b>første kurs efter genåbningen</b>, og den kan være langt bedre end grænsen.</p>
   </div>
-  <figure class="phone" data-shot="23-demo-graense-fyldt"><figcaption><b>En købsgrænse fyldt i et gab.</b> I demoen satte tommelen en grænse på FCK ved kurs 35 for 100 kr (kapitel 9). BIF-målet ved 31′ gav FCK et gab på <span class="ui">−24 point</span>, og grænsen blev fyldt til første kurs efter genåbningen: <span class="ui">Købsgrænse fyldt: 555 andele @ kurs 18 · 17 point bedre</span>.</figcaption></figure>
+  <figure class="phone" data-shot="23-demo-graense-fyldt"><figcaption><b>En købsgrænse fyldt i et gab.</b> Demoens grænse på FCK ved kurs 35 for 100 kr (kapitel 9) blev fyldt efter BIF-målet ved 31′, hvor FCK fik et gab på <span class="ui">−24 point</span>: <span class="ui">Købsgrænse fyldt: 555 andele @ kurs 18 · 17 point bedre</span>.</figcaption></figure>
 </section>
 <!-- kilde: src/ui/kamp/Fan.tsx:213-227, 246-251; src/render/fan/live.ts:170-197; src/ui/kamp/Tray.tsx:31-56; src/state/focus.ts:74, 96; src/state/match.ts:267-282, 718-723; src/engine/book/portfolio.ts:116-157 -->
 <!-- data: shots/23-demo-graense-fyldt.json (besked og gab); src/engine/director/demo90.ts:50 (niveau 35, 100 kr) -->
-<p>Spillet afviser en grænse, der ikke giver mening. Er kursen nået ned på grænsen, før du bekræfter, står der <span class="ui">Kursen er allerede under grænsen. Køb nu i stedet?</span>. Har du allerede {{k.MAX_LIMITS}} aktive, står der <span class="ui">Højst {{k.MAX_LIMITS}} aktive købsgrænser</span>. En grænse kan heller ikke ligge på eller under et aktivt stop-loss på samme kontrakt, fordi stoppet ville sælge, før grænsen køber (kapitel 7). Hvad der sker, når en grænse og et stop-loss springes over i samme gab, står i kapitel 21.</p>
+<p>Spillet afviser en grænse, når kursen allerede er nået ned på den, når du har {{k.MAX_LIMITS}} aktive, og når den ligger på eller under et aktivt stop-loss på samme kontrakt, fordi stoppet ville sælge, før grænsen køber (kapitel 7). Hvad der sker, når ét gab springer over både en grænse og et stop-loss, står i kapitel 21.</p>
 <!-- kilde: src/engine/book/portfolio.ts:116-125 -->

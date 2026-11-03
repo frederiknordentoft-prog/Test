@@ -1,48 +1,43 @@
 <h1 class="kapitel" id="laes" data-nr="">Læsevejledning</h1>
-<p class="ingress">Rapporten beskriver UDFALD, en mobil prototype, hvor du køber andele i en fodboldkamps udfald til en kurs fra 0 til 100. Den følger én bestemt kamp fra start til slut, så tallene om kampen i teksten og på billederne kommer fra samme kørsel.</p>
+<p class="ingress">Rapporten beskriver UDFALD, en mobil prototype, hvor du køber andele i en fodboldkamps udfald til en kurs fra 0 til 100. Den følger én kamp fra start til slut.</p>
 
 <h2 id="laes-dele">To dele og fire bilag</h2>
-<p><b>Del I · Spillet</b> (kapitel 1–11) er til alle. Den taler direkte til dig som spiller, viser skærmene som screenshots og forklarer, hvad du ser, og hvad du kan gøre. Du behøver ingen matematik for at læse den.</p>
-<p><b>Del II · Maskinrummet</b> (kapitel 12–21) er til teknikere. Den forklarer motoren bag kurserne: målmodellen, prissætteren, markedslaget, reglerne for afregning og Sikring, puljens regnskab og testene. Den navngiver de funktioner og konstanter i koden, som teksten bygger på.</p>
-<p><b>Bilagene</b> A–D samler ordlisten, kontraktnøglerne, konstanterne og en beskrivelse af, hvordan rapporten er lavet.</p>
-<p>Har du kort tid, så læs kapitel 1–3 for helheden og kapitel 6–8 for de tre nye funktioner. Vil du efterprøve et tal, så slå det op i Del II, hvor kapitlerne kan læses hver for sig. Begrænsninger og afvigelser fra planen er samlet i kapitel 21.</p>
+<p><b>Del I · Spillet</b> (kapitel 1–11) er til alle. Den taler til dig som spiller og viser skærmene som skærmbilleder. Ud over puljens formel og et par enkle regnestykker kræver den ingen matematik.</p>
+<p><b>Del II · Maskinrummet</b> (kapitel 12–21) er til teknikere. Den forklarer motoren bag kurserne, reglerne og testene. <b>Bilagene</b> A–D samler ordliste, kontraktnøgler, konstanter og metode.</p>
+<p>Har du kort tid, så læs kapitel 1–3 for helheden og kapitel 6–8 for de tre nye funktioner. Kapitlerne i Del II kan læses hver for sig. Begrænsninger og afvigelser fra planen er samlet i kapitel 21.</p>
 
 <div class="callout">
 <b>Ordene i rapporten.</b>
 <ul>
 <li><b>Andel:</b> det, du køber. En andel udbetaler 1 kr, hvis udfaldet sker, og ellers 0.</li>
-<li><b>Kurs:</b> prisen på en andel, fra 0 til 100. Kurs 45 betyder, at én andel koster 0,45 kr. Kursen ligger lidt over chancen, fordi husets andel ligger oveni.</li>
-<li><b>Point:</b> en bevægelse i kursen. Da handlen genåbnede efter FCK's mål, sprang FCK's kurs {{genaabning1.gabFCK}} point.</li>
-<li><b>% eller chance:</b> sandsynligheden for udfaldet, fx {{t20.over.chance}} for Over 2,5 ved 20′. I appen står chancen i hele procent ved siden af kursen.</li>
-<li><b>Købskurs og salgskurs:</b> du køber til kursen (købskursen) og sælger til salgskursen, som typisk ligger 2–6 point lavere. Ved 20′ var FCK's kurs {{t20.kursFCK}} og salgskursen {{t20.salgFCK}}.</li>
-<li><b>Udbetaling:</b> det, dine andele betaler ved afregning, altså 1 kr pr. andel, hvis udfaldet skete. {{koeb.fck.andele}} andele i FCK betaler {{koeb.fck.andele}} kr ved FCK-sejr.</li>
+<li><b>Kurs:</b> prisen, du køber en andel til, fra 0 til 100. Kurs 45 betyder, at én andel koster 0,45 kr.</li>
+<li><b>Salgskurs:</b> prisen, du sælger til. Den ligger 2 eller 4 point under kursen (4 ved fare), mindst 6 lige efter en genåbning. Ved 20′ var FCK's kurs {{t20.kursFCK}} og salgskursen {{t20.salgFCK}}.</li>
+<li><b>Point:</b> en bevægelse i kursen, fx FCK's gab på {{genaabning1.gabFCK}} point efter målet.</li>
+<li><b>% eller chance:</b> sandsynligheden for udfaldet, i appen i hele procent.</li>
 </ul>
-<p>Ved kurserne står odds kun som sekundær tekst: odds = 100 ÷ kurs. Parken-puljen viser sine egne odds (kapitel 8).</p>
+<p>Odds står kun som sekundær tekst ved kursen. Parken-puljen viser sine egne odds (kapitel 8).</p>
 </div>
 <!-- kilde: src/engine/book/portfolio.ts:63-66, src/engine/book/portfolio.ts:160-163, src/engine/football/sim.ts:542-545 (spread 2/4/6), src/ui/kamp/Kampen.tsx:166, src/ui/pulje/Pulje.tsx:53 -->
 
 <div class="callout">
 <b>Farverne.</b>
 <ul>
-<li><b>Cyan</b> er FCK, <b>gul</b> er BIF, og grå er uafgjort (X).</li>
-<li><b>Pink</b> er Over 2,5.</li>
-<li><b>Grøn og rød</b> bruges til gevinst og tab (P&amp;L). Farven står ikke alene: der er en pil, et fortegn eller en forklaring ved.</li>
-<li><b>Violet</b> er en købsgrænse.</li>
-<li><b>Koral</b> er et stop-loss, og <b>mint</b> er Sikr gevinst. Det er samme røde og grønne tone som tab og gevinst, men linjerne har altid teksten <span class="ui">Stop</span> eller <span class="ui">Sikr gevinst</span>.</li>
+<li><b>Cyan</b> er FCK, <b>gul</b> er BIF, grå er uafgjort (X), og <b>pink</b> er Over 2,5.</li>
+<li><b>Grøn og rød</b> er gevinst og tab. Farven står ikke alene: der er altid en pil, et fortegn eller en tekst ved.</li>
+<li><b>Violet</b> er en købsgrænse. <b>Koral</b> er et stop-loss og <b>mint</b> Sikr gevinst; linjerne har altid teksten <span class="ui">Stop</span> eller <span class="ui">Sikr gevinst</span>.</li>
 </ul>
 </div>
 <!-- kilde: src/styles/tokens.css:1-20, src/state/focus.ts:18-21, src/render/fan/live.ts:171-217 -->
 
 <h2 id="laes-kampen">Kampen vi følger</h2>
-<p>Rapporten følger ét derby: FCK mod Brøndby (BIF) i Parken, spillet som fri kamp med seed {{seed}}. I en fri kamp er intet sat ind med hånden; mål og hvaler opstår i simulationen. Motoren er deterministisk, så samme seed og samme handler giver præcis samme kamp. Alle tal om kampen og alle screenshots fra derbyet kommer fra den kørsel; kun billederne fra demoen og Hallen er taget andre steder.</p>
+<p>Rapporten følger ét derby: FCK mod Brøndby (BIF) i Parken, spillet som fri kamp med seed {{seed}}. Intet er sat ind med hånden; mål og hvaler opstår i simulationen. Motoren er deterministisk, så samme seed og samme handler giver præcis samme kamp. Alle tal og skærmbilleder fra derbyet kommer fra den kørsel; kun billederne fra demoen og Hallen er taget andre steder.</p>
 <!-- kilde: src/engine/director/timeline.ts:31, docs/rapport/scripts/story.js:1-6 -->
+<figure class="fig" data-fig="tidslinje"><figcaption><b>Figur:</b> Kampen fra kickoff til slutfløjt: hvalerne, målene med handelsstop og genåbning, puljens lukning ved pausen, vores køb, Sikring-udløsningerne og slutresultatet.</figcaption></figure>
 <p>FCK åbner i kurs {{kickoffKurs}}. Før 20′ kommer tre <b>hvaler</b>, store enkeltordrer fra det simulerede publikum: {{hval1.kr}} på {{hval1.paa}} ved {{hval1.minut}}, {{hval2.kr}} på {{hval2.paa}} ved {{hval2.minut}} og {{hval3.kr}} på {{hval3.paa}} ved {{hval3.minut}}.</p>
-<p>Ved {{koeb.fck.minut}} køber vi for at vise funktionerne, ikke som en strategi: {{koeb.fck.indsats}} på FCK til kurs {{koeb.fck.kurs}}, {{koeb.bif.indsats}} på BIF til kurs {{koeb.bif.kurs}}, {{koeb.over.indsats}} på Over 2,5 til kurs {{koeb.over.kurs}} og {{koeb.cs11.indsats}} på slutresultatet 1–1 til kurs {{koeb.cs11.kurs}}. Vi sætter {{pulje.indsats}} i Parken-puljen på {{pulje.side}}. BIF får Sikring med stop ved kurs {{stop.bif.niveau}} og Sikr gevinst ved {{take.bif.niveau}}, og Over 2,5 får stop ved {{stop.over.niveau}} og Sikr gevinst ved {{take.over.niveau}}.</p>
-<p>FCK scorer {{maal1.ur}}. Et <b>handelsstop</b> på {{maalStop.substeps}} <b>substeps</b> følger; et substep er simulationens mindste tidsskridt, 1,5 kampsekunder, så stoppet varer 18 kampsekunder. Handlen genåbner {{genaabning1.ur}} med et <b>gab</b>, et spring i kursen: FCK {{genaabning1.gabFCK}} point, X {{genaabning1.gabX}}, BIF {{genaabning1.gabBIF}} og Over 2,5 {{genaabning1.gabOver}}. I samme øjeblik sælger Sikr gevinst vores Over-andele til kurs {{take.over.kurs}}, i alt {{take.over.kr}}, og Over-stoppet annulleres. Ved {{stop.bif.ur}} udløses BIF-stoppet og sælger til kurs {{stop.bif.kurs}}, i alt {{stop.bif.kr}}. Det venter med vilje {{stop.bif.substepsEfter}} substeps efter genåbningen; kapitel 7 forklarer hvorfor.</p>
+<p>Ved {{koeb.fck.minut}} køber vi for at vise funktionerne, ikke som en strategi: {{koeb.fck.indsats}} på FCK til kurs {{koeb.fck.kurs}}, {{koeb.bif.indsats}} på BIF til kurs {{koeb.bif.kurs}}, {{koeb.over.indsats}} på Over 2,5 til kurs {{koeb.over.kurs}} og {{koeb.cs11.indsats}} på slutresultatet 1–1 til kurs {{koeb.cs11.kurs}}. Vi sætter {{pulje.indsats}} i Parken-puljen på {{pulje.side}}. BIF får Sikring med stop ved {{stop.bif.niveau}} og Sikr gevinst ved {{take.bif.niveau}}, Over 2,5 stop ved {{stop.over.niveau}} og Sikr gevinst ved {{take.over.niveau}}.</p>
+<p>FCK scorer {{maal1.ur}}. Et <b>handelsstop</b> på {{maalStop.substeps}} <b>substeps</b> følger; et substep er simulationens mindste tidsskridt, 1,5 kampsekunder. Handlen genåbner {{genaabning1.ur}} med et <b>gab</b>, et spring i kursen, på {{genaabning1.gabFCK}} point for FCK. I samme øjeblik sælger Sikr gevinst vores Over-andele til salgskurs {{take.over.kurs}}, i alt {{take.over.kr}}, og Over-stoppet annulleres. Ved {{stop.bif.ur}} sælger BIF-stoppet til salgskurs {{stop.bif.kurs}}, i alt {{stop.bif.kr}}; kapitel 7 forklarer, hvorfor det venter til da.</p>
 <!-- kilde: src/engine/football/params.ts:6, src/engine/football/sim.ts:26, src/engine/book/portfolio.ts:35-36, src/engine/book/portfolio.ts:234 -->
 <p>Ved {{koeb.cs21.minut}} køber vi slutresultatet 2–1 for {{koeb.cs21.indsats}} til kurs {{koeb.cs21.kurs}}. Ved pausen lukker puljen med {{pulje.lukning.total}}, og oddsene låses; uafgjort står i {{pulje.lukning.odds.x}}.</p>
-<p>BIF udligner {{maal2.ur}}. Ved genåbningen {{genaabning2.ur}} er gabet FCK {{genaabning2.gabFCK}} point, X {{genaabning2.gabX}}, BIF {{genaabning2.gabBIF}} og Over 2,5 {{genaabning2.gabOver}}. En fjerde hval, {{hval4.kr}} på {{hval4.paa}}, kommer ved {{hval4.minut}}, og slutfløjtet lyder ved 90+3′. Kampen ender {{slutresultat}}.</p>
+<p>BIF udligner {{maal2.ur}}, og ved genåbningen {{genaabning2.ur}} er FCK's gab {{genaabning2.gabFCK}} point. En fjerde hval, {{hval4.kr}} på {{hval4.paa}}, kommer ved {{hval4.minut}}, og slutfløjtet lyder ved 90+3′. Kampen ender {{slutresultat}}. Det rammer vores 1–1 og puljens uafgjort, mens FCK og 2–1 ender på 0; regnskabet står i kapitel 10.</p>
 <!-- data: story.json events[10] (hval, t 90,925) og events[11] (fulltime, t 93 = 90+3′) -->
-<p>FCK-andelene og 2–1 afregnes til 0, 1–1 betaler {{slut.cs11.udbetaling}}, og puljen udbetaler {{pulje.udbetaling}}. I alt er der indsat {{slut.indsat}} og udbetalt {{slut.udbetalt}}, et resultat på {{slut.resultat}}.</p>
 
-<figure class="fig" data-fig="tidslinje"><figcaption><b>Figur:</b> Kampen vi følger, fra kickoff til slutfløjt: hvalerne, de to mål med handelsstop og genåbning, pausen, hvor puljen lukker, vores køb ved {{koeb.fck.minut}} og {{koeb.cs21.minut}}, de to Sikring-udløsninger og slutresultatet {{slutresultat}}.</figcaption></figure>

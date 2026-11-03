@@ -1,12 +1,12 @@
 <h1 class="kapitel" id="k2" data-nr="2">Skærmene og vejen rundt</h1>
-<p class="ingress">UDFALD har elleve ruter, men du når det meste med én tommelfinger: lobbyen, kampskærmen og fire knapper i bunden. Her er kortet over dem.</p>
+<p class="ingress">UDFALD har elleve ruter, men du når det meste med én tommelfinger: lobbyen, kampskærmen og fire knapper i bunden.</p>
 
 <h2 id="k2-lobby">Lobbyen</h2>
 <section class="duo">
 <div class="txt">
-<p>Du starter i lobbyen. Første tryk åbner handlen: en forklaring i tre punkter og knappen <span class="ui">Tryk for at åbne handlen</span>. Forklaringen siger kort det samme som kapitel 1: kursen svarer omtrent til chancen, viften viser 100 fremtider, og du kan sælge når som helst. Trykket låser også lyden op, og derefter kører begge kampe live, også mens du står i lobbyen.</p>
-<p>Øverst står ordmærket og din saldo, som derbyet og Hallen deler. Under dem ligger to levende kort. Derbyet FCK–Brøndby viser stilling, minut, FCK's kurs og en prislinje, der tegner kursen fra kampstart til nu; tryk på kortet (<span class="ui">Til kampen ›</span>) for at gå til kampen. Håndboldkampen Aalborg–GOG viser kampen som et spor på et oscilloskop, og dens kort fører til Hallen.</p>
-<p>Nederst er to knapper, <span class="ui">Se demoen · 90 sek.</span> og <span class="ui">Portefølje</span>, og en linje, der minder dig om, at alt er leg: <span class="ui">Prototype · fiktive kurser · ingen rigtige penge</span>.</p>
+<p>Du starter i lobbyen, dækket af en kort forklaring i tre punkter om kurs og chance, de 100 fremtider og salg. Knappen <span class="ui">Tryk for at åbne handlen</span> åbner handlen og låser lyden op, og derefter kører begge kampe live, også mens du står i lobbyen.</p>
+<p>Øverst står ordmærket og din saldo, som derbyet og Hallen deler. Under dem ligger to levende kort. Derbyet FCK–BIF viser stilling, minut, FCK's kurs og en prislinje fra kampstart til nu; kortet (<span class="ui">Til kampen ›</span>) fører til kampen. Håndboldkampen Aalborg–GOG vises som et spor på et oscilloskop, og dens kort fører til Hallen.</p>
+<p>Nederst er knapperne <span class="ui">Se demoen · 90 sek.</span> og <span class="ui">Portefølje</span> og linjen <span class="ui">Prototype · fiktive kurser · ingen rigtige penge</span>.</p>
 </div>
 <figure class="phone" data-shot="01-lobby"><figcaption><b>Lobbyen ved 27′.</b> Derbyet står 0–0 med FCK i kurs 43. Hallens kort kører nedenunder.</figcaption></figure>
 </section>
@@ -19,7 +19,7 @@
 <thead><tr><th>Rute</th><th>Skærm</th><th>Sådan kommer du dertil</th></tr></thead>
 <tbody>
 <tr><td>#lobby</td><td>Lobbyen</td><td>Start; chevronen på kampskærmen</td></tr>
-<tr><td>#kamp</td><td>Kampskærmen, FCK–Brøndby</td><td>Derbykortet i lobbyen</td></tr>
+<tr><td>#kamp</td><td>Kampskærmen, FCK–BIF</td><td>Derbykortet i lobbyen</td></tr>
 <tr><td>#byg</td><td>Byg en fremtid</td><td><span class="ui">Byg</span> i bundbjælken</td></tr>
 <tr><td>#maal</td><td>Mål og slutresultat</td><td><span class="ui">Mål</span> i bundbjælken</td></tr>
 <tr><td>#pulje</td><td>Parken-puljen</td><td><span class="ui">Pulje</span> i bundbjælken</td></tr>
@@ -34,24 +34,24 @@
 <!-- kilde: src/ui/router.ts:4-10, src/ui/Lobby.tsx:20-34, src/ui/kamp/Kampen.tsx:117-131, src/ui/portefolje/Portefolje.tsx:71, src/ui/kamp/Director.tsx:25-26, src/ui/App.tsx:91-102 -->
 
 <h2 id="k2-bund">Bundbjælken</h2>
-<p>På kampskærmen har bundbjælken fire knapper. Hver har en anden linje, og på Mål, Pulje og Portefølje viser den noget levende, så du kan se, om det er værd at gå derhen:</p>
+<p>Bundbjælken på kampskærmen har fire knapper, hver med en anden linje under navnet:</p>
 <ul>
 <li><span class="ui">Byg</span> med <span class="ui">en fremtid</span>: sæt dit eget udfald sammen af flere ben (kapitel 9).</li>
-<li><span class="ui">Mål</span> med Over 2,5's kurs, fx <span class="ui">Over 2,5 · 38</span>. Er der scoret 3 mål, står antallet og <span class="ui">Over ✓</span>.</li>
-<li><span class="ui">Pulje</span> med <span class="ui">åben til pausen</span>, <span class="ui">stoppet</span> under et handelsstop og fra pausen enten <span class="ui">lukket</span> eller dit beløb, fx <span class="ui">{{pulje.indsats}} inde</span>.</li>
+<li><span class="ui">Mål</span> med Over 2,5's kurs, fx <span class="ui">Over 2,5 · 38</span>, og efter 3 mål antallet og <span class="ui">Over ✓</span>.</li>
+<li><span class="ui">Pulje</span> med <span class="ui">åben til pausen</span>, <span class="ui">stoppet</span> under et handelsstop og fra pausen <span class="ui">lukket</span> eller dit beløb, fx <span class="ui">{{pulje.indsats}} inde</span>.</li>
 <li><span class="ui">Portefølje</span> med dit samlede resultat i kroner, grønt med plus eller rødt med minus.</li>
 </ul>
 <!-- kilde: src/ui/kamp/Kampen.tsx:117-131, src/state/match.ts:412 -->
 <!-- data: data/shots/03-kamp-anatomi.json (bundbjælken viser "Over 2,5 · 38") -->
 
 <h2 id="k2-vej">Frem og tilbage</h2>
-<p>Chevronen <span class="ui">‹</span> øverst til venstre fører altid hjemad. På kampskærmen, i Hallen og i Afregningen går den til lobbyen. På Byg, Mål, Pulje og Portefølje går den tilbage til kampen, eller til demoen, hvis det er den, du ser. Har du startet demoen, viser de fire skærme og Afregningen demoens kamp, indtil du går tilbage til derbyet.</p>
+<p>Chevronen <span class="ui">‹</span> øverst til venstre fører altid hjemad: fra kampskærmen, Hallen og Afregningen til lobbyen, fra Byg, Mål, Pulje og Portefølje tilbage til kampen eller demoen.</p>
 <!-- kilde: src/ui/kamp/Kampen.tsx:138, src/ui/hallen/Hallen.tsx:164, src/ui/afregning/Afregning.tsx:107, src/ui/byg/Byg.tsx:121, src/ui/maal/Maal.tsx:85, src/ui/pulje/Pulje.tsx:29, src/ui/portefolje/Portefolje.tsx:19, src/ui/App.tsx:41-42, src/ui/App.tsx:86 -->
-<p>Hold fingeren på logoet <span class="ui">U</span> i kampbåndet i 0,6 sekund, så åbner <b>instruktørpanelet</b>. Det er prototypens styrepult. Du kan udløse <span class="ui">Mål FCK</span>, <span class="ui">Mål BIF</span>, <span class="ui">Mål FCK + VAR</span>, <span class="ui">Rødt kort BIF</span> og <span class="ui">Hval 25.000 kr</span>, skifte hastighed mellem ×1, ×4 og ×16 og åbne demoen, diagnosen og en debug-visning. Panelet siger det selv: <span class="ui">Hændelser sker ved næste kampsekund. Alt er fiktivt.</span> I lobbyen slår et langt tryk på ordmærket kun debug-visningen til og fra. Rapportens kamp er spillet uden panelet.</p>
+<p>Hold fingeren på logoet <span class="ui">U</span> i kampbåndet i 0,6 sekund, så åbner <b>instruktørpanelet</b>, prototypens styrepult. Her kan du udløse mål for begge hold, et mål med VAR-tjek, rødt kort til BIF og en hval på 25.000 kr, skifte hastighed mellem ×1, ×4 og ×16 og åbne demoen, diagnosen og en visning til fejlsøgning. Rapportens kamp er spillet uden panelet.</p>
 <!-- kilde: src/ui/Hud.tsx:20-21, src/ui/kamp/Kampen.tsx:134-139, src/ui/kamp/Director.tsx:5-29, src/ui/Lobby.tsx:9-17, src/ui/App.tsx:87-91, docs/rapport/scripts/story.js:11-30 -->
 
 <figure class="fig" data-fig="skaermkort"><figcaption><b>Figur:</b> Skærmene og vejene mellem dem. Kampskærmen er midten: bundbjælken fører ud til Byg, Mål, Pulje og Portefølje, og chevronen fører tilbage.</figcaption></figure>
 
 <h2 id="k2-demo">Demoen</h2>
-<p>Vil du se appen i brug uden selv at trykke, så vælg <span class="ui">Se demoen · 90 sek.</span> i lobbyen. Åbner du adressen #demo direkte, hedder knappen på åbningsskærmen bare <span class="ui">Se demoen</span>. Demoen er et scriptet derby, der varer cirka {{qa.demoSek}}, altså lidt under de 90 sekunder, knappen lover. En markeret <b>spøgelsestommel</b> udfører gestusserne for dig: hurtigkøb på FCK, en købsgrænse i viften, Byg i pausen, et træk over Målvejret og faderen. Til sidst går den selv til Afregningen. Kapitel 9 beskriver demoen nærmere.</p>
-<!-- kilde: src/ui/Lobby.tsx:33, src/ui/Gate.tsx:20, src/engine/director/demo90.ts:48-55, src/ui/demo/DemoThumb.tsx:26-67 -->
+<p>Knappen <span class="ui">Se demoen · 90 sek.</span> i lobbyen starter et derby efter manuskript på cirka {{qa.demoSek}}, hvor en <b>spøgelsestommel</b> udfører gestusserne for dig. Kapitel 9 beskriver demoen og manuskriptet.</p>
+<!-- kilde: src/ui/Lobby.tsx:33, src/engine/director/demo90.ts:48-55, src/ui/demo/DemoThumb.tsx:26-67 -->

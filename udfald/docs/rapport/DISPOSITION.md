@@ -64,7 +64,7 @@ Hver skriver ejer bestemte filer i `kapitler/`. Filnavn, `id` og `data-nr` er l�
   - spøgelsesstatus.
 - **Fremtidsviften:**
   - 100 stier;
-  - tally = pris;
+  - tally = den viste chance (mid), ikke kursen;
   - grenmærker for næste begivenhed inden for horisonten min(10′, halvdelen af resttiden);
   - årsagschippen;
   - NU og historikken.

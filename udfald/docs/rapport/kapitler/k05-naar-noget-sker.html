@@ -1,5 +1,5 @@
 <h1 class="kapitel" id="k5" data-nr="5">Når noget sker: mål, handelsstop, VAR og hvaler</h1>
-<p class="ingress">Et mål ændrer prisen på et øjeblik. Derfor stopper UDFALD handlen kort, regner prisen om og åbner igen med et synligt gab. Rødt kort og VAR stopper også handlen, mens en hval flytter prisen uden at stoppe noget.</p>
+<p class="ingress">Et mål ændrer prisen på et øjeblik, så UDFALD stopper handlen kort og åbner igen med et synligt gab. Rødt kort og VAR stopper også handlen, mens en hval flytter prisen uden stop.</p>
 
 <table class="t">
   <thead><tr><th>Hændelse</th><th>Handelsstop</th><th>Kampuret</th></tr></thead>
@@ -15,34 +15,27 @@
 <h2 id="k5-maalstop">Målstop</h2>
 <section class="duo">
   <div class="txt">
-    <p>FCK scorede {{maal1.ur}}, og i samme substep stoppede handlen. Kampbåndets pille skiftede fra <span class="ui">ÅBEN</span> til <span class="ui">STOPPET</span>, og viften fik et skraveret bånd ved NU med teksten <span class="ui">HANDEL STOPPET</span>.</p>
-    <p>Et <b>målstop</b> varer {{maalStop.substeps}} substeps, altså 18 kampsekunder, og gælder alle kontrakter på én gang. Kampuret kører videre imens. Under et stop spiller kampen altid i normal fart, også når du har spolet frem.</p>
-    <p>Modellen kender allerede målet. Årsagschippen viser <span class="ui">▲ 27 point: mål FCK 28′</span>, som er springet i FCK's fair chance. Kursen står derimod stille på 43, fordi der ikke bliver handlet. Under stoppet gælder:</p>
-    <ul>
-      <li>Du kan hverken købe eller sælge. Faderen viser <span class="ui">Salg åbner efter stoppet</span>.</li>
-      <li>Købsgrænser og Sikring venter.</li>
-      <li>Over 2,5 står stille, og puljen er sat på pause.</li>
-    </ul>
+    <p>FCK scorede {{maal1.ur}}, og i samme substep stoppede handlen. Pillen i kampbåndet skiftede til <span class="ui">STOPPET</span>, og viften fik et skraveret bånd ved NU: <span class="ui">HANDEL STOPPET</span>.</p>
+    <p>Et <b>målstop</b> varer {{maalStop.substeps}} substeps, altså 18 kampsekunder, og gælder alle kontrakter. Kampuret kører videre, under stoppet i normal fart, også hvis du har spolet frem.</p>
+    <p>Modellen kender allerede målet. Årsagschippen viser <span class="ui">▲ 27 point: mål FCK 28′</span>, som er springet i FCK's fair chance. Kursen står derimod stille på 43, fordi der ikke bliver handlet. Du kan hverken købe eller sælge, købsgrænser og Sikring venter, Over 2,5 står stille, og puljen er sat på pause.</p>
   </div>
-  <figure class="phone" data-shot="11-handelsstop"><figcaption><b>Handelsstop efter FCK-målet.</b> Pillen siger <span class="ui">STOPPET</span>, og båndet ved NU er skraveret. Kursen står på 43, mens årsagschippen allerede viser målets <span class="ui">▲ 27 point</span>. Andelsbaren er dæmpet, og bundbjælken melder puljen <span class="ui">stoppet</span>.</figcaption></figure>
+  <figure class="phone" data-shot="11-handelsstop"><figcaption><b>Handelsstop efter FCK-målet.</b> Kursen står på 43, mens årsagschippen allerede viser målets <span class="ui">▲ 27 point</span>. Andelsbaren er dæmpet, og bundbjælken melder puljen <span class="ui">stoppet</span>.</figcaption></figure>
 </section>
 <!-- kilde: src/engine/football/sim.ts:312-331, 484-498, 444; src/state/match.ts:210-214, 410-413; src/engine/book/portfolio.ts:136-137, 222-223; src/render/fan/live.ts:130-151; src/engine/football/display.ts:223-235; src/ui/kamp/Kampen.tsx:135, 456 -->
 <!-- data: story.json trace k=1179–1191 (kurs FCK 43 hele stoppet; fair FCK 0,4299 → 0,7010 ved målet) -->
-<p>Selve målet får et kort frys i viften: prislinjens hoved står stille i 80 ms og sender så en ring ud i holdets farve, og dataelementerne dykker kort, sidechain-pumpen (kapitel 11).</p>
-<!-- kilde: src/ui/kamp/Fan.tsx:173-187 -->
 
 <h2 id="k5-gab">Genåbning og gab</h2>
 <section class="duo">
   <div class="txt">
-    <p>Ved {{genaabning1.ur}} åbnede handlen igen. Alle kurser sprang til den nye pris på én gang med et lille overshoot, og en kort bølge af handler fra publikum fulgte efter. Springet hedder <b>gabet</b>. Viften mærker det ved genåbningen, når det er 2 point eller mere, her <span class="ui">{{genaabning1.gabFCK}} point</span>.</p>
-    <p>Gabet er forskellen mellem kursen lige efter genåbningen og kursen, da handlen stoppede. FCK gik fra 43 til 72. Gabet måles på kursen og er derfor ikke helt samme tal som chippens fair chance: kursen rummer husets andel, og genåbningen har sit overshoot.</p>
-    <p>De første 8 substeps efter en genåbning er afstanden mellem købs- og salgskurs mindst 6 point i stedet for normalt 2 eller 4, fordi prisen stadig finder sit niveau. Derfor venter et stop-loss 8 substeps, før det kan udløses (kapitel 7). En købsgrænse, som kursen er sprunget forbi, fyldes derimod straks til første kurs efter genåbningen.</p>
+    <p>Ved {{genaabning1.ur}} åbnede handlen igen. Alle kurser sprang på én gang, med et lille udsving forbi den nye pris, og en kort bølge af handler fra publikum fulgte efter. Springet hedder <b>gabet</b>: kursen lige efter genåbningen minus kursen, da handlen stoppede. Viften mærker gab på 2 point eller mere.</p>
+    <p>FCK gik fra 43 til 72, et gab på <span class="ui">{{genaabning1.gabFCK}} point</span>. Chippens 27 point er springet i fair chance, mens gabet måles på kursen, som også rummer husets andel og det lille udsving.</p>
+    <p>Lige efter en genåbning er afstanden mellem købs- og salgskurs, <b>spreadet</b>, 6 point i stedet for 2 eller 4 (4 ved fare), fordi prisen stadig finder sit niveau. Hvad det betyder for et stop-loss, står i kapitel 7.</p>
   </div>
-  <figure class="phone" data-shot="13-genaabning-gab"><figcaption><b>Lige efter genåbningen.</b> FCK står på kurs 70, og gabet er mærket <span class="ui">{{genaabning1.gabFCK}} point</span> ved genåbningen. Chippen <span class="ui">Efter målet</span> er dukket op, spøgelsesstatus siger <span class="ui">Foran vindertempo · +30 point</span>, og faderen har fået hakket <span class="ui">Indsats hjem</span>.</figcaption></figure>
+  <figure class="phone" data-shot="13-genaabning-gab"><figcaption><b>Lige efter genåbningen.</b> FCK står på kurs 70, og gabet er mærket <span class="ui">{{genaabning1.gabFCK}} point</span>. Chippen <span class="ui">Efter målet</span> er dukket op, og faderen har fået hakket <span class="ui">Indsats hjem</span>.</figcaption></figure>
 </section>
 <!-- kilde: src/engine/football/sim.ts:411-425, 535-546; src/render/fan/live.ts:117-128; src/engine/book/portfolio.ts:222-234; src/state/match.ts:258-282 -->
 <!-- data: story.json trace k=1191–1200 (kurs FCK 43 → 72; salgskurs 66/16/3 ved genåbningen, 69/21/8 fra substep 8) -->
-<p>Begge mål i kampen gav gab på alle fire kurser. Tallene er i point:</p>
+<p>Begge mål gav gab på alle fire kurser (i point):</p>
 <table class="t">
   <thead><tr><th>Genåbning</th><th>Efter</th><th class="n">FCK</th><th class="n">X</th><th class="n">BIF</th><th class="n">Over 2,5</th></tr></thead>
   <tbody>
@@ -50,36 +43,26 @@
     <tr><td>{{genaabning2.ur}}</td><td>BIF-mål {{maal2.ur}}, 1–1</td><td class="n">{{genaabning2.gabFCK}}</td><td class="n">{{genaabning2.gabX}}</td><td class="n">{{genaabning2.gabBIF}}</td><td class="n">{{genaabning2.gabOver}}</td></tr>
   </tbody>
 </table>
-<p>Ved BIF's udligning var FCK den eneste kurs, der faldt, og uafgjort steg mest. Over 2,5 steg igen, fordi der nu kun manglede ét mål til Over.</p>
+<p>Ved udligningen faldt kun FCK, og uafgjort steg mest. Over 2,5 steg igen, fordi der nu kun manglede ét mål.</p>
 
 <h2 id="k5-roedt">Rødt kort</h2>
-<p>Et rødt kort stopper handlen i {{k.RED_HALT}} substeps, altså 24 kampsekunder, og handlen genåbner med gab på samme måde som efter et mål. Kortet indgår i modellens målrater resten af kampen (kapitel 13). I fri kamp opstår røde kort ikke af sig selv. De kommer fra instruktørpanelet (<span class="ui">Rødt kort BIF</span>) eller fra et manuskript.</p>
+<p>Et rødt kort stopper handlen som et mål, bare lidt længere, og kortet indgår i modellens målrater resten af kampen (kapitel 13). I fri kamp kommer røde kort kun fra instruktørpanelet eller et manuskript.</p>
 <!-- kilde: src/engine/football/sim.ts:27, 290-295, 364-369, 411-425; src/ui/kamp/Director.tsx:14-18 -->
 
 <h2 id="k5-var">VAR</h2>
 <section class="duo">
   <div class="txt">
-    <p>Når et mål skal tjekkes, skifter pillen til <span class="ui">VAR</span>, og <b>kampuret står stille</b>. Stillingen ændres først ved dommen. Imens er kun ét marked åbent, <span class="ui">Målet står?</span>, med Ja og Nej. Alt andet viser <span class="ui">Kun "Målet står?" er åben under VAR</span>.</p>
-    <p>Chancen for, at målet står, bevæger sig som en tilfældig vandring, der ender i dommen. Viften viser to <b>spøgelseskurser</b>: kursen, hvis målet godkendes, og kursen, hvis det annulleres. Kun den ene overlever dommen.</p>
-    <p>Efter dommen holder handlen ét substep mere og åbner så med gab i forhold til kurserne fra før tjekket. Godkendes målet, tæller det med det samme. Annulleres det, er stillingen uændret.</p>
-    <p>I demoen varer tjekket 70 substeps, 7 sekunder ved ×1. I fri kamp kommer VAR kun fra instruktørpanelet (<span class="ui">Mål FCK + VAR</span>).</p>
+    <p>Når et mål skal tjekkes, skifter pillen til <span class="ui">VAR</span>, og <b>kampuret står stille</b>. Imens er kun ét marked åbent, <span class="ui">Målet står?</span>, med Ja og Nej.</p>
+    <p>Chancen for, at målet står, vandrer tilfældigt frem mod dommen. Viften viser to <b>spøgelseskurser</b>: kursen, hvis målet godkendes, og kursen, hvis det annulleres.</p>
+    <p>Efter dommen åbner handlen ét substep senere med gab i forhold til kurserne fra før tjekket. I fri kamp kommer VAR kun fra instruktørpanelet (<span class="ui">Mål FCK + VAR</span>).</p>
   </div>
-  <figure class="phone" data-shot="22-demo-var"><figcaption><b>VAR-tjek i demoen ved 64′.</b> FCK har sat bolden i nettet, men stillingen står stadig 0–1. Viften viser <span class="ui">Godkendt ≈ 33</span> og <span class="ui">Annulleret ≈ 10</span>, og båndet ved NU er mærket <span class="ui">HANDEL STOPPET · VAR-tjek</span>. Under andelsbaren står <span class="ui">VAR-tjek · Målet står? 90 %</span>, og du kan kun købe <span class="ui">Ja · 92</span> eller <span class="ui">Nej · 16</span>.</figcaption></figure>
+  <figure class="phone" data-shot="22-demo-var"><figcaption><b>VAR-tjek i demoen ved 64′.</b> FCK har sat bolden i nettet, men stillingen står stadig 0–1. Viften viser <span class="ui">Godkendt ≈ 33</span> og <span class="ui">Annulleret ≈ 10</span>, og du kan kun købe <span class="ui">Ja · 92</span> eller <span class="ui">Nej · 16</span>.</figcaption></figure>
 </section>
 <!-- kilde: src/engine/football/sim.ts:153-155, 312-321, 376-405; src/engine/football/display.ts:42-48, 128-141; src/render/fan/live.ts:146-169; src/state/match.ts:370-373, 588-592; src/ui/kamp/Kampen.tsx:135, 334-345; src/engine/director/demo90.ts:19; src/state/match.ts:902-913 -->
 <!-- data: shots/22-demo-var.json -->
 
 <h2 id="k5-hval">Hvaler</h2>
-<p>En <b>hval</b> er en stor ordre fra én køber. Den stopper ikke handlen, men flytter prisen. Halvdelen af virkningen klinger af med en halveringstid på 1 kampminut, den anden halvdel med en halveringstid på 15 kampminutter. Bagefter kommer en kort bølge af handler fra publikum, og viften sender en ring ud fra prislinjens hoved.</p>
-<p>Årsagschippen nævner hvalen, når ordreflowet de sidste 2 kampminutter har flyttet prisen mindst 1 point og mere end tiden og presset, og der har været en hval i samme periode. Så står der <span class="ui">storordre</span>, fx <span class="ui">▼ 1 point: storordre BIF</span> i demoen (billedet i kapitel 9).</p>
-<p>I fri kamp kommer der i gennemsnit to hvaler pr. halvleg, hver på 10.000–40.000 kr på FCK eller BIF, og aldrig under et handelsstop. I kampen, vi følger, kom der {{antalHvaler}}:</p>
-<table class="t">
-  <thead><tr><th>Minut</th><th>Hval på</th><th class="n">Beløb</th></tr></thead>
-  <tbody>
-    <tr><td>{{hval1.minut}}</td><td>{{hval1.paa}}</td><td class="n">{{hval1.kr}}</td></tr>
-    <tr><td>{{hval2.minut}}</td><td>{{hval2.paa}}</td><td class="n">{{hval2.kr}}</td></tr>
-    <tr><td>{{hval3.minut}}</td><td>{{hval3.paa}}</td><td class="n">{{hval3.kr}}</td></tr>
-    <tr><td>{{hval4.minut}}</td><td>{{hval4.paa}}</td><td class="n">{{hval4.kr}}</td></tr>
-  </tbody>
-</table>
+<p>En <b>hval</b> er en stor ordre fra én køber. Den flytter prisen uden at stoppe handlen. Virkningen klinger af med to halveringstider, 1 og 15 kampminutter, for hver sin halvdel. Bagefter følger en kort bølge af handler fra publikum.</p>
+<p>Har ordreflowet de sidste 2 kampminutter flyttet prisen mindst 1 point og mere end tiden og presset, og var der en hval, nævner årsagschippen den, fx <span class="ui">▼ 1 point: storordre BIF</span> i demoen (kapitel 9).</p>
+<p>I fri kamp kommer der i gennemsnit to hvaler pr. halvleg, hver på 10.000–40.000 kr på FCK eller BIF, men aldrig under et handelsstop. Kampen, vi følger, fik {{antalHvaler}}: én på {{hval1.paa}} og tre på {{hval2.paa}} (tidslinjen i læsevejledningen).</p>
 <!-- kilde: src/engine/football/sim.ts:28-32, 300-304, 333-342, 484-489; src/engine/football/display.ts:240-249; src/ui/kamp/Fan.tsx:195-197 -->

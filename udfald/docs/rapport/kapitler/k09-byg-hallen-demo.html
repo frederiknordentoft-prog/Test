@@ -1,48 +1,48 @@
 <h1 class="kapitel" id="k9" data-nr="9">Byg en fremtid, Hallen og demoen</h1>
-<p class="ingress">Byg en fremtid samler flere ben i én kontrakt ved at filtrere de simulerede fremtider. Hallen viser håndbold som et signal på et oscilloskop. Demoen spiller et helt derby på halvandet minut med en tommel, der viser, hvad du kan gøre.</p>
+<p class="ingress">Byg en fremtid samler flere ben i én kontrakt ved at filtrere de simulerede fremtider. Hallen viser håndbold på et oscilloskop, og demoen spiller et derby efter manuskript.</p>
 
 <h2 id="k9-byg">Byg en fremtid</h2>
 <section class="duo">
   <div class="txt">
     <p>Skærmen <span class="ui">Byg en fremtid</span> (Byg i bundbjælken) lader dig kombinere op til tre <b>ben</b>: et resultat, et antal mål, <span class="ui">Begge scorer</span> og målvinduer på 10 minutter.</p>
-    <p>Hvert ben brænder de fremtider af, der ikke opfylder det. Grafen viser de 100 fremtider som målforskel fra nu til slutfløjt. De fremtider, der overlever, er cyan, resten er grå, og de overlevendes målforskel ved slutfløjt står som prikker ved højre kant. Tælleren siger, hvor mange der er tilbage, fx <span class="ui">31 af 100 fremtider tilbage → kurs 38</span>.</p>
-    <p>Med to eller flere ben står chancerne både hver for sig og samlet. Er den samlede chance mindst 15 % højere end produktet af benenes chancer, står der <span class="ui">benene hænger sammen og trækker hinanden op</span>. Er den mindst 13 % lavere, står der <span class="ui">benene trækker hinanden ned</span>.</p>
+    <p>Hvert ben brænder de fremtider af, der ikke opfylder det. Grafen viser de 100 fremtider som målforskel frem til slutfløjt; de overlevende er cyan, resten grå. Tælleren siger, hvor mange der er tilbage, og hvad det giver i kurs.</p>
+    <p>Med to eller flere ben står chancerne hver for sig og samlet. En ekstra linje siger, når benene trækker hinanden op (samlet mindst 15 % over benenes chancer ganget sammen) eller ned (mindst 13 % under).</p>
     <p>En bygget fremtid afregnes ved slutfløjt og betaler kun, hvis alle ben er opfyldt.</p>
   </div>
-  <figure class="phone" data-shot="17-byg"><figcaption><b>Byg i pausen ved 1–0.</b> FCK vinder og Mindst 3 mål: <span class="ui">31 af 100 fremtider tilbage → kurs 38</span>. Hver for sig 30 %, samlet 31 %. Forskellen er for lille til en ekstra linje. 50 kr giver <span class="ui">ved sejr 131 kr</span>.</figcaption></figure>
+  <figure class="phone" data-shot="17-byg"><figcaption><b>Byg i pausen ved 1–0.</b> FCK vinder og Mindst 3 mål: <span class="ui">31 af 100 fremtider tilbage → kurs 38</span>. Benenes chancer ganget sammen giver 30 %, samlet 31 %, for lidt til en ekstra linje. 50 kr giver <span class="ui">ved sejr 131 kr</span>.</figcaption></figure>
 </section>
 <!-- kilde: src/ui/byg/Byg.tsx:22-33, 39-111, 113-114, 127-153; src/state/match.ts:472-483, 785-810, 374-385 -->
 <!-- data: shots/17-byg.json -->
-<p>Benene følger kampen. Målbenene er altid 1, 2 og 3 mål mere end stillingen nu, og vinduerne er de to næste 10-minutters vinduer. Vælger du et nyt resultat eller et nyt antal mål, erstatter det det gamle, og et fjerde ben skubber det ældste ud.</p>
-<p>Prisen kommer fra de samme 5.000 simulerede fremtider, som viften tager sine 100 stier fra. Et resultatben skaleres, så det passer med resultatets chance på kampskærmen. Kursen har en margin på 12 % efter samme power-metode som de andre kurser, og salgskursen er kursen minus 4 point. Er den samlede chance under 5 %, kan du ikke bygge: <span class="ui">For usandsynlig at bygge: under 5 % af fremtiderne.</span></p>
+<p>Benene følger kampen: målbenene er altid 1, 2 og 3 mål over stillingen nu, og vinduerne er de to næste. Et fjerde ben skubber det ældste ud.</p>
+<p>Prisen tælles i de samme simulerede fremtider, som viften bygger på. Huset lægger 12 % på, og salgskursen er kursen minus 4 point. Under 5 % samlet chance kan du ikke bygge.</p>
 <!-- kilde: src/ui/byg/Byg.tsx:21-30, 145-148; src/state/match.ts:785-810; src/engine/mc/paths.ts:270-291; src/engine/lib/quote.ts:1-17 -->
-<div class="callout advarsel"><b>Prisen regnes kun, når du vælger ben.</b> Kursen på en bygget fremtid beregnes, hver gang du ændrer benene, og bliver derefter stående. Den opdateres ikke, mens kampen kører, heller ikke efter et mål, og den kan købes til den gamle kurs, så længe handlen er åben. Salgskursen i Porteføljen for en købt bygget fremtid er også den, der blev regnet sidst. Det er fundet under arbejdet med rapporten og er ikke rettet.</div>
+<div class="callout advarsel"><b>Prisen regnes kun, når du vælger ben.</b> Kursen bliver stående, mens kampen kører, også efter et mål, og kan købes til den gamle kurs og sælges til den gamle salgskurs, så længe handlen er åben. Fejlen er ikke rettet (kapitel 21).</div>
 <!-- kilde: src/state/match.ts:543-551 (quote læser den gemte buildQuotes), 604-618 (isOpen), 785-810 (eneste sted, prisen regnes); src/ui/byg/Byg.tsx:34-36 -->
 
 <h2 id="k9-hallen">Hallen</h2>
 <section class="duo">
   <div class="txt">
-    <p><b>Hallen</b> er den anden kamp i lobbyen: Aalborg mod GOG i håndbold. Her er helten et <b>oscilloskop</b>. Sporet er målforskellen over tid, lyst når Aalborg fører og blåt når GOG fører, og de ældre dele af sporet blegner som fosfor på en gammel skærm. Gitterlinjerne ligger ved 0, ±5 og ±8, som banens 9- og 6-meterlinjer.</p>
-    <p>Træk i skopet for at sætte et <b>triggerniveau</b>, fx <span class="ui">Aalborg +4 før 45′?</span>. En andel betaler 1 kr, første gang målforskellen rører niveauet, og 0, hvis fristen udløber først. Du vælger fristen (<span class="ui">før 40′</span>, <span class="ui">før 45′</span>, <span class="ui">før 50′</span> eller <span class="ui">før slut</span>) og indsatsen. Kursen bygger på sandsynligheden for, at niveauet nås før fristen. Den regnes i lukket form, og der lægges 8 % margin på. Rammer triggeren, blinker skopet pink.</p>
-    <p>Under skopet køber du Aalborg, X eller GOG med ét tryk. Hallen deler saldo med derbyet. En håndboldkamp varer 60 minutter, og et kampminut tager 8 sekunder ved ×1.</p>
+    <p><b>Hallen</b> er den anden kamp i lobbyen: Aalborg mod GOG i håndbold. Her er hovedvisningen et <b>oscilloskop</b>. Sporet er målforskellen over tid, og de ældre dele blegner som fosfor på en gammel skærm.</p>
+    <p>Træk i skopet for at sætte et <b>triggerniveau</b>, fx <span class="ui">Aalborg +4 før 45′?</span>. En andel betaler 1 kr, første gang målforskellen rører niveauet, og 0, hvis fristen udløber først. Fristen er 40′, 45′, 50′ eller slut. Kursen bygger på chancen for, at niveauet nås i tide, og huset lægger 8 % på.</p>
+    <p>Under skopet køber du Aalborg, X eller GOG med ét tryk. Hallen har hverken salg, købsgrænser eller Sikring: et køb holdes til afregning. En håndboldkamp varer 60 minutter, og et kampminut tager 8 sekunder ved ×1.</p>
   </div>
-  <figure class="phone" data-shot="21-hallen"><figcaption><b>Hallen ved 20′, 14–13.</b> Den pink stiplede linje er triggeren <span class="ui">Aalborg +4 før 45′?</span> til <span class="ui">kurs 45 · 40 % chance</span>. 100 kr giver <span class="ui">ved ramning 222 kr</span>. Øverst står, hvem der angriber, og <span class="ui">Mål i angrebet 56 %</span>.</figcaption></figure>
+  <figure class="phone" data-shot="21-hallen"><figcaption><b>Hallen ved 20′, 14–13.</b> Den pink stiplede linje er triggeren <span class="ui">Aalborg +4 før 45′?</span> til <span class="ui">kurs 45 · 40 % chance</span>. 100 kr giver <span class="ui">ved ramning 222 kr</span>.</figcaption></figure>
 </section>
 <!-- kilde: src/ui/hallen/Hallen.tsx:10-14, 37-62, 76-119, 124-138, 157-201; src/state/hallen.ts:1-5, 147-212; src/engine/handball/pricing.ts:551-556; src/engine/handball/params.ts:4-17; src/ui/App.tsx:36 -->
+<!-- kilde: src/state/hallen.ts:156-183 (intet salg, ingen købsgrænser eller Sikring) -->
 <!-- data: shots/21-hallen.json -->
 
 <h2 id="k9-demo">Demoen</h2>
 <section class="duo">
   <div class="txt">
-    <p>Knappen <span class="ui">Se demoen · 90 sek.</span> i lobbyen starter et derby efter manuskript. Demoen tager cirka {{qa.demoSek}}. Den spoler med ×16 gennem de rolige minutter og med ×4 op mod 30′ og i tillægstiden. Hvor der sker noget, kører den med ×1, og handelsstop og prislåse kører altid med ×1.</p>
-    <p>En <b>spøgelsestommel</b> udfører gestusserne: en markeret prik på skærmen med en linje tekst, der begynder med <span class="ui">Demo ·</span>. Tommelen bruger de samme funktioner som en rigtig bruger, så købene havner i demoens egen portefølje, og demoen slutter i en rigtig afregning.</p>
-    <p>Demoen er bestemt på forhånd. Der falder ingen tilfældige mål og kommer ingen tilfældige hvaler, så kampen forløber ens hver gang og ender 2–1 til FCK. Mens demoen kører, viser Byg, Portefølje og Afregning demoens kamp, ikke derbyet.</p>
+    <p>Knappen i lobbyen (kapitel 2) starter et derby efter manuskript, der tager cirka {{qa.demoSek}}. Det spoler med ×16 gennem rolige minutter og ×4 op mod 30′ og i tillægstiden, men kører ×1, hvor der sker noget, og altid under handelsstop og prislåse.</p>
+    <p>En <b>spøgelsestommel</b>, en markeret prik med en tekstlinje, der begynder med <span class="ui">Demo ·</span>, udfører gestusserne med de samme funktioner som en rigtig bruger. Købene havner i demoens egen portefølje, og demoen slutter i en rigtig afregning.</p>
+    <p>Demoen har ingen tilfældige mål eller hvaler, så den forløber ens hver gang og ender 2–1 til FCK.</p>
   </div>
-  <figure class="phone" data-shot="02-demo-tommel"><figcaption><b>Spøgelsestommelen ved 9′.</b> <span class="ui">Langt tryk i viften: køb FCK ved 35</span>. Den violette linje <span class="ui">Køb ved kurs 35</span> er grænsen, og beskeden <span class="ui">Købsgrænse sat: FCK ved kurs 35 · 100 kr</span> bekræfter den. Årsagschippen viser hvalen: <span class="ui">▼ 1 point: storordre BIF</span>.</figcaption></figure>
+  <figure class="phone" data-shot="02-demo-tommel"><figcaption><b>Spøgelsestommelen ved 9′.</b> Den violette linje er købsgrænsen, og beskeden <span class="ui">Købsgrænse sat: FCK ved kurs 35 · 100 kr</span> bekræfter den. Årsagschippen viser hvalen: <span class="ui">▼ 1 point: storordre BIF</span>.</figcaption></figure>
 </section>
 <!-- kilde: src/ui/Lobby.tsx:33; src/engine/director/demo90.ts:7-55; src/ui/demo/DemoThumb.tsx:7-80; src/state/match.ts:210-214; src/ui/App.tsx:55-70 -->
 <!-- data: shots/02-demo-tommel.json -->
-<p>Manuskriptet ser sådan ud:</p>
 <table class="t">
   <thead><tr><th>Minut</th><th>I kampen</th><th>Tommelen</th></tr></thead>
   <tbody>
@@ -53,10 +53,8 @@
     <tr><td>Pause</td><td>–</td><td><span class="ui">Pause: byg en fremtid</span>: FCK vinder og Mindst 3 mål, 50 kr</td></tr>
     <tr><td>54′</td><td>–</td><td><span class="ui">Træk over Målvejret: mål 60–70′</span>, 50 kr</td></tr>
     <tr><td>64′</td><td>FCK-mål 64:05 med VAR-tjek, godkendt</td><td>–</td></tr>
-    <tr><td>89′</td><td>FCK-mål 89:20</td><td><span class="ui">Faderen: sælg til indsatsen er hjemme?</span></td></tr>
+    <tr><td>89′</td><td>FCK-mål 89:20</td><td><span class="ui">Faderen: sælg til indsatsen er hjemme?</span> (viser kun grebet, sælger ikke)</td></tr>
     <tr><td>Slut</td><td>2–1 efter 3 minutters tillægstid</td><td>Afregningen åbner</td></tr>
   </tbody>
 </table>
-<!-- kilde: src/engine/director/demo90.ts:7-23, 48-55; src/ui/demo/DemoThumb.tsx:26-67 -->
-<p>Ved faderen viser tommelen kun grebet; den sælger ikke. I pausen skifter demoen selv til Byg og tilbage til kampen, og efter slutfløjt åbner den Afregningen.</p>
-<!-- kilde: src/ui/demo/DemoThumb.tsx:48-67 -->
+<!-- kilde: src/engine/director/demo90.ts:7-23, 48-55; src/ui/demo/DemoThumb.tsx:26-67 (faderen: kun grebet, 48-67) -->

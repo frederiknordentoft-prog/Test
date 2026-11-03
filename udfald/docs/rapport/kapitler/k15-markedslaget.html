@@ -1,84 +1,69 @@
 <h1 class="kapitel" id="k15" data-nr="15">Markedslaget: fra fair pris til kurs</h1>
-<p class="ingress">Prissætterens fair chance er ikke kursen. Imellem ligger et simuleret marked med ordreflow fra et publikum, hvaler, støj og overshoot efter genåbninger. Til sidst giver en margin og et spread de hele kurser, der handles til.</p>
+<p class="ingress">Mellem prissætterens fair chance og kursen ligger et simuleret marked: ordreflow fra et publikum, hvaler, støj og et lille udsving forbi den nye pris efter hver genåbning (overshoot). En margin og et spread giver de hele kurser.</p>
 
 <h2 id="k15-mid">Fra fair til mid</h2>
-<p>Markedets chance, <b>mid</b>, er fair-chancen fra DP'en flyttet i logit af fire led. Alle led er i naturlig log, og softmax gør dem til tre chancer, der summerer til 1:</p>
-<div class="formel">mid<sub><i>i</i></sub> = softmax(ln <i>f</i><sub><i>i</i></sub> + <i>u</i><sub><i>i</i></sub><sup>T</sup> + <i>u</i><sub><i>i</i></sub><sup>P</sup> + <i>o</i><sub><i>i</i></sub> + ε<sub><i>i</i></sub>)<span class="hvor">hvor <i>f</i> er fair-chancen for FCK, X og BIF, <i>u</i><sup>T</sup> er den forbigående ordrestrøm, <i>u</i><sup>P</sup> den vedvarende, <i>o</i> er overshoot efter en genåbning, og ε er støj.</span></div>
-<!-- kilde: src/engine/football/sim.ts:479-481 -->
-<p>Strømmene har halveringstider på 1 og 15 kampminutter. Under et handelsstop henfalder leddene stadig, men der handles ikke, og mid regnes ikke om. Kursen står derfor stille, mens fair-chancen springer, og springet viser sig først som gab ved genåbningen. I åbningsauktionens {{k.PRE_SUBS}} substeps dæmpes den forbigående strøm med faktor 0,85 pr. substep.</p>
-<!-- kilde: src/engine/football/sim.ts:28-37, 484-502, 531 -->
+<p>Markedets chance, <b>mid</b>, er fair-chancen fra DP'en flyttet af fire led i naturlig log og normeret med softmax:</p>
+<div class="formel">mid<sub><i>i</i></sub> = softmax(ln <i>f</i><sub><i>i</i></sub> + <i>u</i><sub><i>i</i></sub><sup>T</sup> + <i>u</i><sub><i>i</i></sub><sup>P</sup> + <i>o</i><sub><i>i</i></sub> + ε<sub><i>i</i></sub>)<span class="hvor">hvor <i>f</i> er fair-chancen for FCK, X og BIF, <i>u</i><sup>T</sup> er den forbigående ordrestrøm med en halveringstid på 1 kampminut, <i>u</i><sup>P</sup> den vedvarende med 15 kampminutter, <i>o</i> er overshoot, og ε er støj.</span></div>
+<!-- kilde: src/engine/football/sim.ts:28-37, 479-481 -->
+<p>Under et handelsstop henfalder leddene, men der handles ikke, og mid regnes ikke om. Kursen står stille, mens fair-chancen springer, og springet viser sig først som gab ved genåbningen. I åbningsauktionens {{k.PRE_SUBS}} substeps dæmpes den forbigående strøm med faktor 0,85 pr. substep.</p>
+<!-- kilde: src/engine/football/sim.ts:484-502, 531 -->
 
 <h2 id="k15-flow">Ordreflow</h2>
-<p>Publikums handler kommer som en punktproces med intensiteten Λ. Hvert substep er der tre træk, hver med sandsynligheden Λ/3, så der kan komme op til tre handler pr. substep. Hver handel flytter den forbigående strøm for sit udfald lineært med beløbet, som i en logaritmisk market scoring rule (LMSR), hvor prisen er en softmax af den samlede strøm:</p>
+<p>Publikums handler er en punktproces med intensiteten Λ, tre træk pr. substep med sandsynligheden Λ/3 hver. En handel flytter sit udfalds forbigående strøm lineært med beløbet, som i en logaritmisk market scoring rule (LMSR):</p>
 <div class="formel">Λ = (μ + <i>H</i> + 60 · Σ<sub><i>i</i></sub>|<i>u</i><sub><i>i</i></sub><sup>T</sup>|) · Δ<i>t</i>,  μ = {{k.MU_TRADES}} pr. kampminut<br><i>u</i><sub><i>o</i></sub><sup>T</sup> ← <i>u</i><sub><i>o</i></sub><sup>T</sup> + side · kr / <i>B</i>,  <i>B</i> = {{k.B_LIQ}} pr. logit<span class="hvor">hvor side er +1 for køb og −1 for salg, og <i>H</i> er Hawkes-leddet. Planen (§8) havde <i>b</i> ≈ 400.000, så markedet er dobbelt så følsomt for ordrer som planlagt.</span></div>
 <!-- kilde: src/engine/football/sim.ts:28-30, 503-529; docs/PLAN.md:233 -->
-<p>Ved ×1 er grundraten 2 handler i sekundet, og en typisk handel på 150 kr flytter logit med 0,00075. <i>H</i> er et <b>Hawkes-led</b>, en intensitet der springer op og henfalder: +12 ved en hval, +14 ved en genåbning og +20 ved et VAR-tjek, med en halveringstid på cirka 12,5 kampsekunder. Det tændes af hændelser, ikke af publikums egne handler.</p>
-<!-- kilde: src/engine/football/sim.ts:29-30, 320, 339, 421, 497, 505 -->
-<p>Brugerens egne køb og salg indgår ikke i strømmen, så kursen reagerer ikke på dem.</p>
-<!-- kilde: src/state/match.ts:681-694, 705-716 -->
-
-<h2 id="k15-informeret">Informerede handlende</h2>
-<p>En handel er informeret med sandsynligheden 0,3 + min(0,5; 8 · Σ|<i>u</i><sup>T</sup>|). En informeret handel køber det udfald, hvor fair ligger mest over mid, eller sælger det, hvor mid ligger mest over fair, alt efter hvilket gab der er størst. En uinformeret handel rammer FCK med 52 %, X med 16 % og BIF med 32 % og er et salg med 35 % sandsynlighed. Jo større den forbigående strøm er, desto flere handler og desto flere informerede, så en skævhed trækkes synligt tilbage mod fair.</p>
+<p>Ved ×1 er grundraten 2 handler i sekundet, og en handel på 150 kr flytter logit med 0,00075. <b>Hawkes-leddet</b> <i>H</i> springer +12 ved en hval, +14 ved en genåbning og +20 ved et VAR-tjek og halveres på cirka 12,5 kampsekunder. Spillerens egne handler indgår ikke i strømmen.</p>
+<!-- kilde: src/engine/football/sim.ts:29-30, 320, 339, 421, 497, 505; src/state/match.ts:681-694, 705-716 -->
+<p>En handel er <b>informeret</b> med sandsynligheden 0,3 + min(0,5; 8 · Σ|<i>u</i><sup>T</sup>|) og handler mod det største gab mellem fair og mid; ellers rammer den FCK, X og BIF med 52, 16 og 32 % og er et salg med 35 % sandsynlighed. En stor forbigående strøm giver altså flere handler og en større andel informerede, så en skævhed trækkes synligt tilbage mod fair.</p>
 <!-- kilde: src/engine/football/sim.ts:504-523 -->
-<p>Den vedvarende strøm har en halveringstid på 15 kampminutter, så en hval sætter sig i længere tid. Hvalen på {{hval3.kr}} på BIF ved {{hval3.minut}} løftede BIF's mid fra 23,9 % til 27,2 % og kursen fra 25 til 28, mens fair-chancen stod på 24,0 %. Knap fire kampminutter senere var mid 24,9 % mod fair 23,3 %, og kursen 26.</p>
-<!-- data: story.json series k=640 (mid BIF 0,2393, fair 0,2387, kurs 25), k=650 (0,2715 / 0,2396 / 28), k=800 (0,2485 / 0,2333 / 26); events id 10 (k 646, 33320 kr) -->
 
 <h2 id="k15-stoerrelser">Ordrestørrelser og hvaler</h2>
-<p>Publikums ordrestørrelser er lognormale med median 150 kr, rundet til hele 10 kr og holdt mellem 20 og 9.999 kr:</p>
-<div class="formel">kr = min(9.999; max(20; 10 · rund(15 · e<sup>1,2<i>z</i></sup>))),  <i>z</i> ~ <i>N</i>(0, 1)</div>
+<p>Publikums ordrestørrelser er lognormale, 10 · rund(15 · e<sup>1,2<i>z</i></sup>) kr med <i>z</i> standardnormal, altså median 150 kr, holdt mellem 20 og 9.999 kr.</p>
 <!-- kilde: src/engine/football/sim.ts:524-525 -->
-<p>Hvaler er store enkeltordrer. I fri kamp kommer de med sandsynligheden (2/45) · Δ<i>t</i> pr. substep, cirka to pr. halvleg, og kun når handlen er åben. De lander på FCK eller BIF med 50 % hver, er på 10.000 + 30.000 · <i>u</i> kr, og skubbet deles ligeligt mellem de to strømme. Historiekampens {{antalHvaler}} hvaler var alle naturlige.</p>
+<p>Hvaler kommer i fri kamp med sandsynligheden (2/45) · Δ<i>t</i> pr. substep, cirka to pr. halvleg, når handlen er åben. De rammer FCK eller BIF med 50 % hver, er på 10.000 + 30.000 · <i>u</i> kr, og halvdelen af skubbet går i den vedvarende strøm. Hvalen på {{hval3.kr}} på BIF ved {{hval3.minut}} løftede BIF's mid fra 23,9 % til 27,2 % (kurs 25 til 28) med fair på 24,0 %, og knap fire kampminutter senere var mid stadig 24,9 % mod fair 23,3 %. Historiekampens {{antalHvaler}} hvaler var alle naturlige.</p>
 <!-- kilde: src/engine/football/sim.ts:300-304, 333-342 -->
+<!-- data: story.json series k=640 (mid BIF 0,2393, fair 0,2387, kurs 25), k=650 (0,2715 / 0,2396 / 28), k=800 (0,2485 / 0,2333 / 26); events id 10 (k 646, 33320 kr) -->
 
 <h2 id="k15-stoej">Støj og overshoot</h2>
-<p>Støjen er en OU-proces i logit pr. udfald med tidskonstanten 1/3,2 kampminutter og spredningen 0,016, klippet ved ±0,02. Klippet holder den lille: et skub på 0,02 i ét udfalds logit flytter en chance på 50 % med 0,5 point. Planen klippede ved ±0,45 point.</p>
-<div class="formel">ε ← klip(ε · e<sup>−3,2Δ<i>t</i></sup> + 0,016 · √(1 − e<sup>−6,4Δ<i>t</i></sup>) · <i>N</i>(0, 1); ±0,02)</div>
+<p>Støjen ε er en OU-proces i logit pr. udfald med tidskonstanten 1/3,2 kampminutter og spredningen 0,016, klippet ved ±0,02. Et skub på 0,02 i ét udfalds logit flytter en chance på 50 % med 0,5 point; planen klippede ved ±0,45 point.</p>
 <!-- kilde: src/engine/football/sim.ts:33-35, 493-495; docs/PLAN.md:234 -->
-<p>Ved en genåbning springer mid til den nye fair pris og 10 % videre i log. Overshoot henfalder med τ = 0,125 kampminutter, altså 7,5 kampsekunder, og Hawkes-leddets spring giver en kort bølge af handler efter gabet.</p>
-<div class="formel"><i>o</i><sub><i>i</i></sub> = 0,1 · (ln <i>f</i><sub><i>i</i></sub> − ln mid<sub><i>i</i></sub><sup>før</sup>),  derefter <i>o</i> ← <i>o</i> · e<sup>−Δ<i>t</i>/0,125</sup></div>
+<p>Ved en genåbning springer mid til den nye fair pris og 10 % videre i log, <i>o</i><sub><i>i</i></sub> = 0,1 · (ln <i>f</i><sub><i>i</i></sub> − ln mid<sub><i>i</i></sub><sup>før</sup>). Overshoot henfalder med τ = 0,125 kampminutter (7,5 kampsekunder), og Hawkes-leddets spring giver en kort bølge af handler efter gabet.</p>
 <!-- kilde: src/engine/football/sim.ts:36, 411-425, 488-492 -->
-<p>Over 2,5 har intet ordreflow. Dens mid er fair plus støj og overshoot og står stille under handelsstop (kapitel 16).</p>
+<p>Over 2,5 har intet ordreflow; dens mid er fair plus støj og overshoot (kapitel 16).</p>
 <!-- kilde: src/engine/football/sim.ts:427-456 -->
 
 <h2 id="k15-kurser">Kurser</h2>
-<p>Kursen kommer fra <b>power-metoden</b>: alle chancer opløftes i samme potens <i>k</i> under 1, valgt så summen bliver 1 plus marginen. Et lille <i>p</i> løftes relativt mere end et stort, så favoritten bærer relativt mindre af marginen end de lange udfald. <i>k</i> findes ved halvering i 60 trin på [0,5; 1].</p>
+<p>Kursen kommer fra <b>power-metoden</b>: alle chancer opløftes i samme potens <i>k</i> under 1, fundet ved halvering, så summen bliver 1 plus marginen. Et lille <i>p</i> løftes relativt mere, så favoritten bærer relativt mindre af marginen.</p>
 <div class="formel">kurs<sub><i>i</i></sub><sup>rå</sup> = 100 · min(0,99; mid<sub><i>i</i></sub><sup><i>k</i></sup>),  Σ<sub><i>i</i></sub> mid<sub><i>i</i></sub><sup><i>k</i></sup> = 1 + <i>m</i>,  <i>m</i> = 0,03 for 1X2</div>
 <!-- kilde: src/engine/lib/quote.ts:1-17; src/engine/football/sim.ts:534-536 -->
-<p>Ved 20′ (substep 830) var mid 43,5 / 31,4 / 25,1 %. Med <i>k</i> ≈ 0,972 giver det de rå kurser 44,499 / 32,39 / 26,11, i alt 103,00. Marginen er cirka 1 point på hvert udfald, men relativt 2,3 % på FCK og 3,9 % på BIF. En proportional margin havde givet 44,80 / 32,32 / 25,89.</p>
+<p>Ved 20′ (substep 830) gav mid 43,5 / 31,4 / 25,1 % med <i>k</i> ≈ 0,972 de rå kurser 44,499 / 32,39 / 26,11, i alt 103,00. Marginen er cirka 1 point på hvert udfald, men relativt 2,3 % på FCK og 3,9 % på BIF.</p>
 <!-- data: story.json before (k 830): mid [0.4349, 0.3138, 0.2513], ask [45, 32, 26], bid [41, 28, 22]; mc20.json askNow 44,499; rå kurser og k beregnet med powerAsks(mid, 0,03) -->
-<p>Den viste kurs er et heltal mellem 1 og 99 med <b>hysterese</b>: den skifter kun, når den rå kurs er mindst {{k.HYST}} point fra den viste, eller ved en genåbning. Det holder kursen rolig, når den rå værdi ligger tæt på en halv. I eksemplet står FCK derfor i {{t20.kursFCK}} og ikke i 44: den rå kurs 44,499 er kun 0,501 point fra 45.</p>
-<p>Salgskursen er kursen minus et <b>spread</b>:</p>
-<ul>
-<li><b>2 point</b> i roligt spil.</li>
-<li><b>4 point</b> ved fare: bolden i zone 1 eller 6, eller |π| &gt; 0,5. Ved 20′ stod FCK i kurs {{t20.kursFCK}} med salgskurs {{t20.salgFCK}}. Der havde ikke været en genåbning, så spreadet på 4 betyder fare.</li>
-<li><b>6 point</b> i de første 8 substeps efter en genåbning.</li>
-<li><b>Mindst ⌈100 · |<i>o</i><sub><i>i</i></sub>| · mid<sub><i>i</i></sub> + 1⌉</b>, så spreadet altid dækker overshoot.</li>
-</ul>
-<!-- kilde: src/engine/football/sim.ts:37, 537-547 -->
-<p>En test kræver, at de tre kurser summerer til 103 ± 1 i hvert åbent substep af en kamp uden mål og hvaler.</p>
+<p>Den viste kurs er et heltal fra 1 til 99 med <b>hysterese</b>: den skifter kun ved en genåbning, eller når den rå kurs er mindst {{k.HYST}} point fra den viste. Derfor stod FCK i {{t20.kursFCK}} og ikke i 44. En test kræver, at 1X2-kurserne summerer til 103 ± 1 i hvert åbent substep af en kamp uden mål og hvaler.</p>
 <!-- kilde: tests/football.test.ts:31-44 -->
+<p>Salgskursen er kursen minus et <b>spread</b> på 2 eller 4 point (4 ved fare: bolden i zone 1 eller 6, eller |π| &gt; 0,5), 6 lige efter en genåbning (de første 8 substeps), og altid mindst ⌈100 · |<i>o</i><sub><i>i</i></sub>| · mid<sub><i>i</i></sub> + 1⌉, så det dækker overshoot. Ved 20′ stod FCK i kurs {{t20.kursFCK}} med salgskurs {{t20.salgFCK}}, et spread ved fare.</p>
+<!-- kilde: src/engine/football/sim.ts:37, 537-547 -->
 
 <h2 id="k15-attribution">Attribution</h2>
-<p>Årsagschippen bygger på en opdeling af hvert substeps bevægelse i mid, i point, i fem led. Hændelse, tid og pres regnes om med prissætteren; resten deles fast 85/15 mellem flow og støj, hvor planen ville regne alle led om ét ad gangen:</p>
-<div class="formel">Δ = 100 · (mid<sub>ny</sub> − mid<sub>før</sub>)<br>hændelse = 100 · (<i>f</i><sub>ny</sub> − <i>f</i><sub>før</sub>), hvis stillingen ændrede sig, ellers 0<br>tid = 100 · (<i>f</i>(<i>t</i><sub>ny</sub>; π<sub>før</sub>, <i>z</i><sub>før</sub>) − <i>f</i><sub>før</sub>),  pres = 100 · (<i>f</i><sub>ny</sub> − <i>f</i>(<i>t</i><sub>ny</sub>; π<sub>før</sub>, <i>z</i><sub>før</sub>))<br>flow = 0,85 · rest,  støj = 0,15 · rest,  rest = Δ − hændelse − tid − pres<span class="hvor">hvor <i>f</i>(<i>t</i><sub>ny</sub>; π<sub>før</sub>, <i>z</i><sub>før</sub>) er fair-chancen med det nye ur, men forrige substeps pres og zone. Ved en hændelse sættes tid og pres til 0.</span></div>
+<p>Årsagschippen deler hvert substeps bevægelse i mid, Δ = 100 · (mid<sub>ny</sub> − mid<sub>før</sub>) point, i fem led. <i>Hændelse</i> er springet i fair-chancen, hvis stillingen ændrede sig. <i>Tid</i> er ændringen i fair med det nye ur, men forrige substeps pres og zone, og <i>pres</i> er resten af ændringen i fair; ved en hændelse er begge 0. Det, der er tilbage, rest = Δ − hændelse − tid − pres, deles fast 85/15 mellem <i>flow</i> og <i>støj</i>, hvor planen ville regne hvert led om.</p>
 <!-- kilde: src/engine/football/sim.ts:214-221, 549-569; docs/PLAN.md:237 -->
-<p>Leddene gemmes i en ring på 80 substeps, altså 2 kampminutter, og chippen summerer dem for fokus:</p>
+<p>Leddene gemmes i en ring på 80 substeps (2 kampminutter), og chippen summerer dem for fokus:</p>
 <ol>
-<li>Er hændelsesleddet mindst 1 point, og er der et mål, et rødt kort eller en VAR-dom i vinduet, nævnes hændelsen: <span class="ui">▲ 27 point: mål FCK 28′</span> i historien, som er springet i fair-chancen.</li>
-<li>Ellers vælges det største af tid, pres og flow. Under 1 point står der <span class="ui">Rolig handel · under 1 point på 2 kampmin</span>.</li>
+<li>Er hændelsesleddet mindst 1 point, og er der et mål, et rødt kort eller en VAR-dom i vinduet, nævnes hændelsen, i historien <span class="ui">▲ 27 point: mål FCK 28′</span>, springet i fair-chancen.</li>
+<li>Ellers vælges det største af tid, pres og flow, og under 1 point står der <span class="ui">Rolig handel · under 1 point på 2 kampmin</span>.</li>
 <li>Tid giver <span class="ui">tiden løber</span>. Pres giver antallet af hjørnespark, hvis det pressende hold har haft mindst 2 på 4 kampminutter, ellers <span class="ui">FCK presser</span> eller <span class="ui">BIF presser</span>. Flow giver <span class="ui">storordre</span> efter en hval, ellers <span class="ui">købspres</span> eller <span class="ui">salgspres</span>.</li>
 </ol>
 <p>Støjleddet nævnes aldrig. Over 2,5's chip læser i stedet sin prishistorik og de seneste hændelser.</p>
 <!-- kilde: src/engine/football/sim.ts:38, 571-579; src/engine/football/display.ts:198-250 -->
-<div class="callout advarsel"><b>To skævheder i attributionen.</b> Fundet under rapportarbejdet ved at læse <code>attribute</code> og køre motoren. Kurserne er ikke påvirket, kun chippens tekst.
+<div class="callout advarsel"><b>To skævheder i attributionen.</b> Fundet under rapportarbejdet. Kun chippens tekst er påvirket, ikke kurserne.
 <ul>
-<li><b>Rødt kort.</b> Et rødt kort ændrer ikke stillingen og tæller derfor ikke som hændelse. Tid-leddet regnes med det nye antal kort, så springet havner der, og chippen viser <span class="ui">tiden løber</span> i 2 kampminutter.</li>
-<li><b>Efter et handelsstop.</b> Mid står stille under stoppet, så det substep, hvor fair-chancen springer, bogfører springet med modsat fortegn som flow, og genåbningen bogfører gabet som flow. Det første forlader ringen {{k.GOAL_HALT}} substeps før det andet ({{k.RED_HALT}} ved rødt kort), og i det tidsrum, cirka 2 kampminutter efter hændelsen, viser chippen <span class="ui">købspres</span> eller <span class="ui">salgspres</span> på 85 % af gabet.</li>
+<li><b>Rødt kort.</b> Et rødt kort ændrer ikke stillingen og tæller derfor ikke som hændelse. Springet havner i tid-leddet, og chippen viser <span class="ui">tiden løber</span> i 2 kampminutter.</li>
+<li><b>Efter et handelsstop.</b> Mid står stille under stoppet, så det substep, hvor fair-chancen springer, bogfører springet med modsat fortegn som flow, og genåbningen bogfører mid-springet som flow. Det første forlader ringen {{k.GOAL_HALT}} substeps før det andet ({{k.RED_HALT}} ved rødt kort), og i det tidsrum, cirka 2 kampminutter efter hændelsen, viser chippen <span class="ui">købspres</span> eller <span class="ui">salgspres</span> på 85 % af resten af mid-springet; i historien <span class="ui">▲ 23 point: købspres på FCK</span> fra 30:46 (kapitel 21).</li>
 </ul></div>
 <!-- kilde: src/engine/football/sim.ts:200, 214-221, 498, 549-569; src/engine/football/display.ts:223-249. Genskabt med motorbundtet (tests/.cache/engine.mjs) på en stille tidslinje med rødt kort og med mål ved 30′. -->
+<!-- data: k21 (cause(sim, 0) på historiens seed viser "▲ 23 point: købspres på FCK" fra substep 1260 til 1271) -->
 
 <h2 id="k15-margin">Marginer pr. familie</h2>
-<p>Alle kontrakter bruger power-metoden, undtagen slutresultaterne og puljen. Kurserne er heltal fra 1 til 99. For en to-vejskontrakt summerer Ja og Nej til cirka 100 plus marginen: Over 2,5 og Under 2,5 summerede til {{t20.overUnderSum}} ved 20′. Nøglerne står i bilag B.</p>
+<p>Alle kontrakter undtagen slutresultaterne og puljen bruger power-metoden. Ja og Nej summerer til cirka 100 plus marginen, fx Over og Under 2,5 til {{t20.overUnderSum}} ved 20′. Nøglerne står i bilag B.</p>
 <table class="t">
   <thead><tr><th>Familie</th><th class="n">Margin</th><th>Regel</th><th>Salgskurs</th></tr></thead>
   <tbody>
@@ -88,8 +73,8 @@
     <tr><td>Målvinduer / Efter målet</td><td class="n">9 % / 10 %</td><td>power, <i>p</i> i [0,005; 0,995]</td><td>kurs − 3</td></tr>
     <tr><td>VAR</td><td class="n">8 %</td><td>power på VAR-chancen</td><td>kurs − 4</td></tr>
     <tr><td>Over/Under</td><td class="n">{{k.O25_MARGIN}}</td><td>2,5: power på mid, hysterese; øvrige: <i>p</i> i [0,005; 0,995]</td><td>2,5: kurs − 2/4/6; øvrige: kurs − 3</td></tr>
-    <tr><td>Slutresultat, én celle</td><td class="n">15 %</td><td>⌈100 · <i>p</i> · 1,15⌉</td><td>se kapitel 16</td></tr>
-    <tr><td>Slutresultat, region</td><td class="n">10 %</td><td>⌈100 · Σ<i>p</i> · 1,10⌉, højst Σ cellekurser</td><td>se kapitel 16</td></tr>
+    <tr><td>Slutresultat, én celle</td><td class="n">15 %</td><td>fast påslag på modellens chance</td><td>kapitel 16</td></tr>
+    <tr><td>Slutresultat, region</td><td class="n">10 %</td><td>fast påslag, aldrig mere end cellerne købt hver for sig</td><td>kapitel 16</td></tr>
     <tr><td>Byg</td><td class="n">12 %</td><td>power på (fælles chance, rest)</td><td>kurs − 4</td></tr>
     <tr><td>Parken-puljen</td><td class="n">{{k.POOL_TAKE}}</td><td>huset tager en andel af puljen</td><td>–</td></tr>
   </tbody>

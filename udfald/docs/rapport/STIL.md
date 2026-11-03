@@ -103,7 +103,7 @@ Hver fil i `kapitler/` er et HTML-fragment. Kun disse elementer og klasser bruge
 | `skaermkort` | Kort over skærmene og navigationen | 2 |
 | `system` | Arkitektur: seed → simulation → DP → markedslag → kurser → MC-stier → skærm | 12 |
 | `tidsskala` | Tidsskala: substep 1,5 kampsekunder = 100 ms ved ×1; 1 kampminut = 4 s; kamp ≈ 6 min | 12 |
-| `stier` | 5.000 Monte Carlo-stier stratificeres til 100, så tally = kurs | 14 |
+| `stier` | 5.000 Monte Carlo-stier stratificeres til 100, så tally = den viste chance | 14 |
 | `over25-kamp` | Over 2,5 gennem kampen: fair, mid og kurs; spring ved mål; frosset i handelsstop | 6 og 16 |
 | `kal-o25` | Over 2,5-kalibrering pr. decil (pris mod faktisk) med 3·SE-bånd | 16 og 20 |
 | `kal-1x2` | 1X2-kalibrering (FCK) pr. decil | 20 |

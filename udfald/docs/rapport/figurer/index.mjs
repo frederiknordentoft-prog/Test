@@ -142,7 +142,7 @@ function kursChance({ story, fakta }) {
   s += T(x(kurs) + 6, 34, `Kurs ${kurs} = chance + husets andel`, { size: 10, weight: 650, fill: C.text });
   s += T(x0, 108, `${fakta['koeb.fck.indsats']} ved kurs ${kurs} = ${fakta['koeb.fck.andele']} hele andele for ${fakta['koeb.fck.kr']}.`, { size: 9.5, fill: C.text2 });
   s += T(x0, 122, `Vinder FCK, betaler hver andel 1 kr: ${fakta['koeb.fck.andele']} kr. Ellers 0.`, { size: 9.5, fill: C.text2 });
-  s += box(500, 30, 200, 76, '1 andel', ['koster kursen / 100 kr', `her ${nf(kurs / 100, 2)} kr`, 'betaler 1 kr, hvis udfaldet sker', 'kan sælges når som helst']);
+  s += box(500, 30, 200, 76, '1 andel', ['koster kursen / 100 kr', `her ${nf(kurs / 100, 2)} kr`, 'betaler 1 kr, hvis udfaldet sker', 'kan sælges igen, undtagen under handelsstop']);
   return svg(W, H, s, 'Kurs mod chance');
 }
 
@@ -187,7 +187,7 @@ function system() {
     s += box(bx, y, bw, h, t, ls, i === 2 || i === 4 ? { stroke: C.over } : {});
     if (i < cols.length - 1) s += arrow(bx + bw + 1, y + h / 2, bx + bw + gap - 1, y + h / 2);
   });
-  s += box(8 + 3 * (bw + gap), 196, 2 * bw + gap, 60, 'Monte Carlo-worker', ['5.000 stier pr. kørsel (fælles tilfældige tal)', '→ 100 stier stratificeret, så tally = kurs', '★ også for Over 2,5'], { stroke: C.over });
+  s += box(8 + 3 * (bw + gap), 196, 2 * bw + gap, 60, 'Monte Carlo-worker', ['5.000 stier pr. kørsel (fælles tilfældige tal)', '→ 100 stier stratificeret, så tally = viste chance', '★ også for Over 2,5'], { stroke: C.over });
   s += arrow(8 + 4 * (bw + gap) + 40, y + h + 1, 8 + 4 * (bw + gap) + 40, 194);
   s += arrow(8 + 5 * (bw + gap) - gap + 2, 226, 8 + 5 * (bw + gap) + 40, y + h + 3);
   s += T(8, 252, 'Tilstand = f(seed, tidslinje, k). Simulationen læser aldrig bogen, puljen eller Monte Carlo.', { size: 8.8, fill: C.text2 });
@@ -223,7 +223,7 @@ function stier({ mc20 }) {
   let s = HATCH;
   const n = mc20.n;
   s += box(8, 14, 178, 112, `${nf(n)} simulerede kampe`, ['fra NU (20′) til slutfløjt,', 'samme intensiteter som DP', '', ...mc20.mcShares.map((p, i) => `${names[i]} vinder i ${nf(p * 100, 1)} %`)]);
-  s += box(8, 140, 178, 98, 'Stratificér efter viste kurs', [`vist chance ${mc20.probs.map((p) => nf(p * 100, 0)).join(' / ')} %`, 'største rest-afrunding →', `${mc20.counts.join(' / ')} stier`, 'så tally = kurs, altid']);
+  s += box(8, 140, 178, 98, 'Stratificér efter viste chance', [`vist chance ${mc20.probs.map((p) => nf(p * 100, 0)).join(' / ')} %`, 'største rest-afrunding →', `${mc20.counts.join(' / ')} stier`, 'så tally = viste chance, altid']);
   s += arrow(188, 70, 214, 110);
   s += arrow(188, 190, 214, 150);
   const px0 = 236, px1 = 640, py0 = 16, py1 = 236;

@@ -1,17 +1,17 @@
 <h1 class="kapitel" id="k7" data-nr="7">Nyt: Sikring – stop-loss og Sikr gevinst</h1>
 <p class="ingress">Sikring sælger din position automatisk: et <b>stop-loss</b>, når kursen falder, og <b>Sikr gevinst</b>, når salgskursen når dit niveau. Du sætter ordrerne én gang, og spillet holder øje i hvert substep.</p>
 
-<div class="callout ny"><b>Nyt i denne version.</b> Sikring-chippen på positionskortet, bakken med stop-loss og Sikr gevinst, linjerne i viften og en vagt, der lader et stop vente 8 substeps efter hver genåbning.</div>
+<div class="callout ny"><b>Nyt i denne version.</b> Sikring-chippen, bakken, linjerne i viften og vagten efter hver genåbning.</div>
 
 <h2 id="k7-hvor">Hvor du finder Sikring</h2>
 <section class="duo">
   <div class="txt">
-    <p>Sikring sidder som en chip på positionskortet, mellem kortets tal og faderen. Den findes kun, når du ejer det udfald, skærmen følger, og kun på FCK, X, BIF og Over 2,5. Det er de fire kontrakter, der har en kurs i hvert substep og en linje i viften. Under 2,5, slutresultater og de øvrige markeder har ingen Sikring.</p>
+    <p>Sikring sidder som en chip på positionskortet, mellem kortets tal og faderen. Den findes kun, når du ejer det udfald, skærmen følger, og kun på FCK, X, BIF og Over 2,5, de fire kontrakter med en kurs i hvert substep og en linje i viften.</p>
     <p>Uden ordrer står der <span class="ui">Sikring</span> på chippen. Med ordrer viser den niveauerne, her <span class="ui">Stop 17</span> og <span class="ui">Sikr 40</span>. Et tryk åbner bakken.</p>
-    <p>Ordrerne står også i viften som vandrette linjer over hele bredden: en koralrød, prikket <span class="ui">Stop 17</span> og en mintgrøn, stiplet <span class="ui">Sikr gevinst 40</span>. Så kan du se, hvor tæt kursen og stierne er på dem. Linjerne vises, mens kontrakten er i fokus, og forsvinder, når ordren er udløst eller annulleret.</p>
+    <p>Ordrerne står også i viften som vandrette linjer, en koralrød, prikket <span class="ui">Stop 17</span> og en mintgrøn, stiplet <span class="ui">Sikr gevinst 40</span>, så du kan se, hvor tæt kursen og stierne er. Linjerne vises, mens kontrakten er i fokus, og forsvinder, når ordren er udløst eller annulleret.</p>
     <p>Ved 20′ satte vi Sikring på to positioner: BIF med stop {{stop.bif.niveau}} og Sikr gevinst {{take.bif.niveau}}, og Over 2,5 med stop {{stop.over.niveau}} og Sikr gevinst {{take.over.niveau}}.</p>
   </div>
-  <figure class="phone" data-shot="05-sikring-linjer"><figcaption><b>Sikring i BIF-viften ved 21′.</b> Den koralrøde linje er stoppet ved kurs {{stop.bif.niveau}}, den mintgrønne Sikr gevinst ved {{take.bif.niveau}}. BIF står i kurs 26 med salgskurs 22. Positionskortet viser {{koeb.bif.andele}} andele @ kurs {{koeb.bif.kurs}} og chippen med begge niveauer.</figcaption></figure>
+  <figure class="phone" data-shot="05-sikring-linjer"><figcaption><b>Sikring i BIF-viften ved 21′.</b> BIF står i kurs 26 med salgskurs 22, og chippen på positionskortet viser begge niveauer.</figcaption></figure>
 </section>
 <!-- kilde: src/ui/kamp/Kampen.tsx:347-388; src/state/match.ts:26-27, 748-750; src/ui/kamp/Fan.tsx:92; src/render/fan/live.ts:201-217 -->
 <!-- data: data/shots/05-sikring-linjer.json (k 870: BIF kurs 26, salgskurs 22, "Stop 17", "Sikr 40", "Sikr gevinst 40"); story.json exitsPlaced (alle fire ved k 837) -->
@@ -25,41 +25,41 @@
       <li><span class="ui">Rammer kursen 17, sælges 769 andele ≈ 130,73 kr, til første kurs efter stoppet.</span></li>
       <li><span class="ui">Når salgskursen når 40, sælges 769 andele for mindst 307,60 kr.</span></li>
     </ul>
-    <p>Forskellen i ordvalget er reel. Stoppet giver et skøn, fordi det sælger til den salgskurs, der er, når det udløses. Sikr gevinst lover et minimum, fordi den først sælger, når salgskursen er nået.</p>
-    <p>Knappen hedder <span class="ui">Sæt stop-loss</span> eller <span class="ui">Sæt Sikr gevinst</span>, bagefter <span class="ui">Aktiv ved 17</span> eller <span class="ui">Flyt til N</span>, og <span class="ui">Fjern</span> sletter ordren. Ligger niveauet på den forkerte side af salgskursen, er knappen slået fra med <span class="ui">Skal under 22</span> eller <span class="ui">Skal over 22</span>.</p>
+    <p>Ordvalget er bevidst. Stoppet kan kun skønne, fordi det sælger til den salgskurs, der er, når det udløses. Sikr gevinst lover et minimum, fordi den først sælger, når salgskursen er nået.</p>
+    <p>Knappen hedder <span class="ui">Sæt stop-loss</span> eller <span class="ui">Sæt Sikr gevinst</span>, bagefter <span class="ui">Aktiv ved 17</span> eller <span class="ui">Flyt til N</span>, og <span class="ui">Fjern</span> sletter ordren.</p>
   </div>
-  <figure class="phone" data-shot="06-sikring-bakke"><figcaption><b>Sikringsbakken for BIF ved 21′.</b> Begge ordrer er aktive, <span class="ui">aktiv ved 17</span> og <span class="ui">aktiv ved 40</span>. Skønnet for stoppet er {{stop.bif.andele}} andele · 17/100 = {{stop.bif.bakkeSkoen}}. Det faktiske salg gav {{stop.bif.kr}}, se historien nedenfor.</figcaption></figure>
+  <figure class="phone" data-shot="06-sikring-bakke"><figcaption><b>Sikringsbakken for BIF ved 21′.</b> Begge ordrer er aktive: <span class="ui">aktiv ved 17</span> og <span class="ui">aktiv ved 40</span>.</figcaption></figure>
 </section>
 <!-- kilde: src/ui/kamp/Tray.tsx:115-175 -->
 <!-- data: data/shots/06-sikring-bakke.json -->
 
 <h3 id="k7-forslag">Forslaget</h3>
-<p>Åbner du bakken uden aktive ordrer, står niveauerne allerede på et forslag: stoppet 15 point under din gennemsnitlige købskurs og Sikr gevinst 25 point over. Forslaget holdes på den rigtige side af salgskursen, mindst 1 point under for stoppet og mindst 1 point over for Sikr gevinst, og altid inden for 1–99. For BIF, købt til kurs {{koeb.bif.kurs}} med salgskurs 22, ville forslaget have været 11 og 51. I historien satte vi i stedet {{stop.bif.niveau}} og {{take.bif.niveau}}.</p>
+<p>Uden aktive ordrer åbner bakken med et forslag: stoppet 15 point under din gennemsnitlige købskurs og Sikr gevinst 25 point over, dog mindst 1 point på den rigtige side af salgskursen og inden for 1–99. For BIF (kurs {{koeb.bif.kurs}}, salgskurs 22) ville det have været 11 og 51; vi satte {{stop.bif.niveau}} og {{take.bif.niveau}}.</p>
 <!-- kilde: src/engine/book/portfolio.ts:178-182; src/ui/kamp/Tray.tsx:123-125 -->
 <!-- data: story.json afterBuys (BIF salgskurs 22 ved k 837): stop = min(26 − 15, 22 − 1) = 11, take = max(26 + 25, 22 + 1) = 51 -->
 
 <h3 id="k7-regler">Reglerne</h3>
 <ul>
-<li><b>Én af hver slags.</b> En position har højst ét stop-loss og én Sikr gevinst. Sætter du et nyt niveau, flytter ordren. Spillet bekræfter med en besked, fx <span class="ui">Stop-loss sat ved kurs 17</span>.</li>
-<li><b>Den rigtige side.</b> Et stop skal ligge under salgskursen og Sikr gevinst over. Spillet tjekker det igen, når du trykker, og afviser ellers med <span class="ui">Stop-loss skal ligge under salgskursen N</span> eller <span class="ui">Sikr gevinst skal ligge over salgskursen N</span>.</li>
+<li><b>Én af hver slags.</b> En position har højst ét stop-loss og én Sikr gevinst. Et nyt niveau flytter ordren, og spillet bekræfter, fx <span class="ui">Stop-loss sat ved kurs 17</span>.</li>
+<li><b>Den rigtige side.</b> Et stop skal ligge under salgskursen og Sikr gevinst over. Ligger niveauet forkert, er bakkens knap slået fra med <span class="ui">Skal under 22</span> eller <span class="ui">Skal over 22</span>, og spillet tjekker igen, når du trykker: <span class="ui">Stop-loss skal ligge under salgskursen N</span> eller <span class="ui">Sikr gevinst skal ligge over salgskursen N</span>.</li>
 <li><b>Ingen konflikt med købsgrænser.</b> Et stop må ikke ligge på eller over en aktiv købsgrænse på samme kontrakt, for så ville stoppet sælge, før grænsen køber: <span class="ui">Din købsgrænse på kurs N ville købe efter stoppet</span>. Reglen gælder også den anden vej (kapitel 4).</li>
-<li><b>Hele positionen.</b> Sikring sælger alle de andele, du ejer, når den udløses, også dem, du har købt efter. Sælger du en del med faderen, gælder Sikring for resten. Sælger du alt, eller bliver kontrakten afregnet, annulleres begge ordrer.</li>
-<li><b>Den ene annullerer den anden.</b> Når den ene ordre har solgt positionen, er der intet tilbage at sælge, og den anden annulleres.</li>
-<li><b>Aldrig under et handelsstop.</b> Under et stop efter et mål, et rødt kort eller under VAR venter Sikring, ligesom købsgrænserne.</li>
+<li><b>Hele positionen.</b> Sikring sælger alle de andele, du ejer, også dem, du har købt efter. Sælger du en del med faderen, gælder Sikring for resten. Sælger du alt, eller bliver kontrakten afregnet, annulleres begge ordrer.</li>
+<li><b>Den ene annullerer den anden.</b> Når den ene har solgt, annulleres den anden.</li>
+<li><b>Aldrig under et handelsstop.</b> Efter et mål, et rødt kort og under VAR venter Sikring, ligesom købsgrænserne.</li>
 </ul>
-<p>Aktive ordrer står også i Porteføljen under <span class="ui">Sikring</span> med en linje om, hvordan de sælger, og en knap til at annullere dem. Nye ordrer sætter du kun fra kampskærmen.</p>
-<!-- kilde: src/engine/book/portfolio.ts:99-114, 159-170, 184-214, 222-244; src/state/match.ts:730-741; src/ui/kamp/Tray.tsx:136-160; src/ui/portefolje/Portefolje.tsx:48-52 -->
+<p>Aktive ordrer står også i Porteføljen under <span class="ui">Sikring</span> med en linje om, hvordan de sælger, og en knap til at annullere dem, men nye ordrer sætter du kun fra kampskærmen. Udløste ordrer står i Afregningen med minut, niveau og salgskurs (kapitel 10).</p>
+<!-- kilde: src/engine/book/portfolio.ts:99-114, 159-170, 184-214, 222-244; src/state/match.ts:730-741; src/ui/kamp/Tray.tsx:136-160; src/ui/portefolje/Portefolje.tsx:48-52; src/ui/afregning/Afregning.tsx:103, 134-137 -->
 
 <h2 id="k7-udloes">Hvornår ordrerne udløses</h2>
-<p><b>Sikr gevinst</b> udløses, når salgskursen er på eller over dit niveau. Den sælger alle andele til salgskursen i det øjeblik, så du får mindst niveauet, og den har ingen vagt efter en genåbning. Beskeden lyder fx <span class="ui">Gevinst sikret: solgt 512 @ kurs 54 · 276,48 kr</span>.</p>
-<p><b>Stop-loss</b> udløses, når kursen minus 2 point er på eller under dit niveau. Normalt er afstanden mellem kurs og salgskurs, <b>spreadet</b>, 2 point, så de 2 point svarer til salgskursen i rolige perioder. Et stop på 17 udløses altså, når kursen er 19 eller lavere. Fordi stoppet måler på kursen og ikke på salgskursen, kan et bredt spread alene ikke udløse det. Det sælger alle andele til salgskursen i det øjeblik, og den kan ligge under niveauet. Beskeden lyder fx <span class="ui">Stop-loss udløst: solgt 769 @ kurs 8</span>.</p>
+<p><b>Sikr gevinst</b> udløses, når salgskursen er på eller over dit niveau. Den sælger alle andele til salgskursen i det øjeblik, så du får mindst niveauet.</p>
+<p><b>Stop-loss</b> udløses, når kursen minus 2 point er på eller under dit niveau, så et stop på 17 udløses ved kurs 19 eller lavere. Spreadet er 2 eller 4 point (4 ved fare), mindst 6 lige efter en genåbning, og fordi stoppet måler på kursen og ikke på salgskursen, kan et bredt spread alene ikke udløse det. Stoppet sælger alle andele til salgskursen i det øjeblik, og den kan ligge under niveauet: med spread 4, som i historien, er salgskursen 15 ved kurs 19.</p>
 <!-- kilde: src/engine/book/portfolio.ts:35-38, 216-244; src/engine/football/sim.ts:535-547; src/state/match.ts:258-265 -->
 
-<div class="callout"><b>Vagten i klart sprog.</b> Efter hver genåbning, efter et mål, et rødt kort eller en VAR-dom, venter et stop-loss 8 substeps, altså 12 kampsekunder, før det må udløses. I de 8 substeps finder prisen sit nye niveau, og spreadet er mindst 6 point i stedet for 2 eller 4. Uden vagten ville et stop sælge midt i det brede spread, lige efter gabet. Sikr gevinst har ingen vagt: den sælger kun, når salgskursen allerede er på eller over dit niveau.</div>
+<div class="callout"><b>Vagten i klart sprog.</b> Efter hver genåbning, efter et mål, et rødt kort eller en VAR-dom, venter et stop-loss 8 substeps, altså 12 kampsekunder, før det må udløses. I de 8 substeps finder prisen sit nye niveau, og spreadet er mindst 6 point. Uden vagten ville et stop sælge midt i det brede spread lige efter gabet. Sikr gevinst har ingen vagt, fordi den kun sælger, når salgskursen allerede er på eller over dit niveau.</div>
 <!-- kilde: src/engine/book/portfolio.ts:35-36, 234 (k − reopenK > 7); src/engine/football/sim.ts:411-425, 539-545 (spread 6, så længe k − reopenK ≤ 7) -->
 
 <h2 id="k7-historie">Historien: ét mål, to udløsninger</h2>
-<p>Lige før FCK-målet stod BIF i kurs {{foerMaal.bifKurs}} og Over 2,5 i kurs {{foerMaal.overKurs}}. Over-stoppet på {{stop.over.niveau}} var tæt på: det udløses ved kurs 32, ét point lavere. Så scorede FCK {{maal1.ur}}, og handlen stoppede i {{maalStop.substeps}} substeps. Kurserne stod stille, og Sikring ventede.</p>
+<p>Lige før FCK-målet stod BIF i kurs {{foerMaal.bifKurs}} og Over 2,5 i kurs {{foerMaal.overKurs}}. Over-stoppet på {{stop.over.niveau}} var tæt på: det udløses ved kurs 32, ét point lavere. Så scorede FCK {{maal1.ur}}, og handlen stoppede i {{maalStop.substeps}} substeps, mens Sikring ventede.</p>
 <!-- data: story.json series k 837–1180 (laveste Over-kurs 33); trace k 1179 -->
 <table class="t">
   <thead><tr><th>Tid</th><th>Hændelse</th><th class="n">BIF kurs</th><th class="n">BIF salgskurs</th><th class="n">Over kurs</th><th class="n">Over salgskurs</th></tr></thead>
@@ -70,28 +70,24 @@
   </tbody>
 </table>
 <!-- data: story.json trace k 1179 (BIF 24/20, Over 33/29), k 1192 (BIF 9/3, Over 62/54), k 1200 (BIF 10/8, Over 60/57) -->
-<p><b>Ved genåbningen {{genaabning1.ur}}</b> sprang BIF fra kurs {{foerMaal.bifKurs}} til {{genaabning1.bifKurs}}, et gab på {{genaabning1.gabBIF}} point, og salgskursen var kun {{genaabning1.bifSalg}}. Kursen minus 2 lå langt under stoppet på {{stop.bif.niveau}}, men vagten holdt det tilbage. Over 2,5 sprang den anden vej, til kurs {{genaabning1.overKurs}} med salgskurs {{genaabning1.overSalg}}. Det er over Sikr gevinst på {{take.over.niveau}}, så den solgte i samme substep: {{take.over.andele}} andele til kurs {{take.over.kurs}} = {{take.over.kr}}. Over-stoppet blev annulleret.</p>
-<p><b>8 substeps senere, {{stop.bif.ur}},</b> var vagten forbi. BIF stod i kurs {{stopTidspunkt.bifKurs}} med salgskurs {{stopTidspunkt.bifSalg}}, og stoppet solgte {{stop.bif.andele}} andele til kurs {{stop.bif.kurs}} = {{stop.bif.kr}}. BIF's Sikr gevinst blev annulleret.</p>
+<p><b>Ved genåbningen {{genaabning1.ur}}</b> sprang BIF til kurs {{genaabning1.bifKurs}} med salgskurs {{genaabning1.bifSalg}}. Kursen minus 2 lå langt under stoppet på {{stop.bif.niveau}}, men vagten holdt det tilbage. Over 2,5 sprang den anden vej, over Sikr gevinst på {{take.over.niveau}}, og solgte i samme substep: {{take.over.andele}} andele til salgskurs {{take.over.kurs}}, i alt {{take.over.kr}}. Over-stoppet blev annulleret.</p>
+<p><b>8 substeps senere, {{stop.bif.ur}},</b> var vagten forbi, og stoppet solgte {{stop.bif.andele}} andele til salgskurs {{stop.bif.kurs}}, i alt {{stop.bif.kr}}. BIF's Sikr gevinst blev annulleret.</p>
 <!-- data: story.json final.exits (stop BIF udløst k 1200 @ 8 = 61,52 kr; take Over udløst k 1192 @ 54 = 276,48 kr; de to andre annulleret), counterfactual -->
 
 <section class="duo">
   <div class="txt">
-    <p>To beskeder fortæller, hvad der skete: <span class="ui">Gevinst sikret: solgt 512 @ kurs 54 · 276,48 kr</span> og <span class="ui">Stop-loss udløst: solgt 769 @ kurs 8</span>. De kom med 8 substeps imellem, så de står sammen på skærmen et øjeblik.</p>
-    <p>Viften er BIF's. Gabet er mærket <span class="ui">{{genaabning1.gabBIF}} point</span> ved genåbningen, og årsagschippen siger <span class="ui">▼ 14 point: mål FCK 28′</span>. Stop- og gevinstlinjerne er væk, fordi ordrerne er udløst eller annulleret, og positionskortet henviser til Porteføljen, for BIF-andelene er solgt.</p>
-    <p>Bakkens skøn var ≈ {{stop.bif.bakkeSkoen}}, og salget gav {{stop.bif.kr}}. Forskellen er gabet: kursen handlede aldrig i nærheden af 17, den sprang fra {{foerMaal.bifKurs}} til {{genaabning1.bifKurs}}, mens handlen var stoppet.</p>
-    <p>Uden vagten var stoppet udløst ved genåbningen til salgskurs {{udenVagt.kurs}}, og de {{stop.bif.andele}} andele havde givet {{udenVagt.kr}}. Med vagten blev det {{stop.bif.kr}}.</p>
+    <p>To beskeder fortæller, hvad der skete: <span class="ui">Gevinst sikret: solgt 512 @ kurs 54 · 276,48 kr</span> og <span class="ui">Stop-loss udløst: solgt 769 @ kurs 8</span>. De kom med 8 substeps imellem og står sammen på skærmen et øjeblik.</p>
+    <p>Viften er BIF's. Gabet er mærket <span class="ui">{{genaabning1.gabBIF}} point</span>, og årsagschippen siger <span class="ui">▼ 14 point: mål FCK 28′</span>. Stop- og gevinstlinjerne er væk, og positionskortet henviser til Porteføljen, for BIF-andelene er solgt.</p>
+    <p>Bakkens skøn var ≈ {{stop.bif.bakkeSkoen}}, men salget gav {{stop.bif.kr}}. Forskellen er gabet: kursen handlede aldrig i nærheden af 17, den sprang fra {{foerMaal.bifKurs}} til {{genaabning1.bifKurs}}, mens handlen var stoppet.</p>
+    <p>Uden vagten var stoppet udløst ved genåbningen til salgskurs {{udenVagt.kurs}}, og de {{stop.bif.andele}} andele havde kun givet {{udenVagt.kr}}.</p>
   </div>
-  <figure class="phone" data-shot="12-stop-udloest"><figcaption><b>BIF ved 29′, lige efter stoppet.</b> De to beskeder fra Sikring står øverst. BIF står i kurs 10 med 9 % chance, gabet på {{genaabning1.gabBIF}} point er mærket ved genåbningen, og der er ingen Sikring-linjer tilbage.</figcaption></figure>
+  <figure class="phone" data-shot="12-stop-udloest"><figcaption><b>BIF ved 29′, lige efter stop-loss-salget.</b> BIF står i kurs 10 med 9 % chance, og de to beskeder fra Sikring står øverst.</figcaption></figure>
 </section>
 <!-- kilde: src/state/match.ts:261-265; src/render/fan/live.ts:117-128, 201-217; src/engine/football/display.ts:223-235; src/ui/kamp/Kampen.tsx:347-358 -->
 <!-- data: data/shots/12-stop-udloest.json (k 1200: toasts, "−15 point", "▼ 14 point: mål FCK 28′"); story.json counterfactual (bidAtReopen 3, noGuardKr 23,07, guardKr 61,52) -->
 
-<figure class="fig" data-fig="sikring-spor"><figcaption><b>Figur:</b> Sikring gennem FCK-målet, substep 1170–1215. Øverst BIF: kurs (fuld linje) og salgskurs (stiplet) med stop {{stop.bif.niveau}} og Sikr gevinst {{take.bif.niveau}}. Det grå skraverede felt er handelsstoppet, det røde vagtens 8 substeps. Den hule ring er salget uden vagt, kurs {{udenVagt.kurs}} = {{udenVagt.kr}}; den fyldte prik er det faktiske salg, kurs {{stop.bif.kurs}} = {{stop.bif.kr}}. Nederst Over 2,5's salgskurs. Ved genåbningen er den {{genaabning1.overSalg}}, over Sikr gevinst på {{take.over.niveau}}, så den sælger med det samme.</figcaption></figure>
+<figure class="fig" data-fig="sikring-spor"><figcaption><b>Figur:</b> Sikring gennem FCK-målet, substep 1170–1215. Øverst BIF's kurs (fuld linje) og salgskurs (stiplet) med niveauerne for stop og Sikr gevinst. Det grå felt er handelsstoppet, det røde vagtens 8 substeps. Den hule ring er salget uden vagt, den fyldte prik det faktiske salg. Nederst Over 2,5's salgskurs, der ved genåbningen ligger over Sikr gevinst.</figcaption></figure>
 
-<h3 id="k7-regnskab">Hvad Sikring gjorde for os</h3>
-<p>Kampen endte {{slutresultat}}. BIF vandt ikke, og der kom kun 2 mål, så begge positioner var endt på 0. Stoppet fik {{stop.bif.kr}} ud af BIF-købet på {{koeb.bif.kr}}, og Sikr gevinst solgte Over for {{take.over.kr}} mod en købspris på {{koeb.over.kr}}. Begge salg står i Porteføljen under de afsluttede positioner og i Afregningen under <span class="ui">Sikring</span> med minut, niveau og kurs (kapitel 10).</p>
-<!-- kilde: src/ui/afregning/Afregning.tsx:103, 134-137 -->
-
-<div class="callout advarsel"><b>Det, Sikring ikke kan.</b> Et stop-loss garanterer ingen pris. Springer kursen forbi niveauet i et gab, sælger stoppet til den første salgskurs efter vagten, og den kan ligge langt under niveauet, som her: kurs {{stop.bif.kurs}} mod et stop på {{stop.bif.niveau}}. Sikr gevinst har den modsatte svaghed: den sælger også i genåbningens brede spread. Over-salgskursen var {{genaabning1.overSalg}} ved genåbningen og 57 otte substeps senere. Har du både en købsgrænse og et stop på samme kontrakt, og springer kursen forbi begge i samme gab, kan stoppet sælge de andele, grænsen lige har købt. Det tilfælde er beskrevet i kapitel 21.</div>
+<div class="callout advarsel"><b>Det, Sikring ikke kan.</b> Et stop-loss garanterer ingen pris: efter et gab sælger det til første salgskurs efter vagten, som historien viser. Sikr gevinst har den modsatte svaghed og sælger også i genåbningens brede spread: Over-salgskursen var {{genaabning1.overSalg}} ved genåbningen og 57 otte substeps senere. Springer ét gab forbi både en købsgrænse og et stop på samme kontrakt, kan stoppet sælge de andele, grænsen lige har købt (kapitel 21).</div>
 <!-- data: story.json trace k 1200 (Over salgskurs 57) -->
 <!-- kilde: src/engine/book/portfolio.ts:132-157, 216-244 -->

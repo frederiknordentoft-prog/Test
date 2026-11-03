@@ -1,86 +1,69 @@
 <h1 class="kapitel" id="k3" data-nr="3">Kampskærmen, bånd for bånd</h1>
-<p class="ingress">Kampskærmen er der, hvor du handler. Den er bygget som en stak af bånd fra top til bund, og her går vi dem igennem ét ad gangen.</p>
+<p class="ingress">Kampskærmen er der, hvor du handler. Den er en stak af bånd fra top til bund, og her går vi dem igennem ét ad gangen.</p>
 
 <h2 id="k3-anatomi">Anatomien</h2>
 <section class="duo">
 <div class="txt">
 <ol class="anat">
-<li><b>Kampbånd.</b> Chevronen til lobbyen, logoet, stillingen, minuttet og en statuspille, her <span class="ui">ÅBEN</span>. <span class="ui">Lyd</span> slår lyden til og fra.</li>
+<li><b>Kampbånd.</b> Chevron, logo, stilling, minut, statuspillen, her <span class="ui">ÅBEN</span>, og <span class="ui">Lyd</span>.</li>
 <li><b>Instrumenthoved (etiket og kurs).</b> Etiketten <span class="ui">FCK vinder ▾</span> siger, hvad skærmen følger; et tryk skifter fokus. Under den står kursen.</li>
-<li><b>Chance og odds.</b> <span class="ui">43 % chance</span> er optællingen ved viftens højre kant. Under den står odds, salgskurs og en stiplet pille med spøgelsesstatus.</li>
-<li><b>Årsagschip.</b> Siger med ord, hvorfor kursen har flyttet sig de seneste 2 kampminutter, her <span class="ui">Rolig handel · under 1 point på 2 kampmin</span>.</li>
-<li><b>Prislinjen og NU.</b> Kursens historik til venstre for den stiplede NU-linje. Den hvide ring er dit køb, og den prikkede linje derfra er spøgelseslinjen.</li>
+<li><b>Chance og odds.</b> <span class="ui">43 % chance</span> er tallyen, og under den står odds, salgskurs og en pille med spøgelsesstatus.</li>
+<li><b>Årsagschip.</b> Hvorfor kursen har flyttet sig de seneste 2 kampminutter, her <span class="ui">Rolig handel · under 1 point på 2 kampmin</span>.</li>
+<li><b>Prislinjen og NU.</b> Kursens historik frem til den stiplede NU-linje, med dit køb som en hvid ring.</li>
 <li><b>Fremtidsviften.</b> 100 simulerede fremtider fra NU til slutfløjt, farvet efter det udfald, de ender i.</li>
-<li><b>Grenmærker.</b> Hvor kursen går hen, hvis FCK scorer, hvis BIF scorer, eller hvis intet sker de næste 10 minutter. Et tryk åbner køb af næste mål.</li>
-<li><b>Tally.</b> Optællingen af stierne ved slutfløjt: 43 FCK, 32 X og 25 BIF. Tallet for dit fokus står øverst.</li>
-<li><b>Andelsbar.</b> Ét felt pr. udfald, og bredden følger kursen. Tryk for at købe, hold for hurtigkøb.</li>
-<li><b>Målvejret.</b> Chancen for mål i hvert 5-minuttersvindue, med overskriften <span class="ui">Et mål er sandsynligt inden 50′ (53 %)</span>.</li>
-<li><b>Over 2,5-chip.</b> <span class="ui">Over 2,5 · kurs 38</span> skifter fokus til Over 2,5 og åbner bakken for Over og Under.</li>
-<li><b>Positionskort med fader.</b> Din position i det udfald, du har i fokus: andele, købskurs, udbetaling ved sejr, værdi nu, gevinst eller tab og salgskurs. Faderen sælger.</li>
-<li><b>Sikring-chip.</b> Åbner Sikring med stop-loss og Sikr gevinst. Er de sat, viser chippen niveauerne.</li>
-<li><b>Bundbjælke.</b> Byg, Mål, Pulje og Portefølje, hver med en anden linje (kapitel 2).</li>
+<li><b>Grenmærker.</b> Hvor kursen går hen efter næste mål, eller hvis intet sker.</li>
+<li><b>Tally.</b> Stierne talt ved slutfløjt: 43 FCK, 32 X og 25 BIF.</li>
+<li><b>Andelsbar.</b> Ét felt pr. udfald med bredde efter kursen. Tryk for at købe, hold for hurtigkøb.</li>
+<li><b>Målvejret.</b> Chancen for mål i hvert 5-minuttersvindue.</li>
+<li><b>Over 2,5-chip.</b> <span class="ui">Over 2,5 · kurs 38</span> skifter fokus og åbner bakken for Over og Under.</li>
+<li><b>Positionskort med fader.</b> Din position i fokus med andele, købskurs, værdi nu og salgskurs; faderen sælger.</li>
+<li><b>Sikring-chip.</b> Åbner stop-loss og Sikr gevinst og viser niveauerne, når de er sat.</li>
+<li><b>Bundbjælke.</b> Byg, Mål, Pulje og Portefølje (kapitel 2).</li>
 </ol>
 </div>
-<figure class="phone anat" data-shot="03-kamp-anatomi"><figcaption><b>Kampskærmen ved 21′.</b> Stillingen er 0–0, og FCK er i fokus. Du ejer {{koeb.fck.andele}} andele i FCK, købt til kurs {{koeb.fck.kurs}} ved {{koeb.fck.minut}}.</figcaption></figure>
+<figure class="phone anat" data-shot="03-kamp-anatomi"><figcaption><b>Kampskærmen ved 21′.</b> 0–0 med FCK i fokus. Den hvide ring er vores køb til kurs {{koeb.fck.kurs}} ved {{koeb.fck.minut}}.</figcaption></figure>
 </section>
 <!-- kilde: src/ui/kamp/Kampen.tsx:46-105, src/render/fan/live.ts:1-4, src/state/match.ts:752-782 -->
 <!-- data: data/shots/03-kamp-anatomi.json (k 870, 21′, kurser 44/33/26, tally 43/32/25, Over 2,5 kurs 38, "odds 2,27 · sælg kurs 40", "Et mål er sandsynligt inden 50′ (53 %)") -->
 
 <h2 id="k3-kampbaand">Kampbåndet</h2>
-<p>Statuspillen til højre i båndet fortæller, om du kan handle:</p>
-<ul>
-<li><span class="ui">AUKTION</span> før kampstart, mens markedet åbner.</li>
-<li><span class="ui">ÅBEN</span> under spillet.</li>
-<li><span class="ui">STOPPET</span> i et handelsstop efter et mål eller et rødt kort.</li>
-<li><span class="ui">VAR</span>, mens et mål bliver tjekket.</li>
-<li><span class="ui">PAUSE</span> i halvlegen.</li>
-<li><span class="ui">LUKKET</span> efter slutfløjt.</li>
-</ul>
-<p>Under et handelsstop er faderen slukket med teksten <span class="ui">Salg åbner efter stoppet</span>, og viften får et skraveret bånd (kapitel 5). Går uret hurtigere end normalt, står hastigheden ved minuttet, fx ×4. Før kampen står der <span class="ui">Før kamp</span> i stedet for minuttet, i halvlegen <span class="ui">Pause</span> og til sidst <span class="ui">Slut</span>.</p>
+<p>Statuspillen til højre i båndet fortæller, om du kan handle: <span class="ui">AUKTION</span> før kampstart, <span class="ui">ÅBEN</span> under spillet, <span class="ui">STOPPET</span> i et handelsstop efter et mål eller et rødt kort, <span class="ui">VAR</span>, mens et mål bliver tjekket, <span class="ui">PAUSE</span> i halvlegen og <span class="ui">LUKKET</span> efter slutfløjt.</p>
+<p>Under et handelsstop er faderen slukket med teksten <span class="ui">Salg åbner efter stoppet</span>, og viften får et skraveret bånd (kapitel 5). Går uret hurtigere end normalt, står hastigheden ved minuttet, fx ×4.</p>
 <!-- kilde: src/ui/kamp/Kampen.tsx:133-149, src/ui/kamp/Kampen.tsx:456, src/state/match.ts:870, src/engine/football/sim.ts:23 -->
 
 <h2 id="k3-hoved">Instrumenthovedet</h2>
-<p>Etiketten med ▾ bestemmer, hvad hele skærmen følger. Hvert tryk skifter fokus i rækkefølgen <span class="ui">FCK vinder</span> → <span class="ui">Uafgjort</span> → <span class="ui">BIF vinder</span> → <span class="ui">Over 2,5 mål</span> og tilbage til FCK. Når der er scoret 3 mål, er Over 2,5 afgjort, og så springer etiketten den over. Viften, kursen, chancen, andelsbaren og positionskortet skifter med.</p>
+<p>Hvert tryk på etiketten med ▾ skifter fokus i rækkefølgen <span class="ui">FCK vinder</span> → <span class="ui">Uafgjort</span> → <span class="ui">BIF vinder</span> → <span class="ui">Over 2,5 mål</span> og tilbage, og resten af skærmen skifter med. Efter 3 mål er Over 2,5 afgjort og springes over.</p>
 <!-- kilde: src/state/focus.ts:102-108, src/ui/kamp/Kampen.tsx:157-161 -->
-<p>Til højre står chancen, fx <span class="ui">43 % chance</span>. Det er det samme tal som tallyen ved viftens højre kant, så det, du læser i hovedet, kan du tælle i viften. I de første 8 minutter står der under chancen, hvad kontrakten betaler, fx <span class="ui">udbetaler 100 hvis FCK vinder</span>, altså 1 kr pr. andel. Derefter står odds og salgskurs, fx <span class="ui">odds 2,27 · sælg kurs 40</span>.</p>
+<p>Chancen til højre, fx <span class="ui">43 % chance</span>, er samme tal som tallyen i viften. I de første 8 minutter står der under den, hvad kontrakten betaler, fx <span class="ui">udbetaler 100 hvis FCK vinder</span>. Derefter står odds og salgskurs, fx <span class="ui">odds 2,27 · sælg kurs 40</span>.</p>
 <!-- kilde: src/ui/kamp/Kampen.tsx:156, src/ui/kamp/Kampen.tsx:165-166, src/state/focus.ts:63, src/state/focus.ts:85 -->
-<p>Ejer du det udfald, du kigger på, og købte du det med udfaldet i fokus, viser hovedet også <b>spøgelsesstatus</b>, fx <span class="ui">Foran vindertempo · +30 point</span> lige efter FCK-målet. Spøgelseslinjen er den prikkede linje i viften: medianen af de fremtider, der endte med dit udfald, frosset, da du købte. Der er kun én spøgelseslinje ad gangen; et nyt køb i fokus erstatter den. Statussen siger, hvor mange point kursen nu ligger over eller under linjen. Den findes kun for FCK, X og BIF, ikke for Over 2,5.</p>
+<p>Har du købt udfaldet med det i fokus, viser hovedet også <b>spøgelsesstatus</b>, fx <span class="ui">Foran vindertempo · +30 point</span> lige efter FCK-målet. Tallet er kursens afstand til spøgelseslinjen, den prikkede linje i viften: medianen af de fremtider, der endte med dit udfald, frosset, da du købte. Linjen findes kun for FCK, X og BIF, én ad gangen.</p>
 <!-- kilde: src/state/match.ts:681-693, src/state/match.ts:752-782, src/state/focus.ts:75, src/state/focus.ts:97 -->
 <!-- data: data/shots/13-genaabning-gab.json ("Foran vindertempo · +30 point") -->
 
 <h2 id="k3-vifte">Fremtidsviften</h2>
-<p>Til venstre for NU-linjen ser du kursen, som den har været, tegnet uden afrunding, så den glider i stedet for at hoppe i hele point. Til højre ser du 100 simulerede fremtider for resten af kampen, <b>stierne</b>. Hver sti er farvet efter det udfald, den ender i: cyan for FCK-sejr, grå for uafgjort og gul for BIF-sejr. Ved slutfløjt ender alle stier i 0 eller 100, for da er kontrakten afgjort.</p>
+<p>Til venstre for NU-linjen ser du kursen, som den har været. Til højre ser du 100 simulerede fremtider for resten af kampen, <b>stierne</b>, farvet efter det udfald, de ender i.</p>
 <!-- kilde: src/render/fan/live.ts:92-115, src/engine/football/sim.ts:581-600, src/render/fan/strands.ts:1-10, src/state/focus.ts:18-21 -->
-<p><b>Tallyen</b> ved højre kant tæller stierne ved slutfløjt. De 100 stier er udvalgt blandt 5.000 simulerede, så antallet, der ender med hvert udfald, er præcis chancen i hele procent. Tallyen er altså prisen talt i fremtider, ikke en tilfældig stikprøve: står der 43 ud for FCK, er chancen 43 %.</p>
+<p><b>Tallyen</b> ved højre kant tæller stierne ved slutfløjt. De 100 stier er udvalgt blandt 5.000 simulerede, så antallet med hvert udfald er præcis chancen i hele procent: står der 43 ud for FCK, er chancen 43 %. Tallyen er altså chancen talt i fremtider.</p>
 <!-- kilde: src/state/match.ts:521-523, src/engine/mc/paths.ts:292-300, src/render/fan/live.ts:271-291 -->
-<p><b>Grenmærkerne</b> i højre margen viser, hvor kursen går hen efter den næste hændelse, fx <span class="ui">Mål FCK → 71</span>, <span class="ui">Intet mål 10′ → 43</span> og <span class="ui">Mål BIF → 24</span>. Horisonten er 10 minutter eller halvdelen af den resterende tid, hvis den er kortere. Jo mere sandsynlig hændelsen er, jo tydeligere står mærket. Mærkerne skjules under et handelsstop og før kampstart, og et tryk på et af dem åbner bakken <span class="ui">Næste mål</span>.</p>
+<p><b>Grenmærkerne</b> i højre margen viser, hvor kursen går hen efter den næste hændelse, fx <span class="ui">Mål FCK → 71</span>, <span class="ui">Intet mål 10′ → 43</span> og <span class="ui">Mål BIF → 24</span>. Et tryk på et mærke åbner bakken <span class="ui">Næste mål</span>.</p>
 <!-- kilde: src/engine/football/display.ts:143-165, src/render/fan/live.ts:293-329, src/ui/kamp/Fan.tsx:254-260, src/ui/kamp/Kampen.tsx:60-72 -->
-<p><b>Årsagschippen</b> øverst til venstre forklarer bevægelsen over de seneste 2 kampminutter. Har et mål, et rødt kort eller en VAR-afgørelse flyttet kursen, står hændelsen der, som <span class="ui">▲ 27 point: mål FCK 28′</span> efter FCK-målet. Ellers står den største af tre kræfter: tiden, pres eller handel. Pres kan stå som <span class="ui">FCK presser</span> eller som et antal hjørnespark, og en hval står som <span class="ui">storordre</span>. Under 1 point står der <span class="ui">Rolig handel</span>.</p>
+<p><b>Årsagschippen</b> øverst til venstre forklarer bevægelsen. Har et mål, et rødt kort eller en VAR-afgørelse flyttet kursen, står hændelsen der, fx <span class="ui">▲ 27 point: mål FCK 28′</span>. Ellers står den største af tre kræfter: tiden, pres som <span class="ui">FCK presser</span> eller handel, hvor en hval står som <span class="ui">storordre</span>. Under 1 point står der <span class="ui">Rolig handel</span>.</p>
 <!-- kilde: src/engine/football/display.ts:198-250, src/render/fan/live.ts:358-378 -->
 <!-- data: data/shots/11-handelsstop.json ("▲ 27 point: mål FCK 28′") -->
-<p><b>NU</b> er en stiplet lodret linje ved godt en tredjedel af bredden, med minuttet under, fx <span class="ui">NU 21′</span>. Begge akser forstørrer det, der er tæt på: de nærmeste minutter og området omkring kursen fylder mest, mens stierne stadig kan nå 0 og 100. Træk fingeren hen over historikken, så viser en markør minut og kurs. Mål, røde kort og VAR-tjek står som små mærker på bundlinjen, og ved en genåbning står gabet, når det er mindst 2 point, fx <span class="ui">{{genaabning1.gabFCK}} point</span>.</p>
+<p><b>NU</b> er en stiplet lodret linje godt en tredjedel inde, med minuttet under, fx <span class="ui">NU 21′</span>. Begge akser forstørrer det, der er tæt på: de nærmeste minutter og området omkring kursen fylder mest. Træk fingeren hen over historikken, så viser en markør minut og kurs. Mål, røde kort og VAR-tjek står som mærker på bundlinjen, og ved en genåbning står gabet, når det er mindst 2 point, fx <span class="ui">{{genaabning1.gabFCK}} point</span>.</p>
 <!-- kilde: src/render/fan/geometry.ts:1-13, src/render/fan/geometry.ts:50-56, src/render/fan/live.ts:67-128, src/render/fan/live.ts:249-269, src/render/fan/live.ts:331-356, src/ui/kamp/Fan.tsx:238-243 -->
 <p>Et langt tryk i viften sætter en købsgrænse på FCK, X eller BIF (kapitel 4). Med Over 2,5 i fokus bliver viften pink og tæller Over og Under (kapitel 6).</p>
 <!-- kilde: src/ui/kamp/Fan.tsx:219-226, src/state/focus.ts:70-74 -->
 
 <h2 id="k3-bar">Andelsbaren</h2>
-<p>Andelsbaren har ét felt pr. udfald, FCK, X og BIF, med hver sin kurs. Feltets bredde følger kursen, så favoritten fylder mest. Tryk på et felt for at gøre det til fokus og åbne ordresedlen. Hold fingeren på feltet, så starter et hurtigkøb, hvor beløbet tæller op; glid op for at købe eller til venstre for at annullere (kapitel 4).</p>
-<p>Trækker du fra et felt over i nabofeltet, åbner du ordresedlen for <b>dobbeltchance</b>: fra FCK til X giver <span class="ui">FCK eller X</span>, og fra X til BIF giver <span class="ui">X eller BIF</span>. Med Over 2,5 i fokus har baren kun felterne <span class="ui">Over 2,5</span> og <span class="ui">Under 2,5</span>.</p>
+<p>Andelsbaren har ét felt pr. udfald, FCK, X og BIF. Tryk på et felt for at gøre det til fokus og åbne ordresedlen, eller hold fingeren på det for et hurtigkøb (kapitel 4).</p>
+<p>Trækker du fra et felt over i nabofeltet, åbner du ordresedlen for <b>dobbeltchance</b>: <span class="ui">FCK eller X</span> eller <span class="ui">X eller BIF</span>. Med Over 2,5 i fokus har baren kun felterne <span class="ui">Over 2,5</span> og <span class="ui">Under 2,5</span>.</p>
 <!-- kilde: src/ui/kamp/Kampen.tsx:173-268, src/engine/football/display.ts:90-95 -->
 
 <h2 id="k3-vejr">Målvejret</h2>
-<p><b>Målvejret</b> er en vejrudsigt for mål. Hver søjle er et 5-minuttersvindue fra det igangværende til slutfløjt, og højden viser chancen for mindst ét mål i vinduet; ved 20 % er søjlen fuld. Den er delt i cyan og gul efter, hvor meget af chancen der er FCK's og BIF's. Et vindue, hvor der er scoret, får et flueben.</p>
+<p><b>Målvejret</b> er en vejrudsigt for mål. Hver søjle er et 5-minuttersvindue fra det igangværende til slutfløjt, og højden viser chancen for mindst ét mål i vinduet; ved 20 % er søjlen fuld. Cyan og gul viser FCK's og BIF's andel, og et vindue med mål får et flueben.</p>
 <!-- kilde: src/engine/football/display.ts:102-114, src/ui/kamp/Kampen.tsx:275-325, src/styles/kamp.css:87-88 -->
-<p>Overskriften siger, hvor længe der går, før et mål er mere sandsynligt end ikke, regnet i hele vinduer, fx <span class="ui">Et mål er sandsynligt inden 50′ (53 %)</span>. Sker det ikke før slutfløjt, står chancen for et mål i resten af kampen. Tryk på en søjle, eller træk over flere, for at købe et mål i perioden eller <span class="ui">Tørvejr</span>, altså intet mål.</p>
+<p>Overskriften siger, hvornår et mål bliver mere sandsynligt end ikke, fx <span class="ui">Et mål er sandsynligt inden 50′ (53 %)</span>. Tryk på en søjle, eller træk over flere, for at købe et mål i perioden eller <span class="ui">Tørvejr</span>, altså intet mål.</p>
 <!-- kilde: src/engine/football/display.ts:167-181, src/ui/kamp/Kampen.tsx:83-87, src/ui/kamp/Kampen.tsx:284-320 -->
-<p>Til højre for overskriften sidder <b>Over 2,5-chippen</b>, fx <span class="ui">Over 2,5 · kurs 38</span>. Den skifter fokus til Over 2,5 og åbner bakken <span class="ui">Mål i alt · 2,5</span>, og den forsvinder, når der er scoret 3 mål. Efter et mål tager <span class="ui">Efter målet</span>-chippen pladsen, så snart handlen er genåbnet. Den sælger chancen for et nyt mål inden for 5 minutter efter målet. Under et VAR-tjek erstattes hele Målvejret af spørgsmålet <span class="ui">Målet står?</span> (kapitel 5).</p>
+<p>Til højre for overskriften sidder <b>Over 2,5-chippen</b>. Den skifter fokus til Over 2,5, åbner bakken <span class="ui">Mål i alt · 2,5</span> og forsvinder efter 3 mål. Efter et mål tager <span class="ui">Efter målet</span>-chippen pladsen, så snart handlen er genåbnet; den sælger chancen for et nyt mål inden for 5 minutter. Under VAR erstattes Målvejret af spørgsmålet <span class="ui">Målet står?</span> (kapitel 5).</p>
 <!-- kilde: src/ui/kamp/Kampen.tsx:35-44, src/ui/kamp/Kampen.tsx:80-92, src/ui/kamp/Kampen.tsx:281-282, src/ui/kamp/Kampen.tsx:334-345, src/engine/football/display.ts:116-126 -->
-
-<h2 id="k3-tilstande">Samme skærm, tre tilstande</h2>
-<p>Båndene ligger fast, men indholdet skifter med kampen og med dit fokus. Her er tre øjeblikke fra den kamp, rapporten følger.</p>
-<div class="phones">
-<figure class="phone sm" data-shot="11-handelsstop"><figcaption><b>STOPPET.</b> Lige efter FCK-målet {{maal1.ur}}: skraveret bånd, årsagschip og slukket fader.</figcaption></figure>
-<figure class="phone sm" data-shot="07-over25-vifte"><figcaption><b>Over 2,5 i fokus ved 24′.</b> Pink vifte, tally 33 Over og 67 Under, to felter i baren.</figcaption></figure>
-<figure class="phone sm" data-shot="13-genaabning-gab"><figcaption><b>Genåbnet ved 29′.</b> Gabet {{genaabning1.gabFCK}} point og <span class="ui">Efter målet</span>-chippen.</figcaption></figure>
-</div>
-<!-- data: data/shots/11-handelsstop.json (k 1185, STOPPET), data/shots/07-over25-vifte.json (k 990, tally 33/67), data/shots/13-genaabning-gab.json (k 1214, gab +29) -->
