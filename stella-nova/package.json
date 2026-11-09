@@ -1,0 +1,27 @@
+{
+  "name": "stella-nova",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Stella Nova: UI-demo af en casinoautomat med ringe i stedet for hjul. Ingen backend, ingen rigtige penge.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "build:artifact": "vite build && node tools/build-artifact.cjs",
+    "test": "vitest run",
+    "preview": "vite preview",
+    "sim": "node --experimental-strip-types src/math/cli.ts"
+  },
+  "dependencies": {
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.7",
+    "vite-plugin-singlefile": "2.3.4",
+    "vitest": "5.1.0"
+  }
+}
