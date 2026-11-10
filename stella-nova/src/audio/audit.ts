@@ -5,7 +5,7 @@
  *
  * Imported by the sandbox page only; the game bundle never sees this file.
  */
-import type { MusicState, SfxName, SfxParams } from '../core/types';
+import type { MusicState, SfxName, SfxParams, SymbolId } from '../core/types';
 import { AudioCore, MUSIC_STATES, type EngineStats } from './index';
 
 export const AUDIT_RATE = 48000;
@@ -422,10 +422,10 @@ function scenarioCases(): Case[] {
     };
   return [
     { name: 'seq ringNotch ×40 @40ms', role: 'mix', seconds: 3, script: repeat('ringNotch', 40, 0.04, (i) => ({ index: i % 4 })) },
-    { name: 'seq gemBurst ×12 @25ms', role: 'mix', seconds: 4, script: repeat('gemBurst', 12, 0.025, (i) => ({ index: i, symbol: i % 4, pan: (i % 5) / 2 - 1 })) },
+    { name: 'seq gemBurst ×12 @25ms', role: 'mix', seconds: 4, script: repeat('gemBurst', 12, 0.025, (i) => ({ index: i, symbol: (i % 4) as SymbolId, pan: (i % 5) / 2 - 1 })) },
     { name: 'seq refillLand ×12 @45ms', role: 'mix', seconds: 4, script: repeat('refillLand', 12, 0.045, (i) => ({ index: i, pan: (i % 5) / 2 - 1 })) },
     { name: 'seq wildTransform ×16 @55ms', role: 'mix', seconds: 5, script: repeat('wildTransform', 16, 0.055, (i) => ({ index: i, pan: (i % 8) / 4 - 0.9 })) },
-    { name: 'seq beamFire ×8 @90ms', role: 'mix', seconds: 5, script: repeat('beamFire', 8, 0.09, (i) => ({ index: i, symbol: i, pan: (i % 4) / 2 - 0.75 })) },
+    { name: 'seq beamFire ×8 @90ms', role: 'mix', seconds: 5, script: repeat('beamFire', 8, 0.09, (i) => ({ index: i, symbol: i as SymbolId, pan: (i % 4) / 2 - 0.75 })) },
     {
       name: 'seq countTick ×90 + countEnd',
       role: 'mix',
@@ -468,7 +468,7 @@ function scenarioCases(): Case[] {
         const names: SfxName[] = ['gemBurst', 'refillLand', 'beamFire', 'wildTransform', 'ringStop', 'tick', 'lineWin', 'stardust', 'scatterLand', 'multiplierUp', 'novaFlash', 'bigWinStart'];
         for (let i = 0; i < 500; i++) {
           const name = names[(i * 7) % names.length];
-          at((i * 2) / 500, () => core.sfx(name, { index: i % 9, tier: i % 4, pan: ((i * 13) % 20) / 10 - 1, symbol: i % 10 }));
+          at((i * 2) / 500, () => core.sfx(name, { index: i % 9, tier: i % 4, pan: ((i * 13) % 20) / 10 - 1, symbol: (i % 10) as SymbolId }));
         }
         // Hostile parameters must be shrugged off, not propagated.
         at(0.5, () => core.sfx('ringStop', { index: Number.NaN, tier: Number.POSITIVE_INFINITY, pan: Number.NaN, gain: Number.NaN }));
@@ -511,9 +511,9 @@ function sessionScript(core: AudioCore, at: Schedule): void {
   // Wins, then three links of chain reaction.
   for (let link = 0; link < 3; link++) {
     const t0 = 8.9 + link * 2.3;
-    for (let b = 0; b < 2; b++) at(t0 + b * 0.12, () => core.sfx('beamFire', { index: b + link, symbol: b + 2, pan: b - 0.5 }));
+    for (let b = 0; b < 2; b++) at(t0 + b * 0.12, () => core.sfx('beamFire', { index: b + link, symbol: (b + 2) as SymbolId, pan: b - 0.5 }));
     at(t0 + 0.3, () => core.sfx('lineWin', { index: link, tier: Math.min(2, link) }));
-    for (let g = 0; g < 7; g++) at(t0 + 0.95 + g * 0.03, () => core.sfx('gemBurst', { index: g, symbol: g % 4, pan: g / 3 - 1 }));
+    for (let g = 0; g < 7; g++) at(t0 + 0.95 + g * 0.03, () => core.sfx('gemBurst', { index: g, symbol: (g % 4) as SymbolId, pan: g / 3 - 1 }));
     at(t0 + 1.2, () => core.sfx('stardust'));
     for (let g = 0; g < 4; g++) at(t0 + 1.3 + g * 0.05, () => core.sfx('novaCharge', { index: link * 4 + g }));
     for (let g = 0; g < 7; g++) at(t0 + 1.45 + g * 0.05, () => core.sfx('refillLand', { index: g, pan: g / 3 - 1 }));
