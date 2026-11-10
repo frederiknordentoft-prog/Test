@@ -1,20 +1,21 @@
 <title>Indkøb &amp; Husk</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Inter:wght@400;600&display=swap">
+<script async src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
 /* Én kolonne, telefon først: fanerne er overskriften, så felt, åbne ting, afkrydsede. Hver liste har sin egen farve. */
 :root {
   --bg: #F3F5F1; --card: #FFFFFF; --fg: #17201A; --muted: #66706A; --line: #DFE4DC;
-  --shop: #17784F; --todo: #3B54C6; --on-accent: #FFFFFF;
+  --shop: #17784F; --todo: #3B54C6; --late: #C0362C; --on-accent: #FFFFFF;
   --display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   --body: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #101411; --card: #191E1B; --fg: #E6ECE7; --muted: #97A19A; --line: #2A312C;
-  --shop: #4BBF88; --todo: #93A6FF; --on-accent: #0D110E; color-scheme: dark } }
+  --shop: #4BBF88; --todo: #93A6FF; --late: #FF8A7E; --on-accent: #0D110E; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #101411; --card: #191E1B; --fg: #E6ECE7; --muted: #97A19A; --line: #2A312C;
-  --shop: #4BBF88; --todo: #93A6FF; --on-accent: #0D110E; color-scheme: dark }
+  --shop: #4BBF88; --todo: #93A6FF; --late: #FF8A7E; --on-accent: #0D110E; color-scheme: dark }
 
 body { --accent: var(--shop); background: var(--bg); color: var(--fg); font: 16px/1.4 var(--body) }
 body[data-list="todo"] { --accent: var(--todo) }
@@ -26,24 +27,34 @@ body[data-list="todo"] { --accent: var(--todo) }
   color: var(--muted); padding-bottom: 4px; border-bottom: 3px solid transparent }
 .tabs [aria-selected="true"] { color: var(--fg); border-color: var(--accent) }
 .tabs sup { font: 600 .85rem var(--body); margin-left: 3px }
-#tab-shop sup { color: var(--shop) } #tab-todo sup { color: var(--todo) }
+#tab-shop sup { color: var(--shop) } #tab-todo sup { color: var(--todo) } #tab-todo.late sup { color: var(--late) }
 
-form { display: flex; gap: 8px }
+#live { margin: 0; display: flex; align-items: center; gap: 8px; font-size: .9rem; font-weight: 600 }
+#live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--shop) }
+
+form { display: flex; flex-wrap: wrap; gap: 8px }
 #text { flex: 1; min-width: 0; font: inherit; padding: 14px 16px; border: 1px solid var(--line);
   border-radius: 12px; background: var(--card); color: var(--fg) }
-#text:focus { outline: 2px solid var(--accent); outline-offset: -1px }
+#text:focus, #due:focus { outline: 2px solid var(--accent); outline-offset: -1px }
 #addbtn { width: 54px; border: 0; border-radius: 12px; background: var(--accent); color: var(--on-accent);
   font: 600 1.7rem/1 var(--body); cursor: pointer }
+#due-row { flex-basis: 100%; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .9rem }
+#due { font: inherit; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px }
 :disabled { opacity: .45; cursor: default }
 
 ul { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px }
-ul:empty, .note:empty { display: none }
+ul:empty, .note:empty, #live:empty { display: none }
 li { position: relative }
 li + li { border-top: 1px solid var(--line) }
 .lift { z-index: 1; background: var(--card); border-color: transparent; border-radius: 12px; box-shadow: 0 10px 24px rgb(0 0 0 / .2) }
-label { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 13px; cursor: pointer; overflow-wrap: anywhere }
+li label { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 13px; cursor: pointer; overflow-wrap: anywhere;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none }
+li small { margin-left: auto; flex: none; font-size: .8rem; color: var(--muted) }
+li small.late { color: var(--late); font-weight: 600 }
 input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--accent); cursor: inherit }
 #done label { color: var(--muted); text-decoration: line-through }
+#edit { width: 100%; box-sizing: border-box; font: inherit; color: var(--fg); background: var(--card); border: 0;
+  border-radius: 13px; padding: 14px 16px 14px 52px; outline: 2px solid var(--accent); outline-offset: -2px }
 
 .row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px;
   font-size: .78rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted) }
@@ -60,8 +71,10 @@ input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accen
   60% { transform: perspective(600px) rotateX(14deg); filter: drop-shadow(0 0 8px var(--accent)) }
   to { transform: perspective(600px) rotateX(0) }
 }
+@keyframes pulse { 50% { opacity: .25 } }
 @media (prefers-reduced-motion: no-preference) {
   .tabs [aria-selected="true"], .flip { animation: flip .75s ease-out; backface-visibility: hidden }
+  #live::before { animation: pulse 1.6s ease-in-out infinite }
 }
 </style>
 
@@ -70,12 +83,15 @@ input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accen
     <button role="tab" id="tab-shop" data-list="shop">Indkøb<sup id="n-shop"></sup></button>
     <button role="tab" id="tab-todo" data-list="todo">Husk<sup id="n-todo"></sup></button>
   </nav>
+  <p id="live" role="status"></p>
   <form id="add" autocomplete="off">
     <input id="text" type="text" list="hist" enterkeyhint="send" aria-label="Ny ting">
     <datalist id="hist"></datalist>
     <button id="addbtn" aria-label="Tilføj">+</button>
+    <label id="due-row" hidden>Frist (valgfri) <input id="due" type="date"></label>
   </form>
   <p id="status" class="note" role="status">Henter listen …</p>
+  <div id="sort-row" class="row" hidden><span>Listen</span><button id="sort" type="button">Sortér efter butik</button></div>
   <ul id="open"></ul>
   <p id="empty" class="note"></p>
   <div id="done-row" class="row" hidden><span id="done-h"></span><button id="clear" type="button">Ryd</button></div>
@@ -90,17 +106,21 @@ const LISTS = {
   shop: { ph: "Tilføj varer, fx mælk, brød", done: "I kurven", empty: "Alt er købt. Skriv det, I mangler, i feltet ovenfor." },
   todo: { ph: "Tilføj noget, I skal huske", done: "Klaret", empty: "Intet at huske lige nu." },
 };
-let list = "shop", items = [], loaded = false, col = null, last = "", fresh = new Set();
+let list = "shop", items = [], loaded = false, col = null, last = "", fresh = new Set(), room = null, user = null, sample = null;
 const glows = new Map(); // id → when it last moved between open and done
 try { if (localStorage.getItem("list") === "todo") list = "todo" } catch {}
 
 const say = msg => $("#status").textContent = msg;
+const today = (d = 0) => new Date(Date.now() + d * 864e5).toLocaleDateString("sv"); // "2026-11-10"
+const when = d => d === today() ? "I dag" : d === today(1) ? "I morgen"
+  : new Date(d + "T12:00").toLocaleDateString("da", { weekday: "short", day: "numeric", month: "short" });
 
 function row(i) {
   const li = document.createElement("li"), label = li.appendChild(document.createElement("label"));
   const cb = label.appendChild(document.createElement("input")), t = performance.now() - glows.get(i.id);
   cb.type = "checkbox"; cb.checked = i.done; cb.dataset.id = i.id; cb.disabled = !col;
   label.append(i.text);
+  if (i.due) label.appendChild(Object.assign(document.createElement("small"), { textContent: when(i.due), className: !i.done && i.due < today() ? "late" : "" }));
   if (t < 3000) { li.className = "glow"; label.style.animationDelay = -t + "ms" } // rows are rebuilt on every change; resume the fade
   return li;
 }
@@ -112,7 +132,8 @@ const tops = () => new Map([...document.querySelectorAll("input[data-id]")].map(
 const still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const shake = (el, axis, px) => still() || el.animate([0, -1, .8, -.5, .3, -.1, 0].map(f => ({ transform: `translate${axis}(${f * px}px)` })), 400);
 // Haptic tick on every tap: Android has the Vibration API; iPhone has none, but iOS 18+ gives a haptic when a switch control toggles.
-document.addEventListener("click", e => e.target.closest("button, input[data-id]") && (navigator.vibrate ? navigator.vibrate(12) : $("#haptic").click()));
+const haptic = () => navigator.vibrate ? navigator.vibrate(12) : $("#haptic").click();
+document.addEventListener("click", e => e.target.closest("button, input[data-id]") && haptic());
 function animate(before) {
   if (still()) return;
   for (const c of document.querySelectorAll("input[data-id]")) {
@@ -127,11 +148,15 @@ function animate(before) {
 }
 
 function render() {
+  if (document.activeElement?.id === "edit") return; // don't rebuild the row being edited; blur renders
   const focusId = document.activeElement?.dataset?.id, before = tops();
   document.body.dataset.list = list;
   for (const b of document.querySelectorAll("[role=tab]")) b.setAttribute("aria-selected", b.dataset.list === list);
   for (const k in LISTS) $("#n-" + k).textContent = items.filter(i => i.list === k && !i.done).length || "";
-  const mine = items.filter(i => i.list === list).sort((a, b) => b.created - a.created);
+  $("#tab-todo").classList.toggle("late", items.some(i => i.list === "todo" && !i.done && i.due && i.due < today()));
+  // Dated tasks first by date, then store aisle (after "Sortér efter butik"), then newest first.
+  const mine = items.filter(i => i.list === list)
+    .sort((a, b) => (a.due || "~").localeCompare(b.due || "~") || (a.aisle ?? 0) - (b.aisle ?? 0) || b.created - a.created);
   const open = mine.filter(i => !i.done), done = mine.filter(i => i.done && !i.cleared);
   $("#open").replaceChildren(...open.map(row));
   $("#done").replaceChildren(...done.map(row));
@@ -139,6 +164,8 @@ function render() {
   $("#empty").textContent = loaded && !open.length ? LISTS[list].empty : "";
   $("#done-row").hidden = !done.length;
   $("#clear").hidden = $("#undo-btn").hidden = !col;
+  $("#sort-row").hidden = !(sample && col && list === "shop" && open.length > 2);
+  $("#due-row").hidden = list !== "todo";
   $("#done-h").textContent = `${LISTS[list].done} · ${done.length}`;
   $("#text").placeholder = LISTS[list].ph;
   $("#text").disabled = $("#addbtn").disabled = !col;
@@ -157,17 +184,20 @@ async function write(p, text) {
 }
 
 // Add: commas split shopping items (not decimal commas: "1,5 l mælk"). A name the list already knows is reused:
-// from the basket or history it comes back to the top; if it is already on the list, that row lights up and shakes.
+// from the basket or history it comes back; if it is already on the list, that row lights up and shakes
+// (and takes the new deadline, if one was picked).
 $("#add").onsubmit = e => {
   e.preventDefault();
   const raw = list === "shop" ? $("#text").value.split(/(?<!\d),|,(?!\d)/) : [$("#text").value];
   const texts = [...new Set(raw.map(s => s.trim()).filter(Boolean).map(s => s[0].toUpperCase() + s.slice(1)))];
   if (!texts.length) return shake($("#add"), "X", 8);
-  $("#text").value = ""; $("#text").focus();
+  const extra = list === "todo" ? { due: $("#due").value } : {};
+  $("#text").value = $("#due").value = ""; $("#text").focus();
   texts.forEach((text, k) => {
     const same = items.find(i => i.list === list && i.text?.toLowerCase() === text.toLowerCase());
-    if (!same) return write(col.add({ text, list, done: false, created: Date.now() - k }), text);
-    if (same.done) return write(col.doc(same.id).update({ done: false, cleared: false, created: Date.now() - k }), text);
+    if (!same) return write(col.add({ text, list, done: false, created: Date.now() - k, ...extra }), text);
+    if (same.done) return write(col.doc(same.id).update({ done: false, cleared: false, created: Date.now() - k, ...extra }), text);
+    if (extra.due) write(col.doc(same.id).update(extra), text);
     glows.set(same.id, performance.now()); render();
     const li = $(`[data-id="${same.id}"]`).closest("li");
     li.scrollIntoView({ block: "nearest", behavior: "smooth" }); shake(li, "X", 6);
@@ -181,17 +211,42 @@ $("#text").onpaste = e => {
   e.target.setRangeText(t.split(/\r?\n/).map(l => l.replace(/^\s*[-•*–]\s*/, "").trim()).filter(Boolean).join(", "), e.target.selectionStart, e.target.selectionEnd, "end");
 };
 
-// Keep the screen on while shopping: each tick on Indkøb holds a wake lock for 3 more minutes.
-let lock = null, lockTimer;
-// The browser drops the lock when the page hides; take it back on return if the 3 minutes are still running.
-document.addEventListener("visibilitychange", () => lock && !document.hidden && (lock = null, keepAwake()));
-const keepAwake = () => {
+// Long-press a row to fix a typo; Enter or leaving the field saves. This also fixes the name in the suggestions.
+let press;
+$(".app").addEventListener("pointerdown", e => {
+  const li = e.target.closest("li");
+  if (li?.querySelector("label") && col) press = setTimeout(() => edit(li), 500);
+});
+for (const t of ["pointerup", "pointercancel"]) addEventListener(t, () => { clearTimeout(press); $("#edit")?.focus() }); // focus inside the gesture opens the iPhone keyboard
+function edit(li) {
+  const id = li.querySelector("[data-id]").dataset.id, old = items.find(i => i.id === id)?.text ?? "";
+  const f = Object.assign(document.createElement("input"), { id: "edit", value: old, enterKeyHint: "done" });
+  li.replaceChildren(f); f.focus(); haptic();
+  f.onkeydown = e => { if (e.key === "Enter") f.blur() }; // a handler returning false would cancel every keystroke
+  f.onblur = () => {
+    const text = f.value.trim();
+    f.id = ""; if (text && text !== old) write(col.doc(id).update({ text }));
+    render();
+  };
+}
+
+// Shopping mode: each tick on Indkøb keeps the screen on and tells the other person "X handler lige nu", for 5 more minutes.
+let lock = null, shopTimer;
+const goShopping = () => {
   lock ??= navigator.wakeLock?.request("screen").catch(() => null) ?? null;
-  clearTimeout(lockTimer);
-  lockTimer = setTimeout(async () => { (await lock)?.release(); lock = null }, 180000);
+  room?.presence({ shopping: true }).catch(() => {});
+  clearTimeout(shopTimer);
+  shopTimer = setTimeout(async () => { (await lock)?.release(); lock = null; room?.presence({ shopping: null }).catch(() => {}) }, 300000);
 };
+// The browser drops the wake lock when the page hides; take it back on return if shopping mode is still on.
+document.addEventListener("visibilitychange", () => lock && !document.hidden && (lock = null, goShopping()));
+async function showShoppers() {
+  const ids = [...new Set(room.peers().filter(p => !p.isMe && p.presence.shopping).map(p => p.by))];
+  const ps = user && ids.length ? await user.profiles(ids.filter(Boolean)) : {};
+  $("#live").textContent = ids.length ? `${ids.map(id => ps[id]?.name || "Den anden").join(" og ")} handler lige nu` : "";
+}
 $("#open").onchange = $("#done").onchange = e => {
-  if (list === "shop") keepAwake();
+  if (list === "shop") goShopping();
   write(col.doc(e.target.dataset.id).update({ done: e.target.checked, cleared: false }));
 };
 
@@ -208,12 +263,37 @@ $("#undo-btn").onclick = () => {
   undoIds.forEach(id => write(col.doc(id).update({ cleared: false })));
   $("#undo").hidden = true;
 };
+
+// Sortér efter butik: Claude puts each open item in a store aisle; the aisle is saved on the item, so it sticks.
+const SORT = "Placér hver vare i den afdeling i et dansk supermarked, hvor den typisk står. Afdelinger i rækkefølge gennem butikken: "
+  + "1 frugt og grønt, 2 brød og bageri, 3 kød, fisk og pålæg, 4 mejeri, ost og æg, 5 kolonial (pasta, ris, mel, krydderier, konserves, morgenmad), "
+  + "6 frost, 7 drikkevarer, 8 slik og snacks, 9 husholdning og personlig pleje, 10 andet. "
+  + 'Svar kun med et JSON-objekt, der parrer hver vare (præcis som skrevet) med afdelingens nummer, fx {"Mælk": 4}. Varer: ';
+$("#sort").onclick = async () => {
+  const open = items.filter(i => i.list === "shop" && !i.done);
+  $("#sort").disabled = true; $("#sort").textContent = "Sorterer …";
+  try {
+    const got = await sample.json(SORT + JSON.stringify(open.map(i => i.text)), { modelTier: "quick" });
+    const aisle = Object.fromEntries(Object.entries(got ?? {}).map(([k, v]) => [k.toLowerCase(), v]));
+    for (const i of open) { const a = +aisle[i.text?.toLowerCase()]; if (Number.isFinite(a) && a !== i.aisle) write(col.doc(i.id).update({ aisle: a })) }
+  } catch (e) {
+    if (["not_granted", "sampling_disabled", "not_declared", "capability_disabled", "capability_removed"].includes(e?.code)) sample = null;
+    else say("Kunne ikke sortere lige nu. Prøv igen om lidt.");
+  }
+  $("#sort").disabled = false; $("#sort").textContent = "Sortér efter butik"; render();
+};
+
 for (const b of document.querySelectorAll("[role=tab]")) b.onclick = () => {
   list = b.dataset.list; render();
   try { localStorage.setItem("list", list) } catch {}
 };
 
 render();
+(async () => {
+  [room, user, sample] = await Promise.all(["room", "user", "sample"].map(n => window.claude?.use?.(n)));
+  room?.onPeers(showShoppers);
+  render();
+})();
 (async () => {
   const db = await window.claude?.use?.("db");
   if (!db) return say("Listen deles kun, når den åbnes på claude.ai.");
@@ -225,8 +305,11 @@ render();
     if (loaded && sig === last) return; // the confirmation of our own write: same data, let the animations finish
     if (loaded) {
       fresh = new Set(snap.docChanges().map(c => c.doc.id));
-      const was = new Map(items.map(i => [i.id, i.done]));
+      const was = new Map(items.map(i => [i.id, i.done])), left = l => l.filter(i => i.list === "shop" && !i.done).length;
       for (const i of next) if (was.get(i.id) === !i.done) glows.set(i.id, performance.now());
+      // Confetti when the last thing on Indkøb goes in the basket.
+      if (left(items) && !left(next)) window.confetti?.({ particleCount: 140, spread: 75, origin: { y: .7 }, disableForReducedMotion: true,
+        colors: ["#17784F", "#4BBF88", "#3B54C6", "#93A6FF", "#F2C94C"] });
     }
     items = next; last = sig; loaded = true;
     render(); fresh.clear();
