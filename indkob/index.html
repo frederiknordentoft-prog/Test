@@ -41,24 +41,27 @@ ul:empty, .note:empty { display: none }
 li { position: relative }
 li + li { border-top: 1px solid var(--line) }
 .lift { z-index: 1; background: var(--card); border-color: transparent; border-radius: 12px; box-shadow: 0 10px 24px rgb(0 0 0 / .2) }
-label { display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer; overflow-wrap: anywhere }
+label { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 13px; cursor: pointer; overflow-wrap: anywhere }
 input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--accent); cursor: inherit }
 #done label { color: var(--muted); text-decoration: line-through }
 
 .row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px;
   font-size: .78rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted) }
-#clear { all: unset; cursor: pointer; color: var(--accent); font-size: .95rem; text-transform: none; letter-spacing: 0; padding: 6px 0 }
-.tabs button:focus-visible, #clear:focus-visible, #addbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px }
+.row button { all: unset; cursor: pointer; color: var(--accent); font-size: .95rem; text-transform: none; letter-spacing: 0; padding: 6px 0 }
+.tabs button:focus-visible, .row button:focus-visible, #addbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px }
 .note { margin: 0; color: var(--muted); text-align: center }
 
-/* 3D flip: the active tab and every new or changed row turn over to their glowing side. */
+/* Glow: a row you tick, untick or type again lights up in the list's colour and fades over 3 s, so you can find it. */
+@keyframes glow { from, 30% { background-color: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent) } }
+.glow label { animation: glow 3s ease-in-out }
+/* 3D flip: the active tab and every new row turn over to their glowing side. */
 @keyframes flip {
   from { transform: perspective(600px) rotateX(-180deg); filter: drop-shadow(0 0 10px var(--accent)) }
   60% { transform: perspective(600px) rotateX(14deg); filter: drop-shadow(0 0 8px var(--accent)) }
   to { transform: perspective(600px) rotateX(0) }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .tabs [aria-selected="true"], .flip label { animation: flip .75s ease-out; backface-visibility: hidden }
+  .tabs [aria-selected="true"], .flip { animation: flip .75s ease-out; backface-visibility: hidden }
 }
 </style>
 
@@ -68,13 +71,15 @@ input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accen
     <button role="tab" id="tab-todo" data-list="todo">Husk<sup id="n-todo"></sup></button>
   </nav>
   <form id="add" autocomplete="off">
-    <input id="text" type="text" maxlength="140" enterkeyhint="send" aria-label="Ny ting">
+    <input id="text" type="text" list="hist" enterkeyhint="send" aria-label="Ny ting">
+    <datalist id="hist"></datalist>
     <button id="addbtn" aria-label="Tilføj">+</button>
   </form>
   <p id="status" class="note" role="status">Henter listen …</p>
   <ul id="open"></ul>
   <p id="empty" class="note"></p>
   <div id="done-row" class="row" hidden><span id="done-h"></span><button id="clear" type="button">Ryd</button></div>
+  <div id="undo" class="row" hidden><span>Ryddet</span><button id="undo-btn" type="button">Fortryd</button></div>
   <ul id="done"></ul>
 </main>
 <label id="haptic" hidden aria-hidden="true"><input type="checkbox" switch tabindex="-1"></label>
@@ -82,19 +87,21 @@ input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accen
 <script>
 const $ = s => document.querySelector(s);
 const LISTS = {
-  shop: { ph: "Tilføj vare", done: "I kurven", empty: "Alt er købt. Skriv det, I mangler, i feltet ovenfor." },
+  shop: { ph: "Tilføj varer, fx mælk, brød", done: "I kurven", empty: "Alt er købt. Skriv det, I mangler, i feltet ovenfor." },
   todo: { ph: "Tilføj noget, I skal huske", done: "Klaret", empty: "Intet at huske lige nu." },
 };
 let list = "shop", items = [], loaded = false, col = null, last = "", fresh = new Set();
+const glows = new Map(); // id → when it last moved between open and done
 try { if (localStorage.getItem("list") === "todo") list = "todo" } catch {}
 
 const say = msg => $("#status").textContent = msg;
 
 function row(i) {
   const li = document.createElement("li"), label = li.appendChild(document.createElement("label"));
-  const cb = label.appendChild(document.createElement("input"));
+  const cb = label.appendChild(document.createElement("input")), t = performance.now() - glows.get(i.id);
   cb.type = "checkbox"; cb.checked = i.done; cb.dataset.id = i.id; cb.disabled = !col;
   label.append(i.text);
+  if (t < 3000) { li.className = "glow"; label.style.animationDelay = -t + "ms" } // rows are rebuilt on every change; resume the fade
   return li;
 }
 
@@ -110,7 +117,7 @@ function animate(before) {
   if (still()) return;
   for (const c of document.querySelectorAll("input[data-id]")) {
     const id = c.dataset.id, li = c.closest("li"), dy = before.get(id) - c.getBoundingClientRect().top;
-    if (!before.has(id)) { if (fresh.has(id)) li.className = "flip" }
+    if (!before.has(id)) { if (fresh.has(id)) li.classList.add("flip") }
     else if (dy && fresh.has(id)) {
       li.classList.add("lift");
       li.animate(ELASTIC.map(f => ({ transform: `translateY(${(dy * f).toFixed(1)}px)` })), 900).onfinish = () => li.classList.remove("lift");
@@ -125,9 +132,10 @@ function render() {
   for (const b of document.querySelectorAll("[role=tab]")) b.setAttribute("aria-selected", b.dataset.list === list);
   for (const k in LISTS) $("#n-" + k).textContent = items.filter(i => i.list === k && !i.done).length || "";
   const mine = items.filter(i => i.list === list).sort((a, b) => b.created - a.created);
-  const open = mine.filter(i => !i.done), done = mine.filter(i => i.done);
+  const open = mine.filter(i => !i.done), done = mine.filter(i => i.done && !i.cleared);
   $("#open").replaceChildren(...open.map(row));
   $("#done").replaceChildren(...done.map(row));
+  $("#hist").replaceChildren(...[...new Set(mine.filter(i => i.done).map(i => i.text))].map(t => new Option(t)));
   $("#empty").textContent = loaded && !open.length ? LISTS[list].empty : "";
   $("#done-row").hidden = !done.length;
   $("#clear").hidden = !col;
@@ -148,18 +156,56 @@ async function write(p, text) {
   }
 }
 
+// Add: commas split shopping items. A name the list already knows is reused: from the basket or history
+// it comes back to the top; if it is already on the list, that row lights up and shakes instead of doubling.
 $("#add").onsubmit = e => {
   e.preventDefault();
-  const text = $("#text").value.trim();
-  if (!text) return shake($("#add"), "X", 8);
+  const texts = (list === "shop" ? $("#text").value.split(",") : [$("#text").value]).map(s => s.trim()).filter(Boolean);
+  if (!texts.length) return shake($("#add"), "X", 8);
   if (!col) return;
   $("#text").value = ""; $("#text").focus();
-  write(col.add({ text, list, done: false, created: Date.now() }), text);
+  texts.forEach((text, k) => {
+    const same = items.find(i => i.list === list && i.text?.toLowerCase() === text.toLowerCase());
+    if (!same) return write(col.add({ text, list, done: false, created: Date.now() - k }), text);
+    if (same.done) return write(col.doc(same.id).update({ done: false, cleared: false, created: Date.now() - k }));
+    glows.set(same.id, performance.now()); render();
+    const li = $(`[data-id="${same.id}"]`).closest("li");
+    li.scrollIntoView({ block: "nearest", behavior: "smooth" }); shake(li, "X", 6);
+  });
 };
-$("#open").onchange = $("#done").onchange = e => write(col.doc(e.target.dataset.id).update({ done: e.target.checked }));
+// A pasted list (one item per line, e.g. a recipe) becomes "a, b, c"; a single-line field would drop the line breaks.
+$("#text").onpaste = e => {
+  const t = e.clipboardData.getData("text");
+  if (!t.includes("\n")) return;
+  e.preventDefault();
+  e.target.setRangeText(t.split(/\r?\n/).map(l => l.replace(/^\s*[-•*–]\s*/, "").trim()).filter(Boolean).join(", "), e.target.selectionStart, e.target.selectionEnd, "end");
+};
+
+// Keep the screen on while shopping: each tick on Indkøb holds a wake lock for 3 more minutes.
+let lock = null, lockTimer;
+document.addEventListener("visibilitychange", () => lock = null); // the browser drops the lock when the page hides
+const keepAwake = () => {
+  lock ??= navigator.wakeLock?.request("screen").catch(() => null) ?? null;
+  clearTimeout(lockTimer);
+  lockTimer = setTimeout(async () => { (await lock)?.release(); lock = null }, 180000);
+};
+$("#open").onchange = $("#done").onchange = e => {
+  if (list === "shop") keepAwake();
+  write(col.doc(e.target.dataset.id).update({ done: e.target.checked }));
+};
+
+// Ryd hides the basket instead of deleting it: cleared items feed the suggestions, and Fortryd brings them back.
+let undoIds = [], undoTimer;
 $("#clear").onclick = () => {
   shake($(".app"), "Y", 6);
-  items.filter(i => i.list === list && i.done).forEach(i => write(col.doc(i.id).delete()));
+  undoIds = items.filter(i => i.list === list && i.done && !i.cleared).map(i => i.id);
+  undoIds.forEach(id => write(col.doc(id).update({ cleared: true })));
+  $("#undo").hidden = false; clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => $("#undo").hidden = true, 5000);
+};
+$("#undo-btn").onclick = () => {
+  undoIds.forEach(id => write(col.doc(id).update({ cleared: false })));
+  $("#undo").hidden = true;
 };
 for (const b of document.querySelectorAll("[role=tab]")) b.onclick = () => {
   list = b.dataset.list; render();
@@ -175,8 +221,12 @@ render();
   col.onSnapshot(snap => {
     if (slow && !snap.metadata.fromCache) { clearTimeout(slow); slow = 0; say("") }
     const next = snap.docs.map(d => ({ id: d.id, ...d.data() })), sig = JSON.stringify(next);
-    if (loaded && sig === last) return; // the confirmation of our own write: same data, let the flip finish
-    if (loaded) fresh = new Set(snap.docChanges().map(c => c.doc.id));
+    if (loaded && sig === last) return; // the confirmation of our own write: same data, let the animations finish
+    if (loaded) {
+      fresh = new Set(snap.docChanges().map(c => c.doc.id));
+      const was = new Map(items.map(i => [i.id, i.done]));
+      for (const i of next) if (was.get(i.id) === !i.done) glows.set(i.id, performance.now());
+    }
     items = next; last = sig; loaded = true;
     render(); fresh.clear();
   }, () => {
