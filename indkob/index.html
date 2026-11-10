@@ -38,7 +38,9 @@ form { display: flex; gap: 8px }
 
 ul { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px }
 ul:empty, .note:empty { display: none }
+li { position: relative }
 li + li { border-top: 1px solid var(--line) }
+.lift { z-index: 1; background: var(--card); border-color: transparent; border-radius: 12px; box-shadow: 0 10px 24px rgb(0 0 0 / .2) }
 label { display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer; overflow-wrap: anywhere }
 input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--accent); cursor: inherit }
 #done label { color: var(--muted); text-decoration: line-through }
@@ -92,12 +94,28 @@ function row(i) {
   const cb = label.appendChild(document.createElement("input"));
   cb.type = "checkbox"; cb.checked = i.done; cb.dataset.id = i.id; cb.disabled = !col;
   label.append(i.text);
-  if (fresh.has(i.id)) li.className = "flip";
   return li;
 }
 
+// FLIP: measure every row before and after a render, then animate each from its old place.
+// The row that changed travels with an elastic overshoot; rows making room glide; new rows flip in.
+const ELASTIC = Array.from({ length: 31 }, (_, k) => Math.exp(-k / 3.75) * Math.cos(k * Math.PI / 6));
+const tops = () => new Map([...document.querySelectorAll("input[data-id]")].map(c => [c.dataset.id, c.getBoundingClientRect().top]));
+function animate(before) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  for (const c of document.querySelectorAll("input[data-id]")) {
+    const id = c.dataset.id, li = c.closest("li"), dy = before.get(id) - c.getBoundingClientRect().top;
+    if (!before.has(id)) { if (fresh.has(id)) li.className = "flip" }
+    else if (dy && fresh.has(id)) {
+      li.classList.add("lift");
+      li.animate(ELASTIC.map(f => ({ transform: `translateY(${(dy * f).toFixed(1)}px)` })), 900).onfinish = () => li.classList.remove("lift");
+    }
+    else if (dy) li.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 300, easing: "ease-out" });
+  }
+}
+
 function render() {
-  const focusId = document.activeElement?.dataset?.id;
+  const focusId = document.activeElement?.dataset?.id, before = tops();
   document.body.dataset.list = list;
   for (const b of document.querySelectorAll("[role=tab]")) b.setAttribute("aria-selected", b.dataset.list === list);
   for (const k in LISTS) $("#n-" + k).textContent = items.filter(i => i.list === k && !i.done).length || "";
@@ -112,6 +130,7 @@ function render() {
   $("#text").placeholder = LISTS[list].ph;
   $("#text").disabled = $("#addbtn").disabled = !col;
   if (focusId) document.querySelector(`[data-id="${focusId}"]`)?.focus({ preventScroll: true });
+  animate(before);
 }
 
 // `text` is set only for a new item: a rejected create means no write access; a rejected tick just failed.
