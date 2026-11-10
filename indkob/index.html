@@ -22,7 +22,7 @@ body[data-list="todo"] { --accent: var(--todo) }
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
 
 .tabs { display: flex; gap: 24px }
-.tabs button { all: unset; cursor: pointer; font: 700 2.1rem/1.1 var(--display); letter-spacing: -.02em;
+.tabs button { all: unset; display: inline-block; cursor: pointer; font: 700 2.1rem/1.1 var(--display); letter-spacing: -.02em;
   color: var(--muted); padding-bottom: 4px; border-bottom: 3px solid transparent }
 .tabs [aria-selected="true"] { color: var(--fg); border-color: var(--accent) }
 .tabs sup { font: 600 .85rem var(--body); margin-left: 3px }
@@ -48,6 +48,16 @@ input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accen
 #clear { all: unset; cursor: pointer; color: var(--accent); font-size: .95rem; text-transform: none; letter-spacing: 0; padding: 6px 0 }
 .tabs button:focus-visible, #clear:focus-visible, #addbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px }
 .note { margin: 0; color: var(--muted); text-align: center }
+
+/* 3D flip: the active tab and every new or changed row turn over to their glowing side. */
+@keyframes flip {
+  from { transform: perspective(600px) rotateX(-180deg); filter: drop-shadow(0 0 10px var(--accent)) }
+  60% { transform: perspective(600px) rotateX(14deg); filter: drop-shadow(0 0 8px var(--accent)) }
+  to { transform: perspective(600px) rotateX(0) }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tabs [aria-selected="true"], .flip label { animation: flip .75s ease-out; backface-visibility: hidden }
+}
 </style>
 
 <main class="app">
@@ -72,7 +82,7 @@ const LISTS = {
   shop: { ph: "Tilføj vare", done: "I kurven", empty: "Alt er købt. Skriv det, I mangler, i feltet ovenfor." },
   todo: { ph: "Tilføj noget, I skal huske", done: "Klaret", empty: "Intet at huske lige nu." },
 };
-let list = "shop", items = [], loaded = false, col = null;
+let list = "shop", items = [], loaded = false, col = null, last = "", fresh = new Set();
 try { if (localStorage.getItem("list") === "todo") list = "todo" } catch {}
 
 const say = msg => $("#status").textContent = msg;
@@ -82,6 +92,7 @@ function row(i) {
   const cb = label.appendChild(document.createElement("input"));
   cb.type = "checkbox"; cb.checked = i.done; cb.dataset.id = i.id; cb.disabled = !col;
   label.append(i.text);
+  if (fresh.has(i.id)) li.className = "flip";
   return li;
 }
 
@@ -134,10 +145,12 @@ render();
   col = db.collection("items");
   let slow = setTimeout(() => say("Kan ikke nå listen lige nu. Prøver igen …"), 10000);
   col.onSnapshot(snap => {
-    items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    loaded = true;
     if (slow && !snap.metadata.fromCache) { clearTimeout(slow); slow = 0; say("") }
-    render();
+    const next = snap.docs.map(d => ({ id: d.id, ...d.data() })), sig = JSON.stringify(next);
+    if (loaded && sig === last) return; // the confirmation of our own write: same data, let the flip finish
+    if (loaded) fresh = new Set(snap.docChanges().map(c => c.doc.id));
+    items = next; last = sig; loaded = true;
+    render(); fresh.clear();
   }, () => {
     clearTimeout(slow); col = null; render();
     say("Forbindelsen til listen er afbrudt. Genindlæs siden.");
