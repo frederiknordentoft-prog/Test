@@ -165,11 +165,23 @@ export class GeoBuilder {
   lathe(
     runs: readonly (readonly ProfilePoint[])[],
     segments: number,
-    o: { u0?: number; u1?: number; vScale?: number; angleInFx?: boolean } = {},
+    o: { u0?: number; u1?: number; vScale?: number; angleInFx?: boolean; a0?: number; a1?: number; caps?: boolean } = {},
   ): void {
     const u0 = o.u0 ?? 0;
     const u1 = o.u1 ?? 1;
     const vScale = o.vScale ?? 1;
+    // Partial sweeps (a0..a1) make arcs; `caps` closes their two ends (convex profiles only).
+    const a0 = o.a0 ?? 0;
+    const a1 = o.a1 ?? Math.PI * 2;
+    if (o.caps) {
+      for (const [a, sign] of [[a0, -1], [a1, 1]] as const) {
+        const s = Math.sin(a);
+        const c = Math.cos(a);
+        const pts: number[][] = [];
+        for (const run of runs) for (const p of run) pts.push([s * p.r, p.y, -c * p.r]);
+        this.face(pts, sign * c, 0, sign * s);
+      }
+    }
     let arc = 0;
     for (const run of runs) {
       const n = run.length;
@@ -202,7 +214,7 @@ export class GeoBuilder {
       const base = this.vertexCount;
       for (let j = 0; j <= segments; j++) {
         const t = j / segments;
-        const a = t * Math.PI * 2;
+        const a = a0 + t * (a1 - a0);
         const s = Math.sin(a);
         const c = Math.cos(a);
         for (let i = 0; i < n; i++) {

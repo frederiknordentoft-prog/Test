@@ -40,7 +40,7 @@ const FinalShader = {
     uAspect: { value: 1 },
     uAberration: { value: 0.0012 },
     uVignette: { value: 0.42 },
-    uGrain: { value: 0.035 },
+    uGrain: { value: 0.016 },
     uFlash: { value: 0 },
     uFlashColor: { value: new THREE.Color(1, 0.96, 0.86) },
     uSaturation: { value: 1.06 },
@@ -311,7 +311,7 @@ export class Stage {
     renderer.toneMappingExposure = 1.0;
     renderer.setClearColor(PALETTE.night0, 1);
     renderer.shadowMap.enabled = QUALITY[this.quality].shadows;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:none;';
     container.appendChild(renderer.domElement);
 

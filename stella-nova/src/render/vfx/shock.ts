@@ -37,7 +37,7 @@ ${GLSL_NOISE}
 
 // A wave front: razor edge outside, long glowing wake inside.
 float front(float x, float w) {
-  return x > 0.0 ? exp(-pow(x / (w * 0.22), 2.0)) : exp(-pow(x / (w * 1.7), 2.0));
+  return x > 0.0 ? exp(-pow(x / (w * 0.22), 2.0)) : exp(-pow(x / (w * 1.25), 2.0));
 }
 
 void main() {
@@ -53,9 +53,10 @@ void main() {
   float core = exp(-pow(x / (uWidth * 0.11), 2.0));
   float echo = front(r - uRadius * 0.74, uWidth * 0.7) * 0.28;
   // Rays combed outward in the wake.
-  float rays = pow(vnoise1(a * 26.0 + uSeed * 3.0), 3.0) * exp(-pow(min(x, 0.0) / (uWidth * 3.2), 2.0)) * step(x, 0.0) * 0.55;
+  float rays = pow(vnoise1(a * 26.0 + uSeed * 3.0), 3.0) * exp(-pow(min(x, 0.0) / (uWidth * 3.2), 2.0)) * step(x, 0.0) * 0.4;
 
-  vec3 col = uColor * (band * 1.25 * torn + echo * torn + rays) + vec3(1.0, 0.97, 0.9) * core * 3.4 * (0.75 + 0.5 * n2);
+  // Only the hairline core is hot enough to bloom; the wake stays a coloured wash the board reads through.
+  vec3 col = uColor * (band * 0.8 * torn + echo * torn + rays) + vec3(1.0, 0.97, 0.9) * core * 1.9 * (0.75 + 0.5 * n2);
   gl_FragColor = vec4(col * uGain, 0.0);
 }
 `;

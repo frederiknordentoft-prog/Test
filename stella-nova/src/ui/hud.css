@@ -120,7 +120,8 @@
   box-sizing: border-box;
 }
 
-.sn-hud button {
+/* Resets sit inside :where() so any component class outranks them. */
+:where(.sn-hud) button {
   font: inherit;
   color: inherit;
   background: none;
@@ -133,7 +134,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.sn-hud button:disabled {
+:where(.sn-hud) button:disabled {
   cursor: default;
 }
 
@@ -146,20 +147,21 @@
   outline-offset: 3px;
 }
 
-.sn-hud p,
-.sn-hud h1,
-.sn-hud h2,
-.sn-hud h3,
-.sn-hud ol,
-.sn-hud ul,
-.sn-hud dl,
-.sn-hud dd {
+:where(.sn-hud) p,
+:where(.sn-hud) h1,
+:where(.sn-hud) h2,
+:where(.sn-hud) h3,
+:where(.sn-hud) h4,
+:where(.sn-hud) ol,
+:where(.sn-hud) ul,
+:where(.sn-hud) dl,
+:where(.sn-hud) dd {
   margin: 0;
   padding: 0;
 }
 
-.sn-hud ol,
-.sn-hud ul {
+:where(.sn-hud) ol,
+:where(.sn-hud) ul {
   list-style: none;
 }
 
@@ -1255,6 +1257,11 @@
   height: 28px;
 }
 
+.sn-spin__face--spin .sn-ico {
+  width: 30px;
+  height: 30px;
+}
+
 .sn-spin__num {
   font: 800 23px/1 var(--sn-ui);
   letter-spacing: -0.02em;
@@ -2136,6 +2143,8 @@
   position: absolute;
   inset: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   align-items: end;
   background: rgb(var(--rgb-night0) / 0.6);
   -webkit-backdrop-filter: blur(9px) saturate(1.1);
@@ -2169,6 +2178,10 @@
 
 .sn-sheet.is-open .sn-sheet__panel {
   transform: none;
+}
+
+.sn-hud .sn-sheet__panel:focus-visible {
+  outline: none;
 }
 
 .sn-sheet__head {
@@ -2380,8 +2393,8 @@
 
 .sn-pay {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) minmax(78px, auto) minmax(78px, auto);
-  column-gap: 10px;
+  grid-template-columns: 38px minmax(0, 1fr) minmax(88px, auto) minmax(88px, auto);
+  column-gap: 0;
   align-items: center;
 }
 
@@ -2398,9 +2411,13 @@
   justify-content: center;
 }
 
+.sn-pay__row > * + * {
+  padding-left: 10px;
+}
+
 .sn-pay__row--head > * {
   min-height: 0;
-  padding: 0 0 8px;
+  padding-top: 0;
   border-top: 0;
 }
 

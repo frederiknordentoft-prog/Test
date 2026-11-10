@@ -82,7 +82,7 @@ void main() {
   vec3 col;
   if (part < 0.5) {
     float k = 1.0 - u;
-    float prof = exp(-v * v * 2.8);
+    float prof = exp(-v * v * 4.2);
     // Striae: fine bands streaming back through the dust.
     float striae = 0.55 + 0.55 * vnoise2(vec2(u * 7.0 - uTime * 0.8, v * 7.0)) + 0.4 * vnoise2(vec2(u * 30.0 - uTime * 2.5, v * 2.5));
     float along = pow(k, 1.9) * smoothstep(0.0, 0.04, u);
@@ -93,12 +93,12 @@ void main() {
     float core = exp(-v * v * 26.0);
     float sheath = exp(-v * v * 3.2) * 0.3;
     float fil = 0.5 + 1.0 * vnoise2(vec2(v * 6.0, u * 6.0 - uTime * 3.5));
-    col = uColor * (core * 2.6 + sheath * fil) * pow(k, 1.4) * (0.8 + 0.4 * fil);
+    col = uColor * (core * 2.1 + sheath * fil) * pow(k, 1.4) * (0.8 + 0.4 * fil);
     col *= smoothstep(1.0, 0.7, abs(v));
   } else if (part < 2.5) {
     float d2 = u * u + v * v;
-    float nucleus = exp(-d2 * 520.0) * 14.0;
-    float coma = exp(-d2 * 46.0) * 2.8;
+    float nucleus = exp(-d2 * 520.0) * 9.0;
+    float coma = exp(-d2 * 46.0) * 2.1;
     float halo = exp(-d2 * 5.5) * 0.36;
     float spikes = (exp(-abs(v) * 110.0 - abs(u) * 4.5) + exp(-abs(u) * 110.0 - abs(v) * 4.5)) * 1.5;
     col = vec3(1.0) * nucleus + uColor * (coma + halo) + mix(vec3(1.0), uColor, 0.45) * spikes;

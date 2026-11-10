@@ -202,8 +202,11 @@ export class SkyComet {
       head.copy(target);
       this.anchored = true;
     } else {
-      // Lazy: a 5 s half-life is far slower than any camera move.
-      head.lerp(target, 1 - Math.pow(0.5, dt / 5)).normalize();
+      // Lazy once it is there: a 5 s half-life is far slower than any camera move.
+      // While it is still fading in it settles quickly instead, so it never
+      // appears wherever a passing camera move (a pull-out, a push-in) put it.
+      const p = u.uPresence.value;
+      head.lerp(target, 1 - Math.pow(0.5, dt / (0.15 + 4.85 * p * p * p))).normalize();
     }
 
     // The tail leaves the head clockwise around the instrument, leaning a

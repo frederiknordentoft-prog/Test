@@ -300,8 +300,9 @@ export class Vfx {
     const rng = this.stage.rng;
     const now = this.now;
     const color = opts?.color ?? PALETTE.starWarm;
-    let c = light(color, 6.5, 0.7);
-    p.emit(P_FLASH, center.x, center.y, center.z, 0, 0, 0, 0, 0, 0, now, 0.34, c.r, c.g, c.b, 2.7, rng.next(), 1, 0);
+    // A pop at the source, not a whiteout: the view owns stage.fx.flash if the beat wants one.
+    let c = light(color, 4.2, 0.6);
+    p.emit(P_FLASH, center.x, center.y, center.z, 0, 0, 0, 0, 0, 0, now, 0.3, c.r, c.g, c.b, 2.1, rng.next(), 1, 0);
 
     if (!this.stage.reducedMotion) {
       // Embers torn off by the front: fast radial streaks that die around the bezel.

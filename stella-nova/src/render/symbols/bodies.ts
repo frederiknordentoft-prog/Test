@@ -13,9 +13,9 @@ import { GLSL_BILLBOARD_VS, GLSL_HEAD, GLSL_NOISE, GLSL_STATE } from './glsl';
 
 /**
  * Saturn's ring plane (unit normal, upright frame). Seen from the play
- * camera this opens the ring about 25° and rolls it a little to the right.
+ * camera this opens the ring about 30° and rolls it a little to the right.
  */
-export const SATURN_RING_NORMAL = new THREE.Vector3(0.3, 0.66, -0.69).normalize();
+export const SATURN_RING_NORMAL = new THREE.Vector3(0.28, 0.78, -0.56).normalize();
 export const SATURN_RADIUS = 0.25;
 export const SATURN_RING_INNER = 0.31;
 export const SATURN_RING_OUTER = 0.5;
@@ -58,7 +58,7 @@ ${GLSL_STATE}
 
 const MOON_FRAG = /* glsl */ `${SPHERE_FRAG_HEAD}
 // Light from the upper left and a little behind: a crescent from the play camera.
-const vec3 L = vec3(-0.865, -0.12, -0.487);
+const vec3 L = vec3(-0.86, 0.1, -0.5);
 // Tycho, the rayed crater: of course.
 const vec3 TYCHO = vec3(-0.515, 0.807, 0.289);
 
@@ -100,7 +100,7 @@ void main() {
   vec4 c1 = craterLayer(p, 3.1, 11.0);
   vec4 c2 = craterLayer(p, 5.7, 23.0);
   vec4 c3 = craterLayer(p, 10.3, 37.0);
-  vec3 grad = c1.xyz * 1.3 + c2.xyz + c3.xyz * 0.7;
+  vec3 grad = c1.xyz * 1.3 + c2.xyz * 0.8 + c3.xyz * 0.35;
   albedo *= 1.0 + 0.16 * (c1.w + c2.w) + 0.1 * c3.w;
 
   // Tycho and its rays.
@@ -114,20 +114,20 @@ void main() {
   float tyc = td / 0.075;
   grad += tv / max(td, 1e-4) * (craterShape(tyc + 0.04) - craterShape(tyc - 0.04)) * 1.6 * step(tyc, 1.6);
 
-  vec3 Nb = normalize(N - (grad - N * dot(grad, N)) * 6.0);
+  vec3 Nb = normalize(N - (grad - N * dot(grad, N)) * 4.5);
   float ndl = dot(Nb, L);
   float geo = dot(N, L);
   float lit = smoothstep(-0.04, 0.2, ndl) * smoothstep(-0.12, 0.1, geo);
-  vec3 col = uColor * albedo * lit * (0.62 + 0.95 * pow(max(ndl, 0.0), 0.7)) * (1.0 + 0.55 * glow);
+  vec3 col = uColor * albedo * lit * (0.7 + 0.7 * pow(max(ndl, 0.0), 0.7)) * (1.0 + 0.25 * glow);
 
   // Earthshine: the night side is a dim silver-blue disc, never a hole.
-  col += uAccent * albedo * (0.085 + 0.2 * glow) * (0.55 + 0.45 * ndv);
+  col += uAccent * albedo * (0.2 + 0.08 * glow) * (0.55 + 0.45 * ndv);
   // Polished silver: a soft studio reflection.
   vec3 R = normalize(mat3(modelMatrix) * reflect(-V, Nb));
   col += textureLod(uEnv, R, 5.0).rgb * albedo * 0.16;
   // Cool glow along the limb.
   float rim = pow(1.0 - ndv, 2.6);
-  col += mix(uAccent, uColor, 0.4) * rim * (0.34 + 0.75 * lit + 0.9 * glow);
+  col += mix(uAccent, uColor, 0.4) * rim * (0.3 + 0.4 * lit + 0.35 * glow);
 
   fragColor = vec4(applyDim(col, uState.y), 1.0);
 }
@@ -189,9 +189,9 @@ void main() {
 
   float ndl = dot(N, L);
   float diff = 0.2 + 0.8 * smoothstep(-0.32, 0.8, ndl);
-  col *= diff * mix(0.5, 1.0, pow(ndv, 0.55)) * (1.0 + 0.75 * glow);
+  col *= diff * mix(0.5, 1.0, pow(ndv, 0.55)) * (1.0 + 0.22 * glow);
   // A thin warm atmosphere on the limb.
-  col += uAccent * pow(1.0 - ndv, 3.0) * (0.22 + 0.9 * glow) * (0.4 + 0.6 * diff);
+  col += uAccent * pow(1.0 - ndv, 3.0) * (0.22 + 0.45 * glow) * (0.4 + 0.6 * diff);
   col += uColor * glow * 0.12;
 
   fragColor = vec4(applyDim(col, uState.y), 1.0);
@@ -232,9 +232,9 @@ void main() {
   float sh = step(0.0, tt) * smoothstep(uRing.x - 0.012, uRing.x + 0.012, rho) * smoothstep(uRing.y + 0.012, uRing.y - 0.012, rho);
   diff *= 1.0 - 0.62 * sh;
 
-  col *= diff * mix(0.5, 1.0, pow(ndv, 0.55)) * (1.0 + 0.75 * glow);
+  col *= diff * mix(0.5, 1.0, pow(ndv, 0.55)) * (1.0 + 0.22 * glow);
   // The ring lights the limb with its lilac.
-  col += uAccent * pow(1.0 - ndv, 3.0) * (0.3 + 0.9 * glow);
+  col += uAccent * pow(1.0 - ndv, 3.0) * (0.3 + 0.45 * glow);
   col += uColor * glow * 0.12;
 
   fragColor = vec4(applyDim(col, uState.y), 1.0);
@@ -294,7 +294,7 @@ void main() {
   float b = dot(P, L);
   float miss = length(P - L * b);
   float shadow = step(b, 0.0) * smoothstep(uRing.z + 0.012, uRing.z - 0.012, miss);
-  float lightK = (0.92 + 0.5 * glow) * (1.0 - 0.8 * shadow);
+  float lightK = (0.92 + 0.2 * glow) * (1.0 - 0.8 * shadow);
 
   // Ice: a few grains glint as they pass.
   float ang = atan(vPosL.z, vPosL.x);
@@ -342,14 +342,15 @@ void main() {
     float cells = fbm(q * 1.5 + vec3(t * 0.5, 0.0, -t * 0.3));
     // Granulation: bright cells with dark lanes between them.
     float gran = 1.0 - abs(2.0 * vnoise(q * 4.3 + vec3(0.0, -t * 1.3, t)) - 1.0);
-    float heat = clamp(0.2 + 0.95 * cells + 0.32 * gran - 0.35 * (1.0 - mu), 0.0, 1.0);
-    vec3 cool = uAccent * 1.25;
-    vec3 warm = uColor * 2.3;
-    vec3 hot = vec3(1.0, 0.94, 0.78) * 3.5;
-    col = heat < 0.55 ? mix(cool, warm, heat / 0.55) : mix(warm, hot, (heat - 0.55) / 0.45);
+    float heat = clamp(0.02 + 0.9 * cells + 0.3 * gran - 0.3 * (1.0 - mu), 0.0, 1.0);
+    // Kept low enough that ACES leaves the plasma golden; only the hottest cells go white.
+    vec3 cool = uAccent * 0.75;
+    vec3 warm = uColor * 1.1;
+    vec3 hot = vec3(1.0, 0.88, 0.55) * 1.8;
+    col = heat < 0.6 ? mix(cool, warm, heat / 0.6) : mix(warm, hot, (heat - 0.6) / 0.4);
     // Chromosphere: a thin hot rim.
-    col += uAccent * 1.6 * smoothstep(0.8, 1.0, r);
-    col *= 1.0 + 0.7 * glow;
+    col += uAccent * 1.0 * smoothstep(0.8, 1.0, r);
+    col *= 1.0 + 0.25 * glow;
   }
 
   // Corona: short flame tongues that lick outward and die inside the cell.
@@ -358,9 +359,9 @@ void main() {
   float reach = 0.1 + 0.52 * pow(vnoise(ad * 2.6 + vec3(0.0, 0.0, t * 1.5)), 1.5) + 0.2 * glow;
   float lick = vnoise(ad * 7.0 + vec3(0.0, 0.0, r * 3.0 - t * 5.0));
   float fall = exp(-max(r - 1.0, 0.0) / (reach * (0.4 + 0.5 * lick)));
-  float spikes = pow(0.5 + 0.5 * cos(ang * 12.0 + sin(ang * 5.0 + t * 2.0) * 1.5 + uSeed * TAU), 3.0);
-  float corona = fall * (0.55 + 0.75 * spikes) * smoothstep(edge, edge * 0.62, r);
-  vec3 cc = mix(uAccent * 1.5, uColor * 2.2, fall) * corona * (1.0 + 0.8 * glow);
+  float spikes = pow(0.5 + 0.5 * cos(ang * 12.0 + sin(ang * 5.0 + t * 2.0) * 1.5 + uSeed * TAU), 4.0);
+  float corona = fall * (0.25 + 1.3 * spikes) * smoothstep(edge, edge * 0.62, r);
+  vec3 cc = mix(uAccent * 1.0, uColor * 1.5, fall) * corona * (1.0 + 0.5 * glow);
 
   vec3 outC = col * disc + cc * (1.0 - disc);
   // Premultiplied: the disc covers, the corona only adds.

@@ -120,6 +120,8 @@ export function createDirector(deps: DirectorDeps): Director {
   let countTickIndex = 0;
   let bigWinRunning = false;
   let disposed = false;
+  /** Player moves offered so far. The first few get their hint early: nobody has turned a ring before. */
+  let nudgesOffered = 0;
   const idleWaiters: (() => void)[] = [];
 
   /** The pending player move, while the engine waits. */
@@ -213,6 +215,7 @@ export function createDirector(deps: DirectorDeps): Director {
   const waitNudge = (beat: BeatAwaitNudge): Promise<{ choice: NudgeChoice | null; shown: boolean }> =>
     new Promise((resolve) => {
       pendingNudge = { beat, resolve, hinted: false, idleTime: 0 };
+      nudgesOffered += 1;
       state = 'nudge';
       hud.setSpinState('nudge');
       hud.nudgePrompt({ on: true, bestAmount: beat.best.amount });
@@ -643,7 +646,7 @@ export function createDirector(deps: DirectorDeps): Director {
     const p = pendingNudge;
     if (p && !p.hinted && !settings.autoNudge && autoRemaining === null) {
       p.idleTime += dt;
-      if (p.idleTime >= TIMING.hintDelay) {
+      if (p.idleTime >= (nudgesOffered <= 3 ? 1.4 : TIMING.hintDelay)) {
         p.hinted = true;
         view.setHint({ ring: p.beat.best.ring, dir: p.beat.best.dir });
         audio.sfx('hint');

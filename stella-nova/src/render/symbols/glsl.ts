@@ -67,7 +67,9 @@ export const GLSL_STATE = /* glsl */ `
 vec3 applyDim(vec3 col, float dim) {
   float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
   col = mix(col, vec3(l) * vec3(0.82, 0.9, 1.12), dim * 0.8);
-  return col * (1.0 - 0.74 * dim);
+  col *= 1.0 - 0.74 * dim;
+  // A glint on a pushed-back symbol would pull the eye off the winning line: roll highlights off as well.
+  return mix(col, col / (1.0 + 2.0 * col), dim);
 }
 `;
 

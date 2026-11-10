@@ -46,36 +46,40 @@ export interface ModelParams {
 
 // Symbol order in every row: Safir, Smaragd, Ametyst, Rubin, Måne, Jupiter, Saturn, Sol, Stella Nova.
 //
-// The rings are deliberately unlike each other. Ring 1 is the gem ring and
-// ring 2 the planet ring, so a spoke rarely agrees with itself by accident:
-// that is what leaves room for the player's own move to be worth something,
-// and it keeps the Kometnat (where ring 0 is all wild and only rings 1 and 2
-// have to agree) from running away.
+// The rings are deliberately unlike each other. Ring 1 is the planet ring and
+// ring 2 the gem ring, so a spoke rarely agrees with itself by accident: that
+// leaves room for the player's own move to be worth something. Ring 2 decides
+// what a Nova pays (rings 0 and 1 turn wild), so gems there keep the Nova a
+// mid-sized event. Ring 3 is gem-heavy with few Suns: four of a kind is common
+// for gems and rare for the top planets, which is where the big pays sit.
 const INIT_WEIGHTS: number[][] = [
-  [130, 130, 130, 130, 120, 110, 100, 90, 20],
-  [200, 200, 200, 200, 60, 50, 40, 30, 20],
-  [70, 70, 70, 70, 190, 180, 170, 150, 30],
-  [120, 120, 120, 120, 120, 120, 120, 120, 40],
+  [130, 130, 130, 130, 115, 105, 95, 85, 10],
+  [65, 65, 65, 65, 170, 160, 150, 140, 10],
+  [180, 180, 180, 180, 42, 38, 33, 28, 10],
+  [170, 170, 170, 170, 60, 50, 34, 19, 12],
 ];
 
-const REFILL_WEIGHTS: number[][] = [
-  [130, 130, 130, 130, 120, 110, 100, 90, 20],
-  [200, 200, 200, 200, 60, 50, 40, 30, 20],
-  [70, 70, 70, 70, 190, 180, 170, 150, 30],
-  [120, 120, 120, 120, 120, 120, 120, 120, 40],
+// Kometnat: ring 0 is all wild, so only rings 1 and 2 have to agree, and every
+// tick deals all eight spokes a fresh pair. The two rings are pushed further
+// apart here to keep the chains from running away.
+const FREE_WEIGHTS: number[][] = [
+  INIT_WEIGHTS[0],
+  [34, 34, 34, 34, 210, 200, 190, 180, 10],
+  [200, 200, 200, 200, 39, 35, 31, 27, 10],
+  INIT_WEIGHTS[3],
 ];
 
 export const PARAMS: ModelParams = {
   name: 'Stella Nova',
   version: '1.0.0',
   initWeights: INIT_WEIGHTS,
-  refillWeights: REFILL_WEIGHTS,
-  freeInitWeights: INIT_WEIGHTS,
-  freeRefillWeights: REFILL_WEIGHTS,
+  refillWeights: INIT_WEIGHTS,
+  freeInitWeights: FREE_WEIGHTS,
+  freeRefillWeights: FREE_WEIGHTS,
   cometChance: [1200, 1200, 1200, 1200],
   freeCometChance: [0, 800, 800, 800],
-  pay3: [4, 5, 6, 8, 10, 15, 20, 25],
-  pay4: [25, 30, 35, 40, 60, 100, 200, 500],
+  pay3: [2, 2, 3, 4, 5, 8, 12, 20],
+  pay4: [5, 6, 8, 10, 40, 60, 150, 500],
   ladder: [1, 2, 3, 5, 8, 12, 20],
   novaThreshold: 180,
   freeSpinsAward: { 3: 8, 4: 12 },
@@ -264,20 +268,22 @@ export function paytableOf(p: ModelParams): PaytableEntry[] {
 }
 
 /**
- * Measured figures from the confirmation run (see docs/PAR.md). Regenerate
- * with `npm run sim -- --par` and paste the block the CLI prints.
+ * Measured figures from the confirmation run (see docs/PAR.md): 100 million
+ * paid spins per policy, seeds 20261110 and 20261111. Regenerate with
+ * `npm run sim -- --spins=100000000 --seed=20261110 --workers=2 --par` and
+ * paste the block the CLI prints.
  */
 export const STATS: ModelStats = {
-  rtp: 0,
-  rtpNoNudge: 0,
-  hitFrequency: 0,
-  hitFrequencyAtLeastBet: 0,
-  stdDev: 0,
-  freeSpinsEvery: 0,
-  novaEvery: 0,
-  breakdown: { base: 0, nudge: 0, nova: 0, freeSpins: 0 },
-  sampleSize: 0,
-  maxObservedMultiple: 0,
+  rtp: 0.95927,
+  rtpNoNudge: 0.23716,
+  hitFrequency: 0.4709,
+  hitFrequencyAtLeastBet: 0.1627,
+  stdDev: 5.92,
+  freeSpinsEvery: 159.1,
+  novaEvery: 74.9,
+  breakdown: { base: 0.10904, nudge: 0.46864, nova: 0.13589, freeSpins: 0.2457 },
+  sampleSize: 100000000,
+  maxObservedMultiple: 2053.8,
 };
 
 export function modelInfoOf(p: ModelParams, stats: ModelStats): ModelInfo {

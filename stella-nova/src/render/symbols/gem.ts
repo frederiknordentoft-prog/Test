@@ -49,6 +49,8 @@ export interface GemLook {
   hotRadius: number;
   sparkle: number;
   edge: number;
+  /** A soft top light that only the stone's interior sees: the studio is dark, the jewel must not be. */
+  fill: number;
 }
 
 const VERT = /* glsl */ `${GLSL_HEAD}
@@ -60,7 +62,7 @@ in vec3 position;
 in vec3 normal;
 in vec3 aEdge;
 out vec3 vPosL;
-out vec3 vNrmL;
+flat out vec3 vNrmL;
 out vec3 vViewL;
 out vec3 vEdge;
 void main() {
@@ -86,8 +88,9 @@ uniform vec4 uLight;   // core gain, core radius, hot gain, hot radius
 uniform vec4 uGain;    // interior, density, sparkle, edge
 uniform vec4 uState;   // glow, dim, sparkle clock, idle clock
 uniform vec2 uSeed;    // per-instance random, centreZ
+uniform float uFill;
 in vec3 vPosL;
-in vec3 vNrmL;
+flat in vec3 vNrmL;
 in vec3 vViewL;
 in vec3 vEdge;
 out vec4 fragColor;
@@ -167,13 +170,16 @@ void main() {
     float p;
     vec4 e = trace(P, T, N, p);
     vec3 s = textureLod(uEnv, normalize(L2W * e.xyz), 1.2).rgb;
-    interior[i] = s[i] * e.w;
+    // The softboxes are lit for brass. Seen through a stone they would burn it white, so roll them off.
+    s = s / (1.0 + 0.7 * s);
+    // Rays that leave straight up find the fill; grazing ones stay dark, which keeps the mosaic contrasty.
+    interior[i] = (s[i] + uFill * (0.22 + 0.78 * e.y * e.y)) * e.w;
     path += p;
   }
   path /= 3.0;
 
   // 3. absorption
-  vec3 body = pow(uColor, vec3(0.5 + uGain.y * path));
+  vec3 body = pow(uColor, vec3(0.8 + uGain.y * path));
   vec3 col = interior * body * uGain.x;
   col += body * uColor * 0.05;
 
@@ -187,21 +193,22 @@ void main() {
   float core = exp(-d2 / r2);
   float halo = exp(-d2 / (r2 * 6.0));
   float breathe = 0.9 + 0.1 * sin(uState.w * 1.3 + uSeed.x * TAU);
-  vec3 coreCol = mix(uColor, uAccent, core * 0.75);
-  col += coreCol * (core + halo * 0.2) * uLight.x * breathe * (1.0 + 1.5 * glow);
+  vec3 coreCol = mix(uColor, uAccent, core * 0.55);
+  col += coreCol * (core + halo * 0.2) * uLight.x * breathe * (1.0 + 0.35 * glow);
 
   col = col * (1.0 - fres) + spec * fres;
 
   // White-hot centre (wild).
   float hr = length(P.xz) / max(uLight.w, 1e-3);
-  col += vec3(1.0, 0.95, 0.84) * uLight.z * exp(-hr * hr) * (1.0 + 0.6 * glow) * breathe;
+  col += vec3(1.0, 0.95, 0.84) * uLight.z * exp(-hr * hr) * (1.0 + 0.3 * glow) * breathe;
 
   // 5. scintillation
   float ph = uState.z;
   vec3 g = sin(Rw * vec3(7.0, 9.0, 8.0) + rnd * TAU + vec3(ph, ph * 0.77, ph * 1.31));
   float inFacet = smoothstep(0.0, 0.45, min(vEdge.x, min(vEdge.y, vEdge.z)));
-  float sp = smoothstep(0.62 - 0.2 * glow, 0.95, g.x * g.y * g.z) * (0.35 + 0.65 * inFacet);
-  col += mix(uAccent, vec3(1.0), 0.55) * sp * uGain.z * (1.0 + 1.2 * glow);
+  float sp = smoothstep(0.62 - 0.04 * glow, 0.95, g.x * g.y * g.z) * (0.35 + 0.65 * inFacet);
+  // A flash is the stone's own pale tint, not white: a whole facet of white reads as a hole.
+  col += mix(uAccent, vec3(1.0), 0.3) * sp * uGain.z * (1.0 + 0.3 * glow);
 
   // Facet junctions catch a hairline of light.
   vec3 ew = fwidth(vEdge) * 1.1;
@@ -211,6 +218,8 @@ void main() {
 
   // Win highlight: the rim lights up so bloom wraps the whole stone.
   col += uColor * pow(1.0 - ndv, 2.0) * glow * 0.9;
+  // The highlight lifts the stone; it must not bleach it.
+  col = col * (1.0 + 0.12 * glow) + uColor * 0.28 * glow;
 
   fragColor = vec4(applyDim(col, uState.y), 1.0);
 }
@@ -229,7 +238,7 @@ export function createGemMaterial(stage: Stage, look: GemLook, seed: number): Ge
   const color = new THREE.Color(look.color);
   const accent = new THREE.Color(look.accent);
   // The heart is specified by luminance so a blue stone blooms as readily as a green one.
-  const heart = color.clone().lerp(accent, 0.75);
+  const heart = color.clone().lerp(accent, 0.55);
   const heartLuma = heart.r * LUMA.x + heart.g * LUMA.y + heart.b * LUMA.z;
   const coreGain = look.core / Math.max(heartLuma, 0.05);
   const mat = new THREE.RawShaderMaterial({
@@ -247,6 +256,7 @@ export function createGemMaterial(stage: Stage, look: GemLook, seed: number): Ge
       uGain: { value: new THREE.Vector4(look.interior, look.density, look.sparkle, look.edge) },
       uState: { value: new THREE.Vector4(0, 0, 0, 0) },
       uSeed: { value: new THREE.Vector2(seed, look.centreZ ?? 0) },
+      uFill: { value: look.fill },
     },
   });
   return mat as GemMaterial;

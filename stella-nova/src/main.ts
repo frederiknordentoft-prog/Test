@@ -34,7 +34,7 @@ async function boot(): Promise<void> {
   stageEl.style.cssText = 'position:absolute;inset:0;overflow:hidden;';
   const hudEl = document.createElement('div');
   hudEl.className = 'sn-hud-root';
-  hudEl.style.cssText = 'position:absolute;inset:0;';
+  hudEl.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
   app.append(stageEl, hudEl);
 
   const seedParam = params.get('seed');

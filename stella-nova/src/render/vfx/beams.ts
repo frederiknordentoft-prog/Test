@@ -138,8 +138,9 @@ void main() {
     }
     // The halo is held back near the hub so eight beams stay a star burst.
     float open = smoothstep(0.35, 1.5, r);
-    col = vec3(1.0) * (core * (1.3 + surge) * energy + spark * 0.7) * mix(1.0, uCrowd, 0.5)
-        + tint * (sheath * 0.9 * energy + halo * 0.16 * open * uCrowd + flare * 0.5 * uCrowd);
+    // The nodes are a soft tinted bead: the symbol's own glow is the highlight, the beam must not white it out.
+    col = vec3(1.0) * (core * (1.2 + surge) * energy + spark * 0.28) * mix(1.0, uCrowd, 0.5)
+        + tint * (sheath * 0.8 * energy + halo * 0.16 * open * uCrowd + flare * 0.24 * uCrowd);
     col *= tip * rise * flick;
     // A brighter bead rides the tip while the beam is still growing.
     vec2 th = vec2(r - (tipR - 0.4), v * vHalf);
