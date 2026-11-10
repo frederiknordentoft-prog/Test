@@ -37,7 +37,7 @@ form { display: flex; gap: 8px }
 :disabled { opacity: .45; cursor: default }
 
 ul { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px }
-ul:empty { display: none }
+ul:empty, .note:empty { display: none }
 li + li { border-top: 1px solid var(--line) }
 label { display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer; overflow-wrap: anywhere }
 input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--accent); cursor: inherit }
@@ -45,7 +45,7 @@ input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accen
 
 .row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px;
   font-size: .78rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted) }
-#clear { all: unset; cursor: pointer; color: var(--accent); font-size: .95rem; padding: 6px 0 }
+#clear { all: unset; cursor: pointer; color: var(--accent); font-size: .95rem; text-transform: none; letter-spacing: 0; padding: 6px 0 }
 .tabs button:focus-visible, #clear:focus-visible, #addbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px }
 .note { margin: 0; color: var(--muted); text-align: center }
 </style>
@@ -61,7 +61,7 @@ input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accen
   </form>
   <p id="status" class="note" role="status">Henter listen …</p>
   <ul id="open"></ul>
-  <p id="empty" class="note" hidden></p>
+  <p id="empty" class="note"></p>
   <div id="done-row" class="row" hidden><span id="done-h"></span><button id="clear" type="button">Ryd</button></div>
   <ul id="done"></ul>
 </main>
@@ -75,7 +75,7 @@ const LISTS = {
 let list = "shop", items = [], loaded = false, col = null;
 try { if (localStorage.getItem("list") === "todo") list = "todo" } catch {}
 
-const say = msg => { $("#status").textContent = msg; $("#status").hidden = !msg };
+const say = msg => $("#status").textContent = msg;
 
 function row(i) {
   const li = document.createElement("li"), label = li.appendChild(document.createElement("label"));
@@ -94,20 +94,22 @@ function render() {
   const open = mine.filter(i => !i.done), done = mine.filter(i => i.done);
   $("#open").replaceChildren(...open.map(row));
   $("#done").replaceChildren(...done.map(row));
-  $("#empty").textContent = LISTS[list].empty;
-  $("#empty").hidden = !loaded || open.length > 0;
+  $("#empty").textContent = loaded && !open.length ? LISTS[list].empty : "";
   $("#done-row").hidden = !done.length;
+  $("#clear").hidden = !col;
   $("#done-h").textContent = `${LISTS[list].done} · ${done.length}`;
   $("#text").placeholder = LISTS[list].ph;
   $("#text").disabled = $("#addbtn").disabled = !col;
-  if (focusId) document.querySelector(`[data-id="${focusId}"]`)?.focus();
+  if (focusId) document.querySelector(`[data-id="${focusId}"]`)?.focus({ preventScroll: true });
 }
 
-async function write(p) {
-  try { await p }
+// `text` is set only for a new item: a rejected create means no write access; a rejected tick just failed.
+async function write(p, text) {
+  try { await p; if (col) say("") }
   catch (e) {
-    if (e?.code === "invalid_argument") { col = null; render(); say("Du kan se listen, men ikke ændre den. Bed om at blive inviteret som Editor.") }
-    else say(e?.code === "quota_exceeded" ? "Listen er fuld. Ryd de afkrydsede ting." : "Ændringen blev ikke gemt. Prøv igen.");
+    if (text && e?.code === "invalid_argument") { col = null; render(); return say("Du kan se listen, men ikke ændre den. Bed om at blive inviteret som Editor.") }
+    if (text) $("#text").value ||= text;
+    say(e?.code === "quota_exceeded" ? "Listen er fuld. Ryd de afkrydsede ting." : "Ændringen blev ikke gemt. Prøv igen.");
   }
 }
 
@@ -116,7 +118,7 @@ $("#add").onsubmit = e => {
   const text = $("#text").value.trim();
   if (!text || !col) return;
   $("#text").value = ""; $("#text").focus();
-  write(col.add({ text, list, done: false, created: Date.now() }));
+  write(col.add({ text, list, done: false, created: Date.now() }), text);
 };
 $("#open").onchange = $("#done").onchange = e => write(col.doc(e.target.dataset.id).update({ done: e.target.checked }));
 $("#clear").onclick = () => items.filter(i => i.list === list && i.done).forEach(i => write(col.doc(i.id).delete()));
@@ -130,16 +132,15 @@ render();
   const db = await window.claude?.use?.("db");
   if (!db) return say("Listen deles kun, når den åbnes på claude.ai.");
   col = db.collection("items");
-  const slow = setTimeout(() => say("Kan ikke nå listen lige nu. Prøver igen …"), 10000);
+  let slow = setTimeout(() => say("Kan ikke nå listen lige nu. Prøver igen …"), 10000);
   col.onSnapshot(snap => {
     items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     loaded = true;
-    if (!snap.metadata.fromCache) { clearTimeout(slow); say("") }
+    if (slow && !snap.metadata.fromCache) { clearTimeout(slow); slow = 0; say("") }
     render();
-  }, e => {
-    clearTimeout(slow);
-    col = null; render();
-    say(e.code === "revoked" ? "Du har ikke længere adgang til listen." : "Forbindelsen til listen er afbrudt. Genindlæs siden.");
+  }, () => {
+    clearTimeout(slow); col = null; render();
+    say("Forbindelsen til listen er afbrudt. Genindlæs siden.");
   });
 })();
 </script>
