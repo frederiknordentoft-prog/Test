@@ -138,7 +138,7 @@ function render() {
   $("#hist").replaceChildren(...[...new Set(mine.filter(i => i.done).map(i => i.text))].map(t => new Option(t)));
   $("#empty").textContent = loaded && !open.length ? LISTS[list].empty : "";
   $("#done-row").hidden = !done.length;
-  $("#clear").hidden = !col;
+  $("#clear").hidden = $("#undo-btn").hidden = !col;
   $("#done-h").textContent = `${LISTS[list].done} · ${done.length}`;
   $("#text").placeholder = LISTS[list].ph;
   $("#text").disabled = $("#addbtn").disabled = !col;
@@ -146,28 +146,28 @@ function render() {
   animate(before);
 }
 
-// `text` is set only for a new item: a rejected create means no write access; a rejected tick just failed.
+// Nothing is ever deleted, so a rejected write means no write access. `text` goes back in the field if it was not saved.
 async function write(p, text) {
   try { await p; if (col) say("") }
   catch (e) {
-    if (text && e?.code === "invalid_argument") { col = null; render(); return say("Du kan se listen, men ikke ændre den. Bed om at blive inviteret som Editor.") }
+    if (e?.code === "invalid_argument") { col = null; render(); return say("Du kan se listen, men ikke ændre den. Bed om at blive inviteret som Editor.") }
     if (text) $("#text").value ||= text;
-    say(e?.code === "quota_exceeded" ? "Listen er fuld. Ryd de afkrydsede ting." : "Ændringen blev ikke gemt. Prøv igen.");
+    say(e?.code === "quota_exceeded" ? "Listen er fuld. Nye ting kan ikke gemmes." : "Ændringen blev ikke gemt. Prøv igen.");
   }
 }
 
-// Add: commas split shopping items. A name the list already knows is reused: from the basket or history
-// it comes back to the top; if it is already on the list, that row lights up and shakes instead of doubling.
+// Add: commas split shopping items (not decimal commas: "1,5 l mælk"). A name the list already knows is reused:
+// from the basket or history it comes back to the top; if it is already on the list, that row lights up and shakes.
 $("#add").onsubmit = e => {
   e.preventDefault();
-  const texts = (list === "shop" ? $("#text").value.split(",") : [$("#text").value]).map(s => s.trim()).filter(Boolean);
+  const raw = list === "shop" ? $("#text").value.split(/(?<!\d),|,(?!\d)/) : [$("#text").value];
+  const texts = [...new Set(raw.map(s => s.trim()).filter(Boolean).map(s => s[0].toUpperCase() + s.slice(1)))];
   if (!texts.length) return shake($("#add"), "X", 8);
-  if (!col) return;
   $("#text").value = ""; $("#text").focus();
   texts.forEach((text, k) => {
     const same = items.find(i => i.list === list && i.text?.toLowerCase() === text.toLowerCase());
     if (!same) return write(col.add({ text, list, done: false, created: Date.now() - k }), text);
-    if (same.done) return write(col.doc(same.id).update({ done: false, cleared: false, created: Date.now() - k }));
+    if (same.done) return write(col.doc(same.id).update({ done: false, cleared: false, created: Date.now() - k }), text);
     glows.set(same.id, performance.now()); render();
     const li = $(`[data-id="${same.id}"]`).closest("li");
     li.scrollIntoView({ block: "nearest", behavior: "smooth" }); shake(li, "X", 6);
@@ -183,7 +183,8 @@ $("#text").onpaste = e => {
 
 // Keep the screen on while shopping: each tick on Indkøb holds a wake lock for 3 more minutes.
 let lock = null, lockTimer;
-document.addEventListener("visibilitychange", () => lock = null); // the browser drops the lock when the page hides
+// The browser drops the lock when the page hides; take it back on return if the 3 minutes are still running.
+document.addEventListener("visibilitychange", () => lock && !document.hidden && (lock = null, keepAwake()));
 const keepAwake = () => {
   lock ??= navigator.wakeLock?.request("screen").catch(() => null) ?? null;
   clearTimeout(lockTimer);
@@ -191,7 +192,7 @@ const keepAwake = () => {
 };
 $("#open").onchange = $("#done").onchange = e => {
   if (list === "shop") keepAwake();
-  write(col.doc(e.target.dataset.id).update({ done: e.target.checked }));
+  write(col.doc(e.target.dataset.id).update({ done: e.target.checked, cleared: false }));
 };
 
 // Ryd hides the basket instead of deleting it: cleared items feed the suggestions, and Fortryd brings them back.
