@@ -39,7 +39,7 @@ form { display: flex; flex-wrap: wrap; gap: 8px }
 #addbtn { width: 54px; border: 0; border-radius: 12px; background: var(--accent); color: var(--on-accent);
   font: 600 1.7rem/1 var(--body); cursor: pointer }
 #due-row { flex-basis: 100%; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .9rem }
-#due { font: inherit; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px }
+#due { font: 1rem var(--body); color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px }
 :disabled { opacity: .45; cursor: default }
 
 ul { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px }
@@ -53,7 +53,7 @@ li small { margin-left: auto; flex: none; font-size: .8rem; color: var(--muted) 
 li small.late { color: var(--late); font-weight: 600 }
 input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--accent); cursor: inherit }
 #done label { color: var(--muted); text-decoration: line-through }
-#edit { width: 100%; box-sizing: border-box; font: inherit; color: var(--fg); background: var(--card); border: 0;
+#edit { position: absolute; inset: 0; width: 100%; box-sizing: border-box; font: inherit; color: var(--fg); background: var(--card); border: 0;
   border-radius: 13px; padding: 14px 16px 14px 52px; outline: 2px solid var(--accent); outline-offset: -2px }
 
 .row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px;
@@ -156,7 +156,7 @@ function render() {
   $("#tab-todo").classList.toggle("late", items.some(i => i.list === "todo" && !i.done && i.due && i.due < today()));
   // Dated tasks first by date, then store aisle (after "Sortér efter butik"), then newest first.
   const mine = items.filter(i => i.list === list)
-    .sort((a, b) => (a.due || "~").localeCompare(b.due || "~") || (a.aisle ?? 0) - (b.aisle ?? 0) || b.created - a.created);
+    .sort((a, b) => (a.due || "z").localeCompare(b.due || "z") || (a.aisle ?? 0) - (b.aisle ?? 0) || b.created - a.created);
   const open = mine.filter(i => !i.done), done = mine.filter(i => i.done && !i.cleared);
   $("#open").replaceChildren(...open.map(row));
   $("#done").replaceChildren(...done.map(row));
@@ -194,7 +194,7 @@ $("#add").onsubmit = e => {
   const extra = list === "todo" ? { due: $("#due").value } : {};
   $("#text").value = $("#due").value = ""; $("#text").focus();
   texts.forEach((text, k) => {
-    const same = items.find(i => i.list === list && i.text?.toLowerCase() === text.toLowerCase());
+    const same = items.filter(i => i.list === list && i.text?.toLowerCase() === text.toLowerCase()).sort((a, b) => a.done - b.done)[0];
     if (!same) return write(col.add({ text, list, done: false, created: Date.now() - k, ...extra }), text);
     if (same.done) return write(col.doc(same.id).update({ done: false, cleared: false, created: Date.now() - k, ...extra }), text);
     if (extra.due) write(col.doc(same.id).update(extra), text);
@@ -212,21 +212,24 @@ $("#text").onpaste = e => {
 };
 
 // Long-press a row to fix a typo; Enter or leaving the field saves. This also fixes the name in the suggestions.
+// The field is laid over the row, so the finger's own pointerup still arrives and can focus it (the iPhone keyboard opens only inside a gesture).
 let press;
 $(".app").addEventListener("pointerdown", e => {
-  const li = e.target.closest("li");
-  if (li?.querySelector("label") && col) press = setTimeout(() => edit(li), 500);
+  const id = e.target.closest("li label")?.querySelector("[data-id]").dataset.id; clearTimeout(press);
+  if (e.isPrimary && id && col) press = setTimeout(() => edit(id), 500); // by id: the row may be re-rendered while the finger is down
 });
-for (const t of ["pointerup", "pointercancel"]) addEventListener(t, () => { clearTimeout(press); $("#edit")?.focus() }); // focus inside the gesture opens the iPhone keyboard
-function edit(li) {
-  const id = li.querySelector("[data-id]").dataset.id, old = items.find(i => i.id === id)?.text ?? "";
+for (const t of ["pointerup", "pointercancel"]) addEventListener(t, () => clearTimeout(press));
+function edit(id) {
+  const li = $(`[data-id="${id}"]`)?.closest("li"), old = items.find(i => i.id === id)?.text ?? "";
+  if (!li) return;
   const f = Object.assign(document.createElement("input"), { id: "edit", value: old, enterKeyHint: "done" });
-  li.replaceChildren(f); f.focus(); haptic();
+  li.append(f); f.focus(); haptic();
+  addEventListener("pointerup", () => f.focus(), { once: true });
   f.onkeydown = e => { if (e.key === "Enter") f.blur() }; // a handler returning false would cancel every keystroke
   f.onblur = () => {
     const text = f.value.trim();
     f.id = ""; if (text && text !== old) write(col.doc(id).update({ text }));
-    render();
+    setTimeout(render); // not now: focus may be moving to another row that a render would replace
   };
 }
 
@@ -238,15 +241,16 @@ const goShopping = () => {
   clearTimeout(shopTimer);
   shopTimer = setTimeout(async () => { (await lock)?.release(); lock = null; room?.presence({ shopping: null }).catch(() => {}) }, 300000);
 };
-// The browser drops the wake lock when the page hides; take it back on return if shopping mode is still on.
-document.addEventListener("visibilitychange", () => lock && !document.hidden && (lock = null, goShopping()));
+// Back on the page: redraw (dates may have rolled over to a new day) and take back the wake lock the browser
+// dropped when the page hid, if shopping mode is still on. Shopping mode itself is not restarted.
+document.addEventListener("visibilitychange", () => document.hidden || (render(), lock && (lock = navigator.wakeLock.request("screen").catch(() => null))));
 async function showShoppers() {
   const ids = [...new Set(room.peers().filter(p => !p.isMe && p.presence.shopping).map(p => p.by))];
   const ps = user && ids.length ? await user.profiles(ids.filter(Boolean)) : {};
   $("#live").textContent = ids.length ? `${ids.map(id => ps[id]?.name || "Den anden").join(" og ")} handler lige nu` : "";
 }
 $("#open").onchange = $("#done").onchange = e => {
-  if (list === "shop") goShopping();
+  if (list === "shop" && e.target.checked) goShopping();
   write(col.doc(e.target.dataset.id).update({ done: e.target.checked, cleared: false }));
 };
 
