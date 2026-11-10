@@ -77,6 +77,7 @@ input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accen
   <div id="done-row" class="row" hidden><span id="done-h"></span><button id="clear" type="button">Ryd</button></div>
   <ul id="done"></ul>
 </main>
+<label id="haptic" hidden aria-hidden="true"><input type="checkbox" switch tabindex="-1"></label>
 
 <script>
 const $ = s => document.querySelector(s);
@@ -101,8 +102,12 @@ function row(i) {
 // The row that changed travels with an elastic overshoot; rows making room glide; new rows flip in.
 const ELASTIC = Array.from({ length: 31 }, (_, k) => Math.exp(-k / 3.75) * Math.cos(k * Math.PI / 6));
 const tops = () => new Map([...document.querySelectorAll("input[data-id]")].map(c => [c.dataset.id, c.getBoundingClientRect().top]));
+const still = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const shake = (el, axis, px) => still() || el.animate([0, -1, .8, -.5, .3, -.1, 0].map(f => ({ transform: `translate${axis}(${f * px}px)` })), 400);
+// Haptic tick on every tap: Android has the Vibration API; iPhone has none, but iOS 18+ gives a haptic when a switch control toggles.
+document.addEventListener("click", e => e.target.closest("button, input[data-id]") && (navigator.vibrate ? navigator.vibrate(12) : $("#haptic").click()));
 function animate(before) {
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (still()) return;
   for (const c of document.querySelectorAll("input[data-id]")) {
     const id = c.dataset.id, li = c.closest("li"), dy = before.get(id) - c.getBoundingClientRect().top;
     if (!before.has(id)) { if (fresh.has(id)) li.className = "flip" }
@@ -146,12 +151,16 @@ async function write(p, text) {
 $("#add").onsubmit = e => {
   e.preventDefault();
   const text = $("#text").value.trim();
-  if (!text || !col) return;
+  if (!text) return shake($("#add"), "X", 8);
+  if (!col) return;
   $("#text").value = ""; $("#text").focus();
   write(col.add({ text, list, done: false, created: Date.now() }), text);
 };
 $("#open").onchange = $("#done").onchange = e => write(col.doc(e.target.dataset.id).update({ done: e.target.checked }));
-$("#clear").onclick = () => items.filter(i => i.list === list && i.done).forEach(i => write(col.doc(i.id).delete()));
+$("#clear").onclick = () => {
+  shake($(".app"), "Y", 6);
+  items.filter(i => i.list === list && i.done).forEach(i => write(col.doc(i.id).delete()));
+};
 for (const b of document.querySelectorAll("[role=tab]")) b.onclick = () => {
   list = b.dataset.list; render();
   try { localStorage.setItem("list", list) } catch {}
