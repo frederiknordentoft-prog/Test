@@ -1,0 +1,1168 @@
+<title>Tidal Memory</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+<style>
+    /* Layout: Anthropic viewer. Controls sidebar (Seed → Parameters → Colors → Actions) beside one large canvas.
+       On phones the canvas sticks to the top of the screen while the sliders scroll underneath it.
+       Deliberately single-theme (light UI around a dark artwork), so every color is set explicitly. */
+    :root {
+        --anthropic-dark: #141413;
+        --anthropic-light: #faf9f5;
+        --anthropic-mid-gray: #b0aea5;
+        --anthropic-light-gray: #e8e6dc;
+        --anthropic-orange: #d97757;
+        --anthropic-blue: #6a9bcc;
+        --anthropic-green: #788c5d;
+        --ink-muted: #6b6960;
+        --panel: rgba(255, 255, 255, 0.95);
+        --art-bg: #0a0e1c;
+        --font-display: 'Lora', Georgia, 'Times New Roman', serif;
+        --font-body: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
+        color-scheme: light;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    html {
+        background: var(--anthropic-light);
+    }
+
+    [hidden] {
+        display: none !important;
+    }
+
+    body {
+        font-family: var(--font-body);
+        background: var(--anthropic-light) linear-gradient(135deg, var(--anthropic-light) 0%, #f5f3ee 100%);
+        min-height: 100vh;
+        color: var(--anthropic-dark);
+    }
+
+    .container {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+        min-height: 100vh;
+        padding-block: 20px;
+        padding-left: max(20px, env(safe-area-inset-left, 0px));
+        padding-right: max(20px, env(safe-area-inset-right, 0px));
+    }
+
+    /* Sidebar */
+    .sidebar {
+        width: 320px;
+        flex-shrink: 0;
+        background: var(--panel);
+        backdrop-filter: blur(10px);
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(20, 20, 19, 0.1);
+        overflow-y: auto;
+        overflow-x: hidden;
+        position: sticky;
+        top: 20px;
+        max-height: calc(100vh - 40px);
+    }
+
+    .sidebar h1 {
+        font-family: var(--font-display);
+        font-size: 24px;
+        font-weight: 500;
+        color: var(--anthropic-dark);
+        margin-bottom: 8px;
+        text-wrap: balance;
+    }
+
+    .sidebar .subtitle {
+        color: var(--ink-muted);
+        font-size: 14px;
+        margin-bottom: 32px;
+        line-height: 1.5;
+    }
+
+    /* Control Sections */
+    .control-section {
+        margin-bottom: 32px;
+    }
+
+    .control-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .control-section h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--anthropic-dark);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .control-section h3::before {
+        content: '•';
+        color: var(--anthropic-orange);
+        font-weight: bold;
+    }
+
+    .param-group-title {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+        margin: 24px 0 12px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--anthropic-light-gray);
+    }
+
+    .param-group-title:first-child {
+        margin-top: 0;
+    }
+
+    /* Seed Controls */
+    .seed-input {
+        width: 100%;
+        background: var(--anthropic-light);
+        color: var(--anthropic-dark);
+        padding: 12px;
+        border-radius: 8px;
+        font-family: var(--font-mono);
+        font-size: 14px;
+        margin-bottom: 12px;
+        border: 1px solid var(--anthropic-light-gray);
+        text-align: center;
+    }
+
+    .seed-input:focus {
+        outline: none;
+        border-color: var(--anthropic-orange);
+        box-shadow: 0 0 0 2px rgba(217, 119, 87, 0.15);
+        background: white;
+    }
+
+    .seed-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .regen-button {
+        margin-bottom: 0;
+    }
+
+    /* Parameter Controls */
+    .control-group {
+        margin-bottom: 18px;
+    }
+
+    .control-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--anthropic-dark);
+        margin-bottom: 2px;
+    }
+
+    .control-group .hint {
+        font-size: 12px;
+        line-height: 1.4;
+        color: var(--ink-muted);
+        margin-bottom: 8px;
+    }
+
+    .slider-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .slider-container input[type="range"] {
+        flex: 1;
+        min-width: 0;
+        height: 4px;
+        background: var(--anthropic-light-gray);
+        border-radius: 2px;
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    .slider-container input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        background: var(--anthropic-orange);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .slider-container input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.1);
+        background: #c86641;
+    }
+
+    .slider-container input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        background: var(--anthropic-orange);
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+    }
+
+    .slider-container input[type="range"]:focus-visible::-webkit-slider-thumb {
+        box-shadow: 0 0 0 4px rgba(217, 119, 87, 0.3);
+    }
+
+    .slider-container input[type="range"]:focus-visible::-moz-range-thumb {
+        box-shadow: 0 0 0 4px rgba(217, 119, 87, 0.3);
+    }
+
+    .value-display {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--ink-muted);
+        min-width: 56px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .toggle input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--anthropic-orange);
+    }
+
+    /* Color Pickers */
+    .color-group {
+        margin-bottom: 16px;
+    }
+
+    .color-group label {
+        display: block;
+        font-size: 12px;
+        color: var(--ink-muted);
+        margin-bottom: 4px;
+    }
+
+    .color-picker-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .color-picker-container input[type="color"] {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        background: none;
+        padding: 0;
+    }
+
+    .color-value {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--ink-muted);
+    }
+
+    /* Buttons */
+    .button {
+        background: var(--anthropic-orange);
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-family: var(--font-body);
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.2s ease;
+        width: 100%;
+    }
+
+    .button:hover {
+        background: #c86641;
+        transform: translateY(-1px);
+    }
+
+    .button:active {
+        transform: translateY(0);
+    }
+
+    .button:focus-visible,
+    .toggle input:focus-visible,
+    .color-picker-container input:focus-visible {
+        outline: 2px solid var(--anthropic-dark);
+        outline-offset: 2px;
+    }
+
+    .button.secondary {
+        background: var(--anthropic-blue);
+    }
+
+    .button.secondary:hover {
+        background: #5a8bb8;
+    }
+
+    .button.tertiary {
+        background: var(--anthropic-green);
+    }
+
+    .button.tertiary:hover {
+        background: #6b7b52;
+    }
+
+    .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .actions .button:last-child {
+        grid-column: 1 / -1;
+    }
+
+    /* Canvas Area */
+    .canvas-area {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        position: sticky;
+        top: 20px;
+        min-height: calc(100vh - 40px);
+    }
+
+    #canvas-container {
+        width: 100%;
+        max-width: 1000px;
+        aspect-ratio: 16 / 10;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(20, 20, 19, 0.12);
+        background: var(--art-bg);
+        position: relative;
+    }
+
+    #canvas-container canvas {
+        display: block;
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    .render-status {
+        width: 100%;
+        max-width: 1000px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--ink-muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .progress {
+        flex: 0 0 96px;
+        height: 3px;
+        border-radius: 2px;
+        background: var(--anthropic-light-gray);
+        overflow: hidden;
+    }
+
+    #progress-fill {
+        display: block;
+        height: 100%;
+        width: 0%;
+        background: var(--anthropic-orange);
+    }
+
+    /* Loading State */
+    .loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        color: var(--anthropic-mid-gray);
+    }
+
+    /* Saved-image overlay */
+    .overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        background: rgba(20, 20, 19, 0.9);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+    }
+
+    .overlay img {
+        max-width: min(100%, 1100px);
+        max-height: 72vh;
+        border-radius: 8px;
+    }
+
+    .overlay p {
+        color: var(--anthropic-light);
+        font-size: 14px;
+        text-align: center;
+        max-width: 40ch;
+        line-height: 1.5;
+    }
+
+    .overlay .button {
+        width: auto;
+        min-width: 140px;
+    }
+
+    /* Responsive: canvas first and pinned to the top on phones */
+    @media (max-width: 760px) {
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0 0 auto;
+            height: env(safe-area-inset-top, 0px);
+            z-index: 10;
+            background: var(--anthropic-light);
+        }
+
+        .container {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+            padding-block: 0 20px;
+            padding-left: max(16px, env(safe-area-inset-left, 0px));
+            padding-right: max(16px, env(safe-area-inset-right, 0px));
+        }
+
+        .canvas-area {
+            order: -1;
+            min-height: 0;
+            top: env(safe-area-inset-top, 0px);
+            z-index: 5;
+            padding-block: 12px 8px;
+            background: var(--anthropic-light);
+        }
+
+        .sidebar {
+            width: 100%;
+            position: static;
+            max-height: none;
+            overflow: visible;
+            padding: 20px;
+        }
+
+        .sidebar .subtitle {
+            margin-bottom: 24px;
+        }
+    }
+</style>
+
+<div class="container">
+    <!-- Control Sidebar -->
+    <aside class="sidebar">
+        <h1>Tidal Memory</h1>
+        <p class="subtitle">A curl-noise flow field. Every strand is one particle carried by an invisible current. Move any slider and the piece redraws.</p>
+
+        <!-- Seed Section -->
+        <section class="control-section">
+            <h3>Seed</h3>
+            <input type="number" id="seed-input" class="seed-input" value="4217" min="1" aria-label="Seed" onchange="updateSeed()">
+            <div class="seed-controls">
+                <button class="button secondary" onclick="previousSeed()">← Prev</button>
+                <button class="button secondary" onclick="nextSeed()">Next →</button>
+            </div>
+            <button class="button tertiary regen-button" onclick="randomSeedAndUpdate()">↻ Random</button>
+        </section>
+
+        <!-- Parameters Section (built from SPEC below) -->
+        <section class="control-section">
+            <h3>Parameters</h3>
+            <div id="param-controls"></div>
+        </section>
+
+        <!-- Colors Section (built from COLOR_SPEC below) -->
+        <section class="control-section">
+            <h3>Colors</h3>
+            <div id="color-controls"></div>
+        </section>
+
+        <!-- Actions Section -->
+        <section class="control-section">
+            <h3>Actions</h3>
+            <div class="actions">
+                <button class="button secondary" onclick="regenerate()">Regenerate</button>
+                <button class="button" onclick="resetParameters()">Reset</button>
+                <button class="button tertiary" onclick="openSnapshot()">Save image</button>
+            </div>
+        </section>
+    </aside>
+
+    <!-- Main Canvas Area -->
+    <main class="canvas-area">
+        <div id="canvas-container">
+            <div class="loading" id="loading">Initializing generative art...</div>
+        </div>
+        <div class="render-status" aria-live="polite">
+            <div class="progress"><span id="progress-fill"></span></div>
+            <span id="status-text">Preparing the field…</span>
+        </div>
+    </main>
+</div>
+
+<div class="overlay" id="snapshot" hidden>
+    <img id="snapshot-img" alt="The rendered flow field">
+    <p id="snapshot-note">Press and hold the image (phone) or right-click it (desktop) to save it.</p>
+    <button class="button" id="snapshot-close" onclick="closeSnapshot()">Close</button>
+</div>
+
+<script>
+    // ═══════════════════════════════════════════════════════════════════════
+    // CONSTANTS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const W = 1600, H = 1000;          // plate size (16:10)
+    const MARGIN = 80;                 // the field extends past the frame so strands enter from outside
+    const CELL = 5;                    // field grid resolution in px
+    const M2_HOURS = 12.42;            // principal lunar semidiurnal tide; one exposure is one day
+    const TURN = Math.PI * 2;
+    const BASE_STEPS = 4;              // simulation steps per animation frame
+    const COLD_LEVELS = 7, WARM_LEVELS = 3, ALPHA_LEVELS = 5;
+    const MAX_SPEED = 2.4;
+    const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PARAMETERS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const DEFAULTS = {
+        seed: 4217,
+        noiseScale: 0.0024,
+        octaves: 2,
+        warp: 0.8,
+        current: 0.3,
+        tide: 0.35,
+        particles: 3400,
+        lifespan: 220,
+        stepLength: 1.8,
+        exposure: 200,
+        glow: 0.16,
+        lineWeight: 0.8,
+        warmth: 0.22,
+        caption: true,
+        colors: { water: '#0a0e1c', deep: '#3d5bd9', surface: '#b4c4ff', warm: '#ff5470' }
+    };
+
+    const clone = (o) => JSON.parse(JSON.stringify(o));
+    let params = clone(DEFAULTS);
+    let defaultParams = clone(DEFAULTS); // Store defaults for reset
+
+    const SPEC = [
+        { group: 'Field', key: 'noiseScale', label: 'Noise scale', min: 0.0008, max: 0.006, step: 0.0001, hint: 'Lower values give larger, slower swirls.' },
+        { group: 'Field', key: 'octaves', label: 'Turbulence', min: 1, max: 5, step: 1, hint: 'Layers of detail stacked on the main current.' },
+        { group: 'Field', key: 'warp', label: 'Domain warp', min: 0, max: 3, step: 0.05, hint: 'Folds the field into itself. 0 is plain noise.' },
+        { group: 'Field', key: 'current', label: 'Current', min: 0, max: 1.5, step: 0.05, hint: 'A steady drift that stretches swirls into streams.' },
+        { group: 'Field', key: 'tide', label: 'Tide', min: 0, max: 1, step: 0.01, hint: 'How far the field shifts while the image builds.' },
+        { group: 'Particles', key: 'particles', label: 'Particles', min: 500, max: 8000, step: 100, hint: 'Strands drawn at the same time.' },
+        { group: 'Particles', key: 'lifespan', label: 'Lifespan', min: 20, max: 400, step: 5, hint: 'Steps a strand lives before it respawns. Longer strands.' },
+        { group: 'Particles', key: 'stepLength', label: 'Step length', min: 0.5, max: 4, step: 0.1, hint: 'Pixels moved per step at full speed.' },
+        { group: 'Particles', key: 'exposure', label: 'Exposure', min: 60, max: 480, step: 10, hint: 'Frames the image accumulates. Higher is denser.' },
+        { group: 'Ink', key: 'glow', label: 'Glow', min: 0.01, max: 0.3, step: 0.005, hint: 'Light per stroke. Overlapping strokes add up.' },
+        { group: 'Ink', key: 'lineWeight', label: 'Line weight', min: 0.3, max: 2, step: 0.1, hint: 'Stroke width in pixels.' },
+        { group: 'Ink', key: 'warmth', label: 'Warm threads', min: 0, max: 1, step: 0.01, hint: 'Share of red strands running through the blue.' }
+    ];
+
+    const COLOR_SPEC = [
+        { key: 'water', label: 'Water (background)' },
+        { key: 'deep', label: 'Deep current' },
+        { key: 'surface', label: 'Surface light' },
+        { key: 'warm', label: 'Warm thread' }
+    ];
+
+    // Changing any of these rebuilds the vector field; everything else reuses it.
+    const FIELD_KEYS = ['seed', 'noiseScale', 'octaves', 'warp', 'tide'];
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SEEDED RANDOMNESS + NOISE
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Independent seeded streams, so a cached field never shifts the particle sequence.
+    function mulberry32(a) {
+        return function () {
+            a |= 0; a = (a + 0x6D2B79F5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    // 3D simplex noise (Gustavson), with a permutation table shuffled by a seeded stream.
+    const GRAD3 = new Int8Array([1,1,0, -1,1,0, 1,-1,0, -1,-1,0, 1,0,1, -1,0,1, 1,0,-1, -1,0,-1, 0,1,1, 0,-1,1, 0,1,-1, 0,-1,-1]);
+
+    function makeSimplex3(rng) {
+        const p = new Uint8Array(256);
+        for (let i = 0; i < 256; i++) p[i] = i;
+        for (let i = 255; i > 0; i--) {
+            const r = Math.floor(rng() * (i + 1));
+            const t = p[i]; p[i] = p[r]; p[r] = t;
+        }
+        const perm = new Uint8Array(512), g3 = new Uint8Array(512);
+        for (let i = 0; i < 512; i++) { perm[i] = p[i & 255]; g3[i] = (perm[i] % 12) * 3; }
+        const F3 = 1 / 3, G3 = 1 / 6;
+
+        return function (x, y, z) {
+            const s = (x + y + z) * F3;
+            const i = Math.floor(x + s), j = Math.floor(y + s), k = Math.floor(z + s);
+            const t = (i + j + k) * G3;
+            const x0 = x - i + t, y0 = y - j + t, z0 = z - k + t;
+            let i1, j1, k1, i2, j2, k2;
+            if (x0 >= y0) {
+                if (y0 >= z0)      { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
+                else if (x0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 0; k2 = 1; }
+                else               { i1 = 0; j1 = 0; k1 = 1; i2 = 1; j2 = 0; k2 = 1; }
+            } else {
+                if (y0 < z0)       { i1 = 0; j1 = 0; k1 = 1; i2 = 0; j2 = 1; k2 = 1; }
+                else if (x0 < z0)  { i1 = 0; j1 = 1; k1 = 0; i2 = 0; j2 = 1; k2 = 1; }
+                else               { i1 = 0; j1 = 1; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
+            }
+            const x1 = x0 - i1 + G3, y1 = y0 - j1 + G3, z1 = z0 - k1 + G3;
+            const x2 = x0 - i2 + 2 * G3, y2 = y0 - j2 + 2 * G3, z2 = z0 - k2 + 2 * G3;
+            const x3 = x0 - 1 + 3 * G3, y3 = y0 - 1 + 3 * G3, z3 = z0 - 1 + 3 * G3;
+            const ii = i & 255, jj = j & 255, kk = k & 255;
+            let n = 0, q, g;
+            q = 0.6 - x0 * x0 - y0 * y0 - z0 * z0;
+            if (q > 0) { g = g3[ii + perm[jj + perm[kk]]]; q *= q; n += q * q * (GRAD3[g] * x0 + GRAD3[g + 1] * y0 + GRAD3[g + 2] * z0); }
+            q = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
+            if (q > 0) { g = g3[ii + i1 + perm[jj + j1 + perm[kk + k1]]]; q *= q; n += q * q * (GRAD3[g] * x1 + GRAD3[g + 1] * y1 + GRAD3[g + 2] * z1); }
+            q = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
+            if (q > 0) { g = g3[ii + i2 + perm[jj + j2 + perm[kk + k2]]]; q *= q; n += q * q * (GRAD3[g] * x2 + GRAD3[g + 1] * y2 + GRAD3[g + 2] * z2); }
+            q = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
+            if (q > 0) { g = g3[ii + 1 + perm[jj + 1 + perm[kk + 1]]]; q *= q; n += q * q * (GRAD3[g] * x3 + GRAD3[g + 1] * y3 + GRAD3[g + 2] * z3); }
+            return 32 * n;
+        };
+    }
+
+    // Fractal sum. Each octave is rotated ~0.6 rad against the last so no grid axis survives.
+    function fbm(noise, x, y, z, oct) {
+        let sum = 0, amp = 1, norm = 0;
+        for (let o = 0; o < oct; o++) {
+            sum += amp * noise(x, y, z + o * 13.7);
+            norm += amp;
+            amp *= 0.42;
+            const rx = (x * 0.8253 - y * 0.5646) * 2.03;
+            const ry = (x * 0.5646 + y * 0.8253) * 2.03;
+            x = rx; y = ry;
+        }
+        return sum / norm;
+    }
+
+    function smoothstep(a, b, v) {
+        const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+        return t * t * (3 - 2 * t);
+    }
+
+    const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // THE CURRENT: stream function → divergence-free curl field
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Stream function ψ: warped fractal noise, dimmed by a slow envelope that opens calm basins.
+    function potential(nMain, nWarp, x, y, z, oct, warp) {
+        let wx = x, wy = y;
+        if (warp > 0) {
+            wx += warp * fbm(nWarp, x * 0.7 + 3.1, y * 0.7 + 7.7, z * 0.5, 2);
+            wy += warp * fbm(nWarp, x * 0.7 - 5.3, y * 0.7 + 1.9, z * 0.5 + 9.4, 2);
+        }
+        const psi = fbm(nMain, wx, wy, z, oct);
+        const calm = smoothstep(-0.45, 0.4, nWarp(x * 0.33 + 41.0, y * 0.33 - 17.0, z * 0.25 + 3.3));
+        return psi * (0.2 + 0.8 * calm);
+    }
+
+    // v = (∂ψ/∂y, −∂ψ/∂x). No sources, no sinks: strands can crowd but never collapse.
+    function curl(psi, cols, rows) {
+        const vx = new Float32Array(cols * rows), vy = new Float32Array(cols * rows);
+        for (let j = 0; j < rows; j++) {
+            const ju = j > 0 ? j - 1 : j, jd = j < rows - 1 ? j + 1 : j, dy = (jd - ju) * CELL;
+            for (let i = 0; i < cols; i++) {
+                const il = i > 0 ? i - 1 : i, ir = i < cols - 1 ? i + 1 : i, dx = (ir - il) * CELL;
+                const idx = j * cols + i;
+                vx[idx] = (psi[jd * cols + i] - psi[ju * cols + i]) / dy;
+                vy[idx] = -(psi[j * cols + ir] - psi[j * cols + il]) / dx;
+            }
+        }
+        return { x: vx, y: vy };
+    }
+
+    // Two time slices of the field. The render swings between them on the tidal cosine.
+    function buildField() {
+        const rng = mulberry32(params.seed);
+        const nMain = makeSimplex3(rng), nWarp = makeSimplex3(rng);
+        const cols = Math.ceil((W + 2 * MARGIN) / CELL) + 2;
+        const rows = Math.ceil((H + 2 * MARGIN) / CELL) + 2;
+        const ns = params.noiseScale, oct = params.octaves, warp = params.warp;
+        const ox = rng() * 512, oy = rng() * 512;
+        const zA = rng() * 64, zB = zA + params.tide * 1.1;
+        const psiA = new Float32Array(cols * rows);
+        const psiB = params.tide > 0 ? new Float32Array(cols * rows) : psiA;
+
+        for (let j = 0; j < rows; j++) {
+            const y = (j * CELL - MARGIN) * ns + oy;
+            for (let i = 0; i < cols; i++) {
+                const x = (i * CELL - MARGIN) * ns + ox;
+                const idx = j * cols + i;
+                psiA[idx] = potential(nMain, nWarp, x, y, zA, oct, warp);
+                if (psiB !== psiA) psiB[idx] = potential(nMain, nWarp, x, y, zB, oct, warp);
+            }
+        }
+
+        const A = curl(psiA, cols, rows);
+        const B = psiB === psiA ? A : curl(psiB, cols, rows);
+
+        // Normalize so the 90th-percentile speed is 1, whatever the noise scale.
+        const sample = [];
+        for (let q = 0; q < A.x.length; q += 13) sample.push(Math.hypot(A.x[q], A.y[q]));
+        sample.sort((a, b) => a - b);
+        const k = 1 / (sample[Math.floor(sample.length * 0.9)] || 1);
+        const arrays = B === A ? [A.x, A.y] : [A.x, A.y, B.x, B.y];
+        for (const arr of arrays) for (let q = 0; q < arr.length; q++) arr[q] *= k;
+
+        return { cols, rows, ax: A.x, ay: A.y, bx: B.x, by: B.y };
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // STATE
+    // ═══════════════════════════════════════════════════════════════════════
+
+    let field = null, fieldSig = '';
+    let px, py, age, life, strandColor;
+    let prng, massNoise, driftX = 0, driftY = 0;
+    let buckets = [], bucketStyles = [];
+    let step = 0, totalSteps = 0, stepsPerFrame = BASE_STEPS;
+    let strokeCount = 0, finished = false, snapCanvas = null;
+    let canvasEl = null, restartTimer = 0;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // P5.JS LIFECYCLE
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function setup() {
+        pixelDensity(1);
+        const c = createCanvas(W, H);
+        c.parent('canvas-container');
+        canvasEl = c.elt;
+        canvasEl.setAttribute('role', 'img');
+        canvasEl.setAttribute('aria-label', 'Generative flow field: thousands of fine blue and red strands following an invisible current');
+        document.getElementById('loading').hidden = true;
+        initializeSystem();
+    }
+
+    function initializeSystem() {
+        if (!canvasEl) return;
+        clearTimeout(restartTimer);
+
+        // p5 convention; the artwork itself draws from the dedicated seeded streams below.
+        randomSeed(params.seed);
+        noiseSeed(params.seed);
+
+        const sig = FIELD_KEYS.map((k) => params[k]).join('|');
+        if (sig !== fieldSig) {
+            field = buildField();
+            fieldSig = sig;
+        }
+
+        const drng = mulberry32(params.seed ^ 0x5bd1e995);
+        const angle = drng() * TURN;
+        driftX = Math.cos(angle) * params.current;
+        driftY = Math.sin(angle) * params.current;
+
+        massNoise = makeSimplex3(mulberry32(params.seed + 104729));
+        prng = mulberry32(Math.imul(params.seed, 7919) + 17);
+
+        const n = params.particles;
+        px = new Float32Array(n); py = new Float32Array(n);
+        age = new Float32Array(n); life = new Float32Array(n);
+        strandColor = new Uint8Array(n);
+        for (let k = 0; k < n; k++) spawn(k);
+
+        buildStyles();
+        paintBackground();
+
+        step = 0;
+        strokeCount = 0;
+        finished = false;
+        snapCanvas = null;
+        totalSteps = params.exposure * BASE_STEPS;
+        stepsPerFrame = reduceMotion ? BASE_STEPS * 6 : BASE_STEPS;
+        setStatus(0, 'Rendering · 0%');
+        loop();
+    }
+
+    // A strand is born somewhere in the water. Its colour comes from the water mass it is born into.
+    function spawn(k) {
+        const x = -MARGIN * 0.6 + prng() * (W + MARGIN * 1.2);
+        const y = -MARGIN * 0.6 + prng() * (H + MARGIN * 1.2);
+        px[k] = x; py[k] = y; age[k] = 0;
+        life[k] = Math.max(6, params.lifespan * (0.45 + prng() * 1.1));
+        const m = clamp01(0.5 + 0.75 * massNoise(x * 0.0009, y * 0.0009, 0.5));
+        if (prng() < params.warmth * (0.3 + 1.4 * (1 - m))) {
+            strandColor[k] = COLD_LEVELS + Math.floor(prng() * WARM_LEVELS);
+        } else {
+            strandColor[k] = Math.min(COLD_LEVELS - 1, Math.floor(clamp01(m + (prng() - 0.5) * 0.3) * COLD_LEVELS));
+        }
+    }
+
+    function hexToRgb(hex) {
+        const v = parseInt(hex.slice(1), 16);
+        return { r: (v >> 16) & 255, g: (v >> 8) & 255, b: v & 255 };
+    }
+
+    function mixRgb(a, b, t) {
+        return { r: Math.round(a.r + (b.r - a.r) * t), g: Math.round(a.g + (b.g - a.g) * t), b: Math.round(a.b + (b.b - a.b) * t) };
+    }
+
+    // Strokes are batched by (colour, light level) so a frame is ~50 canvas stroke calls.
+    function buildStyles() {
+        const deep = hexToRgb(params.colors.deep), surf = hexToRgb(params.colors.surface), warm = hexToRgb(params.colors.warm);
+        const palette = [];
+        for (let i = 0; i < COLD_LEVELS; i++) palette.push(mixRgb(deep, surf, Math.pow(i / (COLD_LEVELS - 1), 1.3)));
+        palette.push(warm, mixRgb(warm, deep, 0.35), mixRgb(warm, surf, 0.3));
+        bucketStyles = [];
+        buckets = [];
+        palette.forEach((c, ci) => {
+            const boost = ci >= COLD_LEVELS ? 1.25 : 1; // warm threads read through the blue
+            for (let a = 0; a < ALPHA_LEVELS; a++) {
+                const alpha = Math.min(1, params.glow * boost * Math.pow((a + 1) / ALPHA_LEVELS, 1.15));
+                bucketStyles.push(`rgba(${c.r},${c.g},${c.b},${alpha.toFixed(4)})`);
+                buckets.push([]);
+            }
+        });
+    }
+
+    function paintBackground() {
+        const ctx = drawingContext;
+        const deep = hexToRgb(params.colors.deep);
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = params.colors.water;
+        ctx.fillRect(0, 0, W, H);
+        const g = ctx.createRadialGradient(W * 0.5, H * 0.46, 0, W * 0.5, H * 0.5, W * 0.62);
+        g.addColorStop(0, `rgba(${deep.r},${deep.g},${deep.b},0.10)`);
+        g.addColorStop(1, `rgba(${deep.r},${deep.g},${deep.b},0)`);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+    }
+
+    function draw() {
+        if (!field || finished) return;
+
+        const f = field, cols = f.cols;
+        const ax = f.ax, ay = f.ay, bx = f.bx, by = f.by;
+        const maxGX = cols - 1.001, maxGY = f.rows - 1.001;
+        const n = px.length, stepLen = params.stepLength;
+        const tideCycles = 24 / M2_HOURS;
+        const minX = -MARGIN, maxX = W + MARGIN, minY = -MARGIN, maxY = H + MARGIN;
+
+        for (let b = 0; b < buckets.length; b++) buckets[b].length = 0;
+
+        const end = Math.min(totalSteps, step + stepsPerFrame);
+        for (; step < end; step++) {
+            const s = 0.5 - 0.5 * Math.cos(TURN * tideCycles * step / totalSteps);
+
+            for (let k = 0; k < n; k++) {
+                const a1 = ++age[k];
+                if (a1 > life[k]) { spawn(k); continue; }
+
+                const x = px[k], y = py[k];
+                let gx = (x + MARGIN) / CELL, gy = (y + MARGIN) / CELL;
+                if (gx < 0) gx = 0; else if (gx > maxGX) gx = maxGX;
+                if (gy < 0) gy = 0; else if (gy > maxGY) gy = maxGY;
+                const i = gx | 0, j = gy | 0, fx = gx - i, fy = gy - j;
+                const i00 = j * cols + i, i10 = i00 + 1, i01 = i00 + cols, i11 = i01 + 1;
+                const w00 = (1 - fx) * (1 - fy), w10 = fx * (1 - fy), w01 = (1 - fx) * fy, w11 = fx * fy;
+
+                const vxA = ax[i00] * w00 + ax[i10] * w10 + ax[i01] * w01 + ax[i11] * w11;
+                const vyA = ay[i00] * w00 + ay[i10] * w10 + ay[i01] * w01 + ay[i11] * w11;
+                const vxB = bx[i00] * w00 + bx[i10] * w10 + bx[i01] * w01 + bx[i11] * w11;
+                const vyB = by[i00] * w00 + by[i10] * w10 + by[i01] * w01 + by[i11] * w11;
+
+                let vx = vxA + (vxB - vxA) * s + driftX;
+                let vy = vyA + (vyB - vyA) * s + driftY;
+                let sp = Math.sqrt(vx * vx + vy * vy);
+                if (sp > MAX_SPEED) { vx *= MAX_SPEED / sp; vy *= MAX_SPEED / sp; sp = MAX_SPEED; }
+
+                const nx = x + vx * stepLen, ny = y + vy * stepLen;
+                px[k] = nx; py[k] = ny;
+                if (nx < minX || nx > maxX || ny < minY || ny > maxY) { age[k] = life[k] + 1; continue; }
+
+                // Tapered at both ends by its own lifespan. Fast jets glow; slack water stays dark.
+                const intensity = Math.sin(Math.PI * a1 / life[k]) * (0.15 + 0.85 * Math.pow(Math.min(1, sp / 1.5), 1.4));
+                if (intensity < 0.06) continue;
+                if ((x < 0 && nx < 0) || (x > W && nx > W) || (y < 0 && ny < 0) || (y > H && ny > H)) continue;
+
+                let lvl = (intensity * ALPHA_LEVELS) | 0;
+                if (lvl >= ALPHA_LEVELS) lvl = ALPHA_LEVELS - 1;
+                buckets[strandColor[k] * ALPHA_LEVELS + lvl].push(x, y, nx, ny);
+            }
+        }
+
+        flush();
+
+        if (step >= totalSteps) finish();
+        else setStatus(step / totalSteps, `Rendering · ${Math.round((100 * step) / totalSteps)}%`);
+    }
+
+    // Additive light: every stroke adds, nothing subtracts.
+    function flush() {
+        const ctx = drawingContext;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineWidth = params.lineWeight;
+        ctx.lineCap = 'butt';
+        for (let b = 0; b < buckets.length; b++) {
+            const seg = buckets[b], len = seg.length;
+            if (!len) continue;
+            ctx.strokeStyle = bucketStyles[b];
+            ctx.beginPath();
+            for (let q = 0; q < len; q += 4) {
+                ctx.moveTo(seg[q], seg[q + 1]);
+                ctx.lineTo(seg[q + 2], seg[q + 3]);
+            }
+            ctx.stroke();
+            strokeCount += len / 4;
+        }
+        ctx.restore();
+    }
+
+    function finish() {
+        finished = true;
+        noLoop();
+        snapCanvas = document.createElement('canvas');
+        snapCanvas.width = W;
+        snapCanvas.height = H;
+        snapCanvas.getContext('2d').drawImage(canvasEl, 0, 0);
+        drawCaption();
+        setStatus(1, `Done · ${strokeCount.toLocaleString('en-US')} strokes`);
+    }
+
+    function drawCaption() {
+        if (!params.caption) return;
+        const ctx = drawingContext;
+        const s = hexToRgb(params.colors.surface);
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = `rgba(${s.r},${s.g},${s.b},0.6)`;
+        ctx.font = '500 16px ui-monospace, "SF Mono", Menlo, Consolas, "Courier New", monospace';
+        ctx.fillText(`flow field · seed ${params.seed}`, 30, H - 52);
+        ctx.fillText(`${params.particles.toLocaleString('en-US')} particles · noise ${params.noiseScale.toFixed(4)}`, 30, H - 28);
+        ctx.restore();
+    }
+
+    function toggleCaption(on) {
+        params.caption = on;
+        if (finished && snapCanvas) {
+            const ctx = drawingContext;
+            ctx.save();
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(snapCanvas, 0, 0);
+            ctx.restore();
+            drawCaption();
+        }
+    }
+
+    function setStatus(progress, text) {
+        document.getElementById('progress-fill').style.width = `${Math.round(progress * 100)}%`;
+        document.getElementById('status-text').textContent = text;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // UI CONTROL HANDLERS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function decimalsFor(stepValue) {
+        const s = String(stepValue);
+        return s.includes('.') ? s.split('.')[1].length : 0;
+    }
+
+    function formatValue(spec, v) {
+        return Number(v).toFixed(decimalsFor(spec.step));
+    }
+
+    function buildControls() {
+        const host = document.getElementById('param-controls');
+        let group = '';
+        for (const spec of SPEC) {
+            if (spec.group !== group) {
+                group = spec.group;
+                const title = document.createElement('div');
+                title.className = 'param-group-title';
+                title.textContent = group;
+                host.appendChild(title);
+            }
+            const wrap = document.createElement('div');
+            wrap.className = 'control-group';
+            wrap.innerHTML = `
+                <label for="${spec.key}">${spec.label}</label>
+                <div class="hint" id="${spec.key}-hint">${spec.hint}</div>
+                <div class="slider-container">
+                    <input type="range" id="${spec.key}" min="${spec.min}" max="${spec.max}" step="${spec.step}" value="${params[spec.key]}" aria-describedby="${spec.key}-hint">
+                    <span class="value-display" id="${spec.key}-value">${formatValue(spec, params[spec.key])}</span>
+                </div>`;
+            wrap.querySelector('input').addEventListener('input', (e) => updateParam(spec.key, e.target.value));
+            host.appendChild(wrap);
+        }
+
+        const toggle = document.createElement('label');
+        toggle.className = 'toggle';
+        toggle.innerHTML = `<input type="checkbox" id="caption" ${params.caption ? 'checked' : ''}> Show caption on the image`;
+        toggle.querySelector('input').addEventListener('change', (e) => toggleCaption(e.target.checked));
+        host.appendChild(toggle);
+
+        const colorHost = document.getElementById('color-controls');
+        for (const c of COLOR_SPEC) {
+            const wrap = document.createElement('div');
+            wrap.className = 'color-group';
+            wrap.innerHTML = `
+                <label for="color-${c.key}">${c.label}</label>
+                <div class="color-picker-container">
+                    <input type="color" id="color-${c.key}" value="${params.colors[c.key]}">
+                    <span class="color-value" id="color-${c.key}-value">${params.colors[c.key]}</span>
+                </div>`;
+            wrap.querySelector('input').addEventListener('input', (e) => updateColor(c.key, e.target.value));
+            colorHost.appendChild(wrap);
+        }
+    }
+
+    function scheduleRestart(delay) {
+        clearTimeout(restartTimer);
+        setStatus(0, 'Updating…');
+        restartTimer = setTimeout(initializeSystem, delay);
+    }
+
+    function updateParam(paramName, value) {
+        const spec = SPEC.find((s) => s.key === paramName);
+        params[paramName] = Number(value);
+        document.getElementById(`${paramName}-value`).textContent = formatValue(spec, value);
+        scheduleRestart(FIELD_KEYS.includes(paramName) ? 160 : 90);
+    }
+
+    function updateColor(colorKey, value) {
+        params.colors[colorKey] = value;
+        document.getElementById(`color-${colorKey}-value`).textContent = value;
+        scheduleRestart(90);
+    }
+
+    function syncControls() {
+        for (const spec of SPEC) {
+            document.getElementById(spec.key).value = params[spec.key];
+            document.getElementById(`${spec.key}-value`).textContent = formatValue(spec, params[spec.key]);
+        }
+        document.getElementById('caption').checked = params.caption;
+        for (const c of COLOR_SPEC) {
+            document.getElementById(`color-${c.key}`).value = params.colors[c.key];
+            document.getElementById(`color-${c.key}-value`).textContent = params.colors[c.key];
+        }
+    }
+
+    function regenerate() {
+        initializeSystem();
+    }
+
+    function openSnapshot() {
+        if (!canvasEl) return;
+        document.getElementById('snapshot-img').src = canvasEl.toDataURL('image/png');
+        document.getElementById('snapshot-note').textContent = finished
+            ? 'Press and hold the image (phone) or right-click it (desktop) to save it.'
+            : 'Still rendering, so this is the image so far. Press and hold (phone) or right-click (desktop) to save it.';
+        document.getElementById('snapshot').hidden = false;
+        document.getElementById('snapshot-close').focus();
+    }
+
+    function closeSnapshot() {
+        document.getElementById('snapshot').hidden = true;
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeSnapshot();
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SEED CONTROL FUNCTIONS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function updateSeedDisplay() {
+        document.getElementById('seed-input').value = params.seed;
+    }
+
+    function updateSeed() {
+        let input = document.getElementById('seed-input');
+        let newSeed = parseInt(input.value);
+        if (newSeed && newSeed > 0) {
+            params.seed = newSeed;
+            initializeSystem();
+        } else {
+            // Reset to current seed if invalid
+            updateSeedDisplay();
+        }
+    }
+
+    function previousSeed() {
+        params.seed = Math.max(1, params.seed - 1);
+        updateSeedDisplay();
+        initializeSystem();
+    }
+
+    function nextSeed() {
+        params.seed = params.seed + 1;
+        updateSeedDisplay();
+        initializeSystem();
+    }
+
+    function randomSeedAndUpdate() {
+        params.seed = Math.floor(Math.random() * 999999) + 1;
+        updateSeedDisplay();
+        initializeSystem();
+    }
+
+    function resetParameters() {
+        params = clone(defaultParams);
+        syncControls();
+        updateSeedDisplay();
+        initializeSystem();
+    }
+
+    buildControls();
+    updateSeedDisplay();
+</script>
