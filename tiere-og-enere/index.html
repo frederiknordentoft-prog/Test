@@ -1,0 +1,335 @@
+<title>Tiere og enere</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@700;800&display=swap">
+<style>
+/* Layout: et regnehæfte. Fliptæller øverst, bakke med klodser under, store knapper nederst.
+   Tiere er altid venstre og blå, enere altid højre og orange. På bred skærm står knapperne til højre. */
+:root {
+  --paper: #eef4f9; --grid: #d8e4ee; --ink: #1b2838; --muted: #566578;
+  --surface: #ffffff; --line: #c3d2e0;
+  --ten: #2b67d1; --one: #e57712; --flap: #1d2733; --flap-fg: #f7f9fb;
+  --ok: #178a4a; --bad: #cf3b3b; --coin: #c3c9d0;
+  --f-num: "Fredoka", ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+  --f-ui: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --u: clamp(12px, 3.3vw, 19px);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #0f1620; --grid: #18222e; --ink: #e6edf4; --muted: #93a3b5; --surface: #17212c; --line: #2b3949;
+  --ten: #5b93f3; --one: #ff9a3d; --flap: #05090e; --flap-fg: #f7f9fb; --ok: #3cc47a; --bad: #ff6b6b; --coin: #9aa3ad; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #0f1620; --grid: #18222e; --ink: #e6edf4; --muted: #93a3b5; --surface: #17212c; --line: #2b3949;
+  --ten: #5b93f3; --one: #ff9a3d; --flap: #05090e; --flap-fg: #f7f9fb; --ok: #3cc47a; --bad: #ff6b6b; --coin: #9aa3ad; color-scheme: dark }
+
+[hidden] { display: none !important }
+body {
+  margin: 0; background-color: var(--paper); color: var(--ink); font: 700 17px/1.35 var(--f-ui);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 22px 22px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 10px 24px;
+}
+main { max-width: 620px; margin: 0 auto; display: grid; gap: 12px }
+@media (min-width: 820px) and (orientation: landscape) {
+  main { max-width: 1000px; grid-template-columns: 1.3fr 1fr; align-items: start; column-gap: 28px }
+  header, details { grid-column: 1 / -1 }
+}
+section { display: grid; gap: 12px; min-width: 0 }
+
+button {
+  font: 600 24px var(--f-num); color: var(--ink); background: var(--surface);
+  border: 2px solid var(--line); border-radius: 16px; min-height: 60px; min-width: 60px;
+  cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+button:disabled { opacity: .3; cursor: default }
+button:active:not(:disabled) { transform: translateY(2px) }
+button:focus-visible { outline: 3px solid var(--ten); outline-offset: 2px }
+
+header { display: flex; gap: 8px; align-items: center }
+.tabs { display: flex; gap: 4px; margin-right: auto; background: var(--surface); border: 2px solid var(--line); border-radius: 16px; padding: 3px }
+.tabs button { border: 0; min-height: 48px; padding-inline: 18px; font-size: 20px; background: transparent }
+.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--paper) }
+header > button { min-height: 52px; min-width: 52px; font-size: 22px }
+
+#prompt { margin: 0; min-height: 2.3em; display: grid; place-items: center; text-align: center; cursor: pointer;
+  font: 600 clamp(24px, 6vw, 36px)/1.15 var(--f-num); text-wrap: balance }
+#prompt small { display: block; font: 700 15px/1.3 var(--f-ui); color: var(--muted) }
+
+.board { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; align-items: start }
+.T { --c: var(--ten) } .E { --c: var(--one) }
+.col { display: grid; justify-items: center; gap: 2px; perspective: 500px }
+.card {
+  font: 600 clamp(64px, 17vw, 108px)/1 var(--f-num); font-variant-numeric: tabular-nums;
+  min-width: .72em; padding: .06em .12em; text-align: center; position: relative;
+  background: var(--flap); color: var(--flap-fg); border-radius: 12px; border-bottom: 8px solid var(--c);
+}
+.card::after { content: ""; position: absolute; inset: 50% 0 auto; height: 2px; background: var(--paper) }
+.card.over { color: var(--bad); animation: shake .3s 2 }
+.cap { font: 800 14px var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--c) }
+#lbl { grid-column: 1 / -1; margin: 0; min-height: 1.35em; text-align: center; color: var(--muted); text-wrap: balance }
+
+.tray { background: var(--surface); border: 2px solid var(--line); border-top: 4px solid var(--c); border-radius: 14px;
+  padding: 10px; min-height: calc(var(--u) * 10 + 27px); display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-content: start }
+#tens { column-gap: 14px }
+.stick, .frame { display: grid; gap: 3px }
+.stick { grid-template-rows: repeat(10, var(--u)); width: var(--u) }
+.frame { grid-template-columns: repeat(5, var(--u)); grid-auto-rows: var(--u); padding: 4px; border: 2px dashed var(--line); border-radius: 8px }
+.frame.full { border: 2px solid var(--bad) }
+.tray b { display: block; border-radius: 3px }
+.stick b { background: var(--ten) }
+.frame b { outline: 1px dashed var(--line) }
+.frame b.on { background: var(--one); outline: 0 }
+/* Mønter: hver klods bliver en enkrone med hul. En tier er 10 enkroner i en blå papirrulle. */
+.coin .stick b, .coin .frame b.on { border-radius: 50%; background: radial-gradient(circle, var(--surface) 0 20%, var(--coin) 23%) }
+.coin .stick { outline: 3px solid var(--ten); outline-offset: 2px; border-radius: 99px }
+.coin .frame b.on { box-shadow: 0 0 0 2px var(--one) }
+
+#msg { margin: 0; min-height: 2.7em; text-align: center; font-size: 19px; text-wrap: balance }
+#msg.ok { color: var(--ok) } #msg.bad { color: var(--bad) }
+#pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px }
+#pad .T, #pad .E { color: var(--c); border-color: var(--c) }
+#veksl { grid-column: 1 / -1 }
+#veksl.pulse { animation: pulse 1s infinite }
+#ans { margin: 0; min-height: 1.15em; text-align: center; font: 600 54px/1.1 var(--f-num); letter-spacing: .06em }
+#keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px }
+#keys button:last-child { grid-column: span 2 }
+#go { background: var(--ink); color: var(--paper); border-color: var(--ink) }
+#dots { display: flex; gap: 6px; justify-content: center; min-height: 12px }
+#dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--line) }
+#dots .ok { background: var(--ok) } #dots .mid { background: var(--one) } #dots .bad { background: var(--bad) }
+
+details { color: var(--muted); font-size: 15px; max-width: 65ch }
+summary { cursor: pointer; padding-block: 8px }
+details ul { padding-left: 1.2em; margin: 0 0 10px }
+details button { font: 700 15px var(--f-ui); min-height: 44px; padding-inline: 14px }
+
+@keyframes shake { 25% { transform: translateX(-5px) } 75% { transform: translateX(5px) } }
+@keyframes pulse { 50% { box-shadow: 0 0 0 8px var(--one) } }
+@media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important } }
+</style>
+
+<main>
+  <header>
+    <div class="tabs"><button id="leg" aria-pressed="true">Leg</button><button id="ov" aria-pressed="false">Øv</button></div>
+    <button id="snd" hidden aria-label="Lyd til og fra">🔊</button>
+    <button id="skin" aria-pressed="false" aria-label="Skift mellem klodser og mønter">🪙</button>
+  </header>
+
+  <section>
+    <p id="prompt" aria-live="polite"></p>
+    <div class="board">
+      <div class="col T"><div class="card" id="ct">0</div><span class="cap">tiere</span></div>
+      <div class="col E"><div class="card" id="ce">0</div><span class="cap">enere</span></div>
+      <p id="lbl" aria-live="polite"></p>
+      <div class="tray T" id="tens"></div>
+      <div class="tray E"><div class="frame" id="ones"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <p id="msg" aria-live="polite"></p>
+    <div id="pad">
+      <button class="T" data-k="-10">−10</button><button class="T" data-k="10">+10</button>
+      <button class="E" data-k="-1">−1</button><button class="E" data-k="1">+1</button>
+      <button id="veksl">⇄ Veksl</button>
+    </div>
+    <div id="kb" hidden><p id="ans"></p><div id="keys"></div></div>
+    <button id="go"></button>
+    <div id="dots"></div>
+  </section>
+
+  <details>
+    <summary>For voksne</summary>
+    <p id="lvl"></p>
+    <ul>
+      <li>Tæl tierne først: “ti, tyve, tredive, enogtredive …”.</li>
+      <li>Byg også med rigtige ting: 10 sugerør med en elastik om er 1 tier.</li>
+      <li>Korte runder flere gange om ugen er bedre end én lang.</li>
+      <li>Mangler oplæsningen (ingen dansk stemme på enheden), så læs talordene højt.</li>
+      <li>🪙 skifter til mønter. Brug det først, når klodserne sidder: en tier er stadig 10 enkroner.</li>
+    </ul>
+    <button id="reset">Start forfra på niveau 1</button>
+  </details>
+</main>
+
+<script>
+const $ = s => document.querySelector(s), R = Math.random, rnd = a => a[R() * a.length | 0];
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const store = (k, v) => { try { return v === undefined ? localStorage.getItem('te-' + k) : localStorage.setItem('te-' + k, v) } catch { } };
+
+// Danske talord 0-99. Enerne siges før tierne: 24 = "fireogtyve".
+const O = ['nul','en','to','tre','fire','fem','seks','syv','otte','ni'],
+  TN = ['ti','elleve','tolv','tretten','fjorten','femten','seksten','sytten','atten','nitten'],
+  D = ['','ti','tyve','tredive','fyrre','halvtreds','tres','halvfjerds','firs','halvfems'];
+const da = n => n < 10 ? O[n] : n < 20 ? TN[n - 10] : (n % 10 ? O[n % 10] + 'og' : '') + D[n / 10 | 0];
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const pl = (n, w) => `${n} ${w}${n == 1 ? '' : 'e'}`;
+const tx = (t, e) => `${pl(t, 'tier')} og ${pl(e, 'ener')}`;
+const lbl = (t, e) => `${tx(t, e)} · ${[t * 10, e].filter(x => x).join(' + ') || 0} · ${da(t * 10 + e)}`;
+
+let t = 2, e = 3, busy = 0, hide = 0, mode = 'leg', task = null, typed = '', round = [], streak = 0;
+let lvl = +store('lvl') || 1, sound = store('sound') !== '0', voice = null;
+
+// Oplæsning: kun med en rigtig dansk stemme. Uden den er knappen skjult.
+const findVoice = () => { voice = speechSynthesis.getVoices().find(v => /^da[-_]/i.test(v.lang)); $('#snd').hidden = !voice };
+if ('speechSynthesis' in window) { findVoice(); speechSynthesis.onvoiceschanged = findVoice }
+function say(s) {
+  if (!voice || !sound) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(s); u.voice = voice; u.lang = 'da-DK'; u.rate = .9; speechSynthesis.speak(u);
+}
+
+const wait = ms => new Promise(r => setTimeout(r, calm ? 0 : ms));
+const nudge = el => el.animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: calm ? 1 : 300 });
+// Enerne glider sammen til en stang (ud) eller folder sig ud af en stang (ind).
+const move = out => new Promise(r => {
+  const k = [{ transform: 'none', opacity: 1 }, { transform: 'translateX(-90%) scale(.2, 1)', opacity: .2 }];
+  $('#ones').animate(out ? k : k.reverse(), { duration: calm ? 1 : 450, easing: 'ease-in-out' }).onfinish = r;
+});
+function flap(el, v) {
+  const old = el.textContent; v = String(v);
+  if (old === v) return;
+  el.textContent = v;
+  if (!calm) el.animate([{ transform: `rotateX(${+v > +old ? -90 : 90}deg)` }, { transform: 'none' }], { duration: 260, easing: 'ease-out' });
+}
+
+function render() {
+  const p = e == 10, n = t * 10 + e, kb = task && task.type != 'byg', end = task && task.done;
+  flap($('#ct'), hide ? '?' : t); flap($('#ce'), hide ? '?' : e);
+  $('#ce').classList.toggle('over', p && !hide);
+  $('#lbl').textContent = hide ? '' : lbl(t, e);
+  $('#tens').innerHTML = `<i class="stick">${'<b></b>'.repeat(10)}</i>`.repeat(t);
+  $('#ones').innerHTML = Array.from({ length: 10 }, (_, i) => `<b class="${i < e ? 'on' : ''}"></b>`).join('');
+  $('#ones').classList.toggle('full', p);
+  $('#veksl').classList.toggle('pulse', p);
+  const lock = busy || end, B = k => $(`[data-k="${k}"]`);
+  B(1).disabled = lock || p || n >= 99; B(-1).disabled = lock || n == 0;
+  B(10).disabled = lock || p || t >= 9; B(-10).disabled = lock || p || t == 0;
+  $('#veksl').disabled = lock || !(p || (!e && t));
+  $('#pad').hidden = kb; $('#kb').hidden = !kb; $('#keys').hidden = end;
+  $('#ans').textContent = typed || '–';
+  $('#go').textContent = mode == 'leg' ? 'Tøm bakken' : end ? 'Næste ➜' : '✓ Tjek';
+  $('#go').disabled = mode == 'leg' ? busy || !n : !end && (busy || (kb ? !typed : p));
+  $('#dots').innerHTML = mode == 'leg' ? '' : Array.from({ length: 10 }, (_, i) => `<i class="${round[i] || ''}"></i>`).join('');
+  $('#lvl').textContent = `Niveau ${lvl} af 3 (tal 0–${MAX[lvl]}). Appen går et niveau op efter 4 rigtige i træk og et ned ved en fejl. Barnet ser ikke niveauet.`;
+}
+
+function act(k) {
+  if (busy) return;
+  if (k == -1 && !e) {  // ingen enere: en tier skal veksles først
+    if ($('#tens').lastChild) nudge($('#tens').lastChild);
+    render(); $('#veksl').classList.add('pulse');
+    return say('Der er ingen enere. Veksl en tier til 10 enere.');
+  }
+  if (Math.abs(k) == 1) e += k; else t += k / 10;
+  render();
+  say(e == 10 ? '10 enere. Veksl dem til 1 tier.' : hide ? '' : da(t * 10 + e));
+}
+
+async function veksl() {
+  if (busy) return;
+  if (e == 10) { busy = 1; render(); await move(1); t++; e = 0; busy = 0; render(); say('10 enere blev til 1 tier. ' + (hide ? '' : da(t * 10))) }
+  else if (!e && t) { t--; e = 10; render(); move(0); say('1 tier blev til 10 enere.') }
+}
+
+// Opgaver. Niveau 1: 0-20, niveau 2: 0-49, niveau 3: 0-99.
+// Ekstra ofte: tierovergange og ombyttede par som 24/42.
+const MAX = [0, 20, 49, 99], SPEC = [0,
+  [9, 10, 11, 12, 13, 14, 19, 20],
+  [12, 21, 14, 41, 24, 42, 19, 29, 30, 39, 40, 20],
+  [24, 42, 36, 63, 59, 60, 90, 99, 15, 51, 70, 17, 71, 48, 84]];
+
+function newTask() {
+  if (round.length >= 10) round = [];
+  const type = ['byg', 'hvor', 'skriv', 'sker'][round.length % 4], M = MAX[lvl];
+  let n = R() < .4 ? rnd(SPEC[lvl]) : R() * (M + 1) | 0, k = 0, show, speak;
+  typed = ''; hide = 0; t = e = 0;
+  if (type == 'byg') {
+    hide = lvl == 3;
+    show = `Byg ${lvl == 1 ? n : da(n)}`; speak = 'Byg ' + da(n);
+  } else if (type == 'hvor') {
+    hide = 1; show = 'Hvor mange er der?'; speak = show;
+  } else if (type == 'skriv') {
+    hide = 1; show = `Skriv ${da(n)}`; speak = 'Skriv tallet ' + da(n);
+  } else {
+    k = rnd(lvl > 1 ? [1, -1, 10, -10] : [1, -1]);
+    const x = R() * (M / 10 | 0) | 0, any = 1 + R() * (M - 1) | 0;
+    n = k == 1 ? (R() < .7 ? x * 10 + 9 : any) : k == -1 ? (R() < .7 ? x * 10 + 10 : any) : k == 10 ? R() * (M - 9) | 0 : 10 + R() * (M - 9) | 0;
+    show = `${n} ${k > 0 ? '+' : '−'} ${Math.abs(k)} = ?<small>Hvad sker der?</small>`;
+    speak = `Hvad er ${da(n)} ${k > 0 ? 'plus' : 'minus'} ${Math.abs(k) == 1 ? 'en' : 'ti'}?`;
+  }
+  if (type == 'hvor' || type == 'sker') { t = n / 10 | 0; e = n % 10 }
+  task = { type, n, k, want: n + k, speak, tries: 0, done: 0 };
+  $('#prompt').innerHTML = show; $('#msg').textContent = ''; $('#msg').className = '';
+  render(); say(speak);
+}
+
+function why(g, w) {
+  const a = g / 10 | 0, b = g % 10, c = w / 10 | 0, d = w % 10;
+  if (g == c * 100 + d && c && d) return `Godt tænkt: ${c * 10} og ${d}. Men ${d}-tallet skal stå på 0'ets plads, så det er ${w}.`;
+  if (g > 99) return 'Tallet har kun to cifre: tiere og enere.';
+  if (a == d && b == c && c != d) return `Du lavede ${g}, det er ${tx(a, b)}. ${cap(da(w))} er ${tx(c, d)}.`;
+  if (a != c) nudge($('#ct')); if (b != d) nudge($('#ce'));
+  return `Tjek ${[a != c && 'tierne', b != d && 'enerne'].filter(Boolean).join(' og ')} igen.`;
+}
+
+async function check() {
+  if (mode == 'leg') { t = e = 0; render(); return }
+  if (task.done) return newTask();
+  const g = task.type == 'byg' ? t * 10 + e : +typed, w = task.want;
+  if (task.type == 'sker') {  // vis hvad der sker, også vekslingen
+    busy = 1; render(); await wait(200);
+    if (task.k == 1) { e++; render(); if (e == 10) { await wait(700); await move(1); t++; e = 0 } }
+    else if (task.k == -1) { if (!e) { t--; e = 10; render(); await move(0); await wait(600) } e-- }
+    else t += task.k / 10;
+    busy = 0;
+  } else if (g != w && ++task.tries < 2) {
+    const m = why(g, w); typed = '';
+    $('#msg').textContent = m; $('#msg').className = 'bad'; render(); return say(m);
+  }
+  const ok = g == w, first = ok && !task.tries;
+  if (first) { if (++streak >= 4 && lvl < 3) { lvl++; streak = 0 } } else { streak = 0; lvl = Math.max(1, lvl - 1) }
+  store('lvl', lvl);
+  round.push(first ? 'ok' : ok ? 'mid' : 'bad');
+  task.done = 1; hide = 0; t = w / 10 | 0; e = w % 10;
+  let m = ok ? `Rigtigt! ${cap(da(w))} er ${tx(t, e)}.` : `${task.tries ? '' : why(g, w) + ' '}Det rigtige er ${w}: ${tx(t, e)}.`;
+  if (round.length == 10) m += ` Runden er færdig: ${round.filter(x => x == 'ok').length} af 10 i første forsøg.`;
+  $('#msg').textContent = m; $('#msg').className = ok ? 'ok' : 'bad';
+  render(); say(m);
+}
+
+function key(k) {
+  if (!task || task.done || task.type == 'byg' || busy) return;
+  typed = k == '⌫' ? typed.slice(0, -1) : (typed + k).slice(0, 3);
+  render();
+}
+
+function setMode(m) {
+  mode = m; task = null; round = []; hide = 0; busy = 0; t = e = 0; typed = '';
+  $('#leg').setAttribute('aria-pressed', m == 'leg'); $('#ov').setAttribute('aria-pressed', m == 'ov');
+  $('#msg').textContent = '';
+  if (m == 'ov') return newTask();
+  $('#prompt').innerHTML = 'Læg tiere og enere i bakken<small>Hvad sker der, når der er 10 enere?</small>';
+  render();
+}
+
+$('#keys').innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9, '⌫', 0].map(k => `<button>${k}</button>`).join('');
+$('#keys').onclick = ev => ev.target.closest('button') && key(ev.target.textContent);
+$('#pad').onclick = ev => { const b = ev.target.closest('[data-k]'); if (b) act(+b.dataset.k) };
+$('#veksl').onclick = veksl;
+$('#go').onclick = check;
+$('#leg').onclick = () => setMode('leg');
+$('#ov').onclick = () => setMode('ov');
+$('#prompt').onclick = () => task && say(task.speak);
+$('#snd').onclick = () => { sound = !sound; store('sound', +sound); $('#snd').textContent = sound ? '🔊' : '🔇'; say('Lyd til') };
+$('#skin').onclick = () => { const c = document.body.classList.toggle('coin'); store('coin', +c); $('#skin').setAttribute('aria-pressed', c); $('#skin').textContent = c ? '🧱' : '🪙' };
+$('#reset').onclick = () => { lvl = 1; streak = 0; store('lvl', 1); setMode(mode) };
+addEventListener('keydown', ev => {
+  if (/^[0-9]$/.test(ev.key)) key(ev.key);
+  else if (ev.key == 'Backspace') key('⌫');
+  else if (ev.key == 'Enter' && !$('#go').disabled && document.activeElement.tagName != 'BUTTON') check();
+});
+$('#snd').textContent = sound ? '🔊' : '🔇';
+if (store('coin') == '1') $('#skin').click();
+setMode('leg'); t = 2; e = 3; render();
+</script>
