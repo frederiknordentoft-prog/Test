@@ -10,17 +10,17 @@
   --paper: #eef4f9; --grid: #d8e4ee; --ink: #1b2838; --muted: #566578;
   --surface: #ffffff; --line: #c3d2e0;
   --ten: #2b67d1; --one: #e57712; --flap: #1d2733; --flap-fg: #f7f9fb;
-  --ok: #178a4a; --bad: #cf3b3b; --coin: #c3c9d0;
+  --ok: #178a4a; --bad: #cf3b3b; --coin: #c3c9d0; --hint: #ffeedd;
   --f-num: "Fredoka", ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
   --f-ui: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --u: clamp(12px, 3.3vw, 19px);
+  --u: clamp(11px, 3vw, 19px);
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --paper: #0f1620; --grid: #18222e; --ink: #e6edf4; --muted: #93a3b5; --surface: #17212c; --line: #2b3949;
-  --ten: #5b93f3; --one: #ff9a3d; --flap: #05090e; --flap-fg: #f7f9fb; --ok: #3cc47a; --bad: #ff6b6b; --coin: #9aa3ad; color-scheme: dark } }
+  --ten: #5b93f3; --one: #ff9a3d; --flap: #05090e; --flap-fg: #f7f9fb; --ok: #3cc47a; --bad: #ff6b6b; --coin: #9aa3ad; --hint: #3d2812; color-scheme: dark } }
 :root[data-theme="dark"] {
   --paper: #0f1620; --grid: #18222e; --ink: #e6edf4; --muted: #93a3b5; --surface: #17212c; --line: #2b3949;
-  --ten: #5b93f3; --one: #ff9a3d; --flap: #05090e; --flap-fg: #f7f9fb; --ok: #3cc47a; --bad: #ff6b6b; --coin: #9aa3ad; color-scheme: dark }
+  --ten: #5b93f3; --one: #ff9a3d; --flap: #05090e; --flap-fg: #f7f9fb; --ok: #3cc47a; --bad: #ff6b6b; --coin: #9aa3ad; --hint: #3d2812; color-scheme: dark }
 
 [hidden] { display: none !important }
 body {
@@ -47,16 +47,17 @@ button:focus-visible { outline: 3px solid var(--ten); outline-offset: 2px }
 
 header { display: flex; gap: 8px; align-items: center }
 .tabs { display: flex; gap: 4px; margin-right: auto; background: var(--surface); border: 2px solid var(--line); border-radius: 16px; padding: 3px }
-.tabs button { border: 0; min-height: 48px; padding-inline: 18px; font-size: 20px; background: transparent }
+.tabs button { border: 0; min-height: 60px; padding-inline: 18px; font-size: 20px; background: transparent }
 .tabs button[aria-pressed="true"] { background: var(--ink); color: var(--paper) }
-header > button { min-height: 52px; min-width: 52px; font-size: 22px }
+header > button { min-height: 66px; min-width: 66px; font-size: 22px }
 
 #prompt { margin: 0; min-height: 2.3em; display: grid; place-items: center; text-align: center; cursor: pointer;
   font: 600 clamp(24px, 6vw, 36px)/1.15 var(--f-num); text-wrap: balance }
 #prompt small { display: block; font: 700 15px/1.3 var(--f-ui); color: var(--muted) }
 
-.board { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; align-items: start }
+.board { display: grid; grid-template-columns: 2fr 1fr; gap: 10px 12px; align-items: start }
 .T { --c: var(--ten) } .E { --c: var(--one) }
+.col.T { justify-items: end } .col.E { justify-items: start }
 .col { display: grid; justify-items: center; gap: 2px; perspective: 500px }
 .card {
   font: 600 clamp(64px, 17vw, 108px)/1 var(--f-num); font-variant-numeric: tabular-nums;
@@ -70,9 +71,9 @@ header > button { min-height: 52px; min-width: 52px; font-size: 22px }
 
 .tray { background: var(--surface); border: 2px solid var(--line); border-top: 4px solid var(--c); border-radius: 14px;
   padding: 10px; min-height: calc(var(--u) * 10 + 27px); display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-content: start }
-#tens { column-gap: 14px }
+#tens { gap: 16px 12px }
 .stick, .frame { display: grid; gap: 3px }
-.stick { grid-template-rows: repeat(10, var(--u)); width: var(--u) }
+.stick { grid-template-rows: repeat(10, var(--u)); width: var(--u); outline: 2px solid var(--ten); outline-offset: 1px; border-radius: 4px }
 .frame { grid-template-columns: repeat(5, var(--u)); grid-auto-rows: var(--u); padding: 4px; border: 2px dashed var(--line); border-radius: 8px }
 .frame.full { border: 2px solid var(--bad) }
 .tray b { display: block; border-radius: 3px }
@@ -81,7 +82,7 @@ header > button { min-height: 52px; min-width: 52px; font-size: 22px }
 .frame b.on { background: var(--one); outline: 0 }
 /* Mønter: hver klods bliver en enkrone med hul. En tier er 10 enkroner i en blå papirrulle. */
 .coin .stick b, .coin .frame b.on { border-radius: 50%; background: radial-gradient(circle, var(--surface) 0 20%, var(--coin) 23%) }
-.coin .stick { outline: 3px solid var(--ten); outline-offset: 2px; border-radius: 99px }
+.coin .stick { border-radius: 99px }
 .coin .frame b.on { box-shadow: 0 0 0 2px var(--one) }
 
 #msg { margin: 0; min-height: 2.7em; text-align: center; font-size: 19px; text-wrap: balance }
@@ -89,7 +90,7 @@ header > button { min-height: 52px; min-width: 52px; font-size: 22px }
 #pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px }
 #pad .T, #pad .E { color: var(--c); border-color: var(--c) }
 #veksl { grid-column: 1 / -1 }
-#veksl.pulse { animation: pulse 1s infinite }
+#veksl.pulse { background: var(--hint); border-color: var(--one); color: var(--one); animation: pulse 1s infinite }
 #ans { margin: 0; min-height: 1.15em; text-align: center; font: 600 54px/1.1 var(--f-num); letter-spacing: .06em }
 #keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px }
 #keys button:last-child { grid-column: span 2 }
@@ -111,7 +112,7 @@ details button { font: 700 15px var(--f-ui); min-height: 44px; padding-inline: 1
 <main>
   <header>
     <div class="tabs"><button id="leg" aria-pressed="true">Leg</button><button id="ov" aria-pressed="false">Øv</button></div>
-    <button id="snd" hidden aria-label="Lyd til og fra">🔊</button>
+    <button id="snd" hidden aria-label="Hør igen">🔊</button>
     <button id="skin" aria-pressed="false" aria-label="Skift mellem klodser og mønter">🪙</button>
   </header>
 
@@ -148,7 +149,7 @@ details button { font: 700 15px var(--f-ui); min-height: 44px; padding-inline: 1
       <li>Mangler oplæsningen (ingen dansk stemme på enheden), så læs talordene højt.</li>
       <li>🪙 skifter til mønter. Brug det først, når klodserne sidder: en tier er stadig 10 enkroner.</li>
     </ul>
-    <button id="reset">Start forfra på niveau 1</button>
+    <button id="mute" hidden></button> <button id="reset">Start forfra på niveau 1</button>
   </details>
 </main>
 
@@ -171,13 +172,14 @@ let t = 2, e = 3, busy = 0, hide = 0, mode = 'leg', task = null, typed = '', rou
 let lvl = +store('lvl') || 1, sound = store('sound') !== '0', voice = null;
 
 // Oplæsning: kun med en rigtig dansk stemme. Uden den er knappen skjult.
-const findVoice = () => { voice = speechSynthesis.getVoices().find(v => /^da[-_]/i.test(v.lang)); $('#snd').hidden = !voice };
+const findVoice = () => { voice = speechSynthesis.getVoices().find(v => /^da[-_]/i.test(v.lang)); $('#snd').hidden = $('#mute').hidden = !voice };
 if ('speechSynthesis' in window) { findVoice(); speechSynthesis.onvoiceschanged = findVoice }
 function say(s) {
   if (!voice || !sound) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(s); u.voice = voice; u.lang = 'da-DK'; u.rate = .9; speechSynthesis.speak(u);
 }
+const tell = (s, c = '') => { $('#msg').textContent = s; $('#msg').className = c; say(s) };
 
 const wait = ms => new Promise(r => setTimeout(r, calm ? 0 : ms));
 const nudge = el => el.animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: calm ? 1 : 300 });
@@ -201,7 +203,7 @@ function render() {
   $('#tens').innerHTML = `<i class="stick">${'<b></b>'.repeat(10)}</i>`.repeat(t);
   $('#ones').innerHTML = Array.from({ length: 10 }, (_, i) => `<b class="${i < e ? 'on' : ''}"></b>`).join('');
   $('#ones').classList.toggle('full', p);
-  $('#veksl').classList.toggle('pulse', p);
+  if (!p) $('#veksl').classList.remove('pulse');
   const lock = busy || end, B = k => $(`[data-k="${k}"]`);
   B(1).disabled = lock || p || n >= 99; B(-1).disabled = lock || n == 0;
   B(10).disabled = lock || p || t >= 9; B(-10).disabled = lock || p || t == 0;
@@ -211,41 +213,43 @@ function render() {
   $('#go').textContent = mode == 'leg' ? 'Tøm bakken' : end ? 'Næste ➜' : '✓ Tjek';
   $('#go').disabled = mode == 'leg' ? busy || !n : !end && (busy || (kb ? !typed : p));
   $('#dots').innerHTML = mode == 'leg' ? '' : Array.from({ length: 10 }, (_, i) => `<i class="${round[i] || ''}"></i>`).join('');
-  $('#lvl').textContent = `Niveau ${lvl} af 3 (tal 0–${MAX[lvl]}). Appen går et niveau op efter 4 rigtige i træk og et ned ved en fejl. Barnet ser ikke niveauet.`;
+  $('#lvl').textContent = `Niveau ${lvl} af 4: tal 0–${MAX[lvl]}${lvl == 4 ? ', og tælleren er skjult, når barnet bygger' : ''}. Appen går et niveau op efter 4 rigtige i træk og et ned ved en fejl. Barnet ser ikke niveauet.`;
 }
 
 function act(k) {
   if (busy) return;
+  if (mode == 'leg') $('#msg').textContent = '';
   if (k == -1 && !e) {  // ingen enere: en tier skal veksles først
-    if ($('#tens').lastChild) nudge($('#tens').lastChild);
-    render(); $('#veksl').classList.add('pulse');
-    return say('Der er ingen enere. Veksl en tier til 10 enere.');
+    nudge($('#tens').lastChild); $('#veksl').classList.add('pulse');
+    return tell('Der er ingen enere. Veksl en tier til 10 enere.');
   }
   if (Math.abs(k) == 1) e += k; else t += k / 10;
   render();
-  say(e == 10 ? '10 enere. Veksl dem til 1 tier.' : hide ? '' : da(t * 10 + e));
+  if (e == 10) { $('#veksl').classList.add('pulse'); return tell('10 enere! Veksl dem til 1 tier.') }
+  say(hide ? '' : da(t * 10 + e));
 }
 
 async function veksl() {
   if (busy) return;
-  if (e == 10) { busy = 1; render(); await move(1); t++; e = 0; busy = 0; render(); say('10 enere blev til 1 tier. ' + (hide ? '' : da(t * 10))) }
-  else if (!e && t) { t--; e = 10; render(); move(0); say('1 tier blev til 10 enere.') }
+  if (e == 10) { busy = 1; render(); await move(1); t++; e = 0; busy = 0; render(); tell('10 enere blev til 1 tier.') }
+  else if (!e && t) { t--; e = 10; render(); move(0); nudge($('[data-k="-1"]')); tell('1 tier blev til 10 enere.') }
 }
 
-// Opgaver. Niveau 1: 0-20, niveau 2: 0-49, niveau 3: 0-99.
+// Opgaver. Niveau 1: 0-20, niveau 2: 0-49, niveau 3: 0-99, niveau 4: 0-99 med skjult tæller, når barnet bygger.
 // Ekstra ofte: tierovergange og ombyttede par som 24/42.
-const MAX = [0, 20, 49, 99], SPEC = [0,
+const MAX = [0, 20, 49, 99, 99], SPEC = [0,
   [9, 10, 11, 12, 13, 14, 19, 20],
   [12, 21, 14, 41, 24, 42, 19, 29, 30, 39, 40, 20],
   [24, 42, 36, 63, 59, 60, 90, 99, 15, 51, 70, 17, 71, 48, 84]];
+SPEC[4] = SPEC[3];
 
 function newTask() {
-  if (round.length >= 10) round = [];
+  if (round.length >= 10 && round[round.length - 1] != 'bad') round = [];  // en runde slutter på et rigtigt svar
   const type = ['byg', 'hvor', 'skriv', 'sker'][round.length % 4], M = MAX[lvl];
   let n = R() < .4 ? rnd(SPEC[lvl]) : R() * (M + 1) | 0, k = 0, show, speak;
   typed = ''; hide = 0; t = e = 0;
   if (type == 'byg') {
-    hide = lvl == 3;
+    hide = lvl == 4;
     show = `Byg ${lvl == 1 ? n : da(n)}`; speak = 'Byg ' + da(n);
   } else if (type == 'hvor') {
     hide = 1; show = 'Hvor mange er der?'; speak = show;
@@ -270,7 +274,7 @@ function why(g, w) {
   if (g > 99) return 'Tallet har kun to cifre: tiere og enere.';
   if (a == d && b == c && c != d) return `Du lavede ${g}, det er ${tx(a, b)}. ${cap(da(w))} er ${tx(c, d)}.`;
   if (a != c) nudge($('#ct')); if (b != d) nudge($('#ce'));
-  return `Tjek ${[a != c && 'tierne', b != d && 'enerne'].filter(Boolean).join(' og ')} igen.`;
+  return `${cap(da(g))} er ${tx(a, b)}. Kig på ${[a != c && 'tierne', b != d && 'enerne'].filter(Boolean).join(' og ')}.`;
 }
 
 async function check() {
@@ -285,17 +289,16 @@ async function check() {
     busy = 0;
   } else if (g != w && ++task.tries < 2) {
     const m = why(g, w); typed = '';
-    $('#msg').textContent = m; $('#msg').className = 'bad'; render(); return say(m);
+    render(); return tell(m, 'bad');
   }
   const ok = g == w, first = ok && !task.tries;
-  if (first) { if (++streak >= 4 && lvl < 3) { lvl++; streak = 0 } } else { streak = 0; lvl = Math.max(1, lvl - 1) }
+  if (first) { if (++streak >= 4 && lvl < 4) { lvl++; streak = 0 } } else { streak = 0; lvl = Math.max(1, lvl - 1) }
   store('lvl', lvl);
   round.push(first ? 'ok' : ok ? 'mid' : 'bad');
   task.done = 1; hide = 0; t = w / 10 | 0; e = w % 10;
   let m = ok ? `Rigtigt! ${cap(da(w))} er ${tx(t, e)}.` : `${task.tries ? '' : why(g, w) + ' '}Det rigtige er ${w}: ${tx(t, e)}.`;
-  if (round.length == 10) m += ` Runden er færdig: ${round.filter(x => x == 'ok').length} af 10 i første forsøg.`;
-  $('#msg').textContent = m; $('#msg').className = ok ? 'ok' : 'bad';
-  render(); say(m);
+  if (round.length >= 10 && ok) m += ' Runden er færdig.';
+  render(); tell(m, ok ? 'ok' : 'bad');
 }
 
 function key(k) {
@@ -305,7 +308,8 @@ function key(k) {
 }
 
 function setMode(m) {
-  mode = m; task = null; round = []; hide = 0; busy = 0; t = e = 0; typed = '';
+  if (busy) return;  // en animation kører stadig
+  mode = m; task = null; round = []; hide = 0; t = e = 0; typed = '';
   $('#leg').setAttribute('aria-pressed', m == 'leg'); $('#ov').setAttribute('aria-pressed', m == 'ov');
   $('#msg').textContent = '';
   if (m == 'ov') return newTask();
@@ -317,19 +321,23 @@ $('#keys').innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9, '⌫', 0].map(k => `<button>$
 $('#keys').onclick = ev => ev.target.closest('button') && key(ev.target.textContent);
 $('#pad').onclick = ev => { const b = ev.target.closest('[data-k]'); if (b) act(+b.dataset.k) };
 $('#veksl').onclick = veksl;
-$('#go').onclick = check;
-$('#leg').onclick = () => setMode('leg');
-$('#ov').onclick = () => setMode('ov');
+let lastGo = -1e9;  // et dobbelttryk må ikke bruge andet forsøg eller springe svaret over
+$('#go').onclick = ev => { if (ev.timeStamp - lastGo > 500) { lastGo = ev.timeStamp; check() } };
+$('#leg').onclick = () => mode != 'leg' && setMode('leg');
+$('#ov').onclick = () => mode != 'ov' && setMode('ov');
 $('#prompt').onclick = () => task && say(task.speak);
-$('#snd').onclick = () => { sound = !sound; store('sound', +sound); $('#snd').textContent = sound ? '🔊' : '🔇'; say('Lyd til') };
+$('#snd').onclick = () => say(task ? task.speak : da(t * 10 + e));
+const muteLbl = () => $('#mute').textContent = sound ? 'Slå oplæsning fra' : 'Slå oplæsning til';
+$('#mute').onclick = () => { sound = !sound; store('sound', +sound); muteLbl() };
 $('#skin').onclick = () => { const c = document.body.classList.toggle('coin'); store('coin', +c); $('#skin').setAttribute('aria-pressed', c); $('#skin').textContent = c ? '🧱' : '🪙' };
-$('#reset').onclick = () => { lvl = 1; streak = 0; store('lvl', 1); setMode(mode) };
+$('#reset').onclick = () => { if (busy) return; lvl = 1; streak = 0; store('lvl', 1); setMode(mode) };
+addEventListener('mousedown', ev => ev.target.closest('button') && ev.preventDefault());  // et klik flytter ikke fokus, så Enter betyder Tjek
 addEventListener('keydown', ev => {
   if (/^[0-9]$/.test(ev.key)) key(ev.key);
   else if (ev.key == 'Backspace') key('⌫');
-  else if (ev.key == 'Enter' && !$('#go').disabled && document.activeElement.tagName != 'BUTTON') check();
+  else if (ev.key == 'Enter' && !ev.repeat && !$('#go').disabled && document.activeElement.tagName != 'BUTTON') $('#go').click();
 });
-$('#snd').textContent = sound ? '🔊' : '🔇';
+muteLbl();
 if (store('coin') == '1') $('#skin').click();
 setMode('leg'); t = 2; e = 3; render();
 </script>
