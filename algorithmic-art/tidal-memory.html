@@ -340,12 +340,49 @@
         gap: 8px;
     }
 
-    .actions .button:last-child {
-        grid-column: 1 / -1;
+    .select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--anthropic-light-gray);
+        background: var(--anthropic-light);
+        color: var(--anthropic-dark);
+        font-family: var(--font-body);
+        font-size: 14px;
+    }
+
+    .select:focus-visible {
+        outline: 2px solid var(--anthropic-orange);
+        outline-offset: 1px;
+    }
+
+    .settings-note {
+        margin-top: 12px;
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--ink-muted);
+    }
+
+    .settings-out {
+        width: 100%;
+        margin-top: 8px;
+        min-height: 72px;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid var(--anthropic-light-gray);
+        background: var(--anthropic-light);
+        color: var(--anthropic-dark);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        resize: vertical;
     }
 
     /* Canvas Area */
     .canvas-area {
+        --aspect: 1.6;
+        --ar: 16 / 10;
+        --max-h: calc(100vh - 100px);
+        --art-w: min(100%, 1000px, calc(var(--max-h) * var(--aspect)));
         flex: 1;
         min-width: 0;
         display: flex;
@@ -359,9 +396,8 @@
     }
 
     #canvas-container {
-        width: 100%;
-        max-width: 1000px;
-        aspect-ratio: 16 / 10;
+        width: var(--art-w);
+        aspect-ratio: var(--ar);
         border-radius: 12px;
         overflow: hidden;
         box-shadow: 0 20px 40px rgba(20, 20, 19, 0.12);
@@ -376,8 +412,7 @@
     }
 
     .render-status {
-        width: 100%;
-        max-width: 1000px;
+        width: var(--art-w);
         display: flex;
         align-items: center;
         gap: 12px;
@@ -467,6 +502,7 @@
         }
 
         .canvas-area {
+            --max-h: 46vh;
             order: -1;
             min-height: 0;
             top: env(safe-area-inset-top, 0px);
@@ -525,7 +561,10 @@
                 <button class="button secondary" onclick="regenerate()">Regenerate</button>
                 <button class="button" onclick="resetParameters()">Reset</button>
                 <button class="button tertiary" onclick="openSnapshot()">Save image</button>
+                <button class="button tertiary" onclick="copySettings()">Copy settings</button>
             </div>
+            <p class="settings-note" id="settings-note">For a print file: copy the settings and paste them in the chat with Claude, together with the size you need.</p>
+            <textarea class="settings-out" id="settings-out" readonly hidden aria-label="Current settings"></textarea>
         </section>
     </aside>
 
@@ -552,7 +591,15 @@
     // CONSTANTS
     // ═══════════════════════════════════════════════════════════════════════
 
-    const W = 1600, H = 1000;          // plate size (16:10)
+    // Plate sizes in design units. A print renders the same plate at a higher scale,
+    // e.g. 2:3 at scale 6 = 6000 × 9000 px, stroke for stroke the same image.
+    const FORMATS = {
+        '16:10': { w: 1600, h: 1000, label: '16:10 landscape (screen)' },
+        '3:2': { w: 1500, h: 1000, label: '3:2 landscape (90 × 60, 150 × 100 cm)' },
+        '2:3': { w: 1000, h: 1500, label: '2:3 portrait (60 × 90, 100 × 150 cm)' },
+        '1:1': { w: 1200, h: 1200, label: '1:1 square (60 × 60, 100 × 100 cm)' }
+    };
+    let W = 1600, H = 1000;
     const MARGIN = 80;                 // the field extends past the frame so strands enter from outside
     const CELL = 5;                    // field grid resolution in px
     const M2_HOURS = 12.42;            // principal lunar semidiurnal tide; one exposure is one day
@@ -568,6 +615,7 @@
 
     const DEFAULTS = {
         seed: 4217,
+        format: '16:10',
         noiseScale: 0.0024,
         octaves: 2,
         warp: 0.8,
@@ -611,7 +659,7 @@
     ];
 
     // Changing any of these rebuilds the vector field; everything else reuses it.
-    const FIELD_KEYS = ['seed', 'noiseScale', 'octaves', 'warp', 'tide'];
+    const FIELD_KEYS = ['seed', 'format', 'noiseScale', 'octaves', 'warp', 'tide'];
 
     // ═══════════════════════════════════════════════════════════════════════
     // SEEDED RANDOMNESS + NOISE
@@ -779,6 +827,7 @@
 
     function setup() {
         pixelDensity(1);
+        applyFormat();
         const c = createCanvas(W, H);
         c.parent('canvas-container');
         canvasEl = c.elt;
@@ -792,15 +841,40 @@
         if (!canvasEl) return;
         clearTimeout(restartTimer);
 
-        // p5 convention; the artwork itself draws from the dedicated seeded streams below.
-        randomSeed(params.seed);
-        noiseSeed(params.seed);
+        applyFormat();
+        resetSimulation();
+        paintBackground(drawingContext);
 
+        finished = false;
+        snapCanvas = null;
+        stepsPerFrame = reduceMotion ? BASE_STEPS * 6 : BASE_STEPS;
+        setStatus(0, 'Rendering · 0%');
+        loop();
+    }
+
+    function applyFormat() {
+        const f = FORMATS[params.format] || FORMATS['16:10'];
+        W = f.w; H = f.h;
+        const area = document.querySelector('.canvas-area');
+        area.style.setProperty('--aspect', String(W / H));
+        area.style.setProperty('--ar', `${W} / ${H}`);
+        if (canvasEl && (width !== W || height !== H)) resizeCanvas(W, H, true);
+    }
+
+    function ensureField() {
         const sig = FIELD_KEYS.map((k) => params[k]).join('|');
         if (sig !== fieldSig) {
             field = buildField();
             fieldSig = sig;
         }
+    }
+
+    // Fresh, seeded particle state. Every render of the same settings starts from here.
+    function resetSimulation() {
+        // p5 convention; the artwork itself draws from the dedicated seeded streams below.
+        randomSeed(params.seed);
+        noiseSeed(params.seed);
+        ensureField();
 
         const drng = mulberry32(params.seed ^ 0x5bd1e995);
         const angle = drng() * TURN;
@@ -817,16 +891,9 @@
         for (let k = 0; k < n; k++) spawn(k);
 
         buildStyles();
-        paintBackground();
-
         step = 0;
         strokeCount = 0;
-        finished = false;
-        snapCanvas = null;
         totalSteps = params.exposure * BASE_STEPS;
-        stepsPerFrame = reduceMotion ? BASE_STEPS * 6 : BASE_STEPS;
-        setStatus(0, 'Rendering · 0%');
-        loop();
     }
 
     // A strand is born somewhere in the water. Its colour comes from the water mass it is born into.
@@ -870,8 +937,7 @@
         });
     }
 
-    function paintBackground() {
-        const ctx = drawingContext;
+    function paintBackground(ctx) {
         const deep = hexToRgb(params.colors.deep);
         ctx.save();
         ctx.globalCompositeOperation = 'source-over';
@@ -887,7 +953,14 @@
 
     function draw() {
         if (!field || finished) return;
+        advance(stepsPerFrame);
+        flush(drawingContext);
+        if (step >= totalSteps) finish();
+        else setStatus(step / totalSteps, `Rendering · ${Math.round((100 * step) / totalSteps)}%`);
+    }
 
+    // Moves every particle `count` steps and collects the strokes into buckets.
+    function advance(count) {
         const f = field, cols = f.cols;
         const ax = f.ax, ay = f.ay, bx = f.bx, by = f.by;
         const maxGX = cols - 1.001, maxGY = f.rows - 1.001;
@@ -897,7 +970,7 @@
 
         for (let b = 0; b < buckets.length; b++) buckets[b].length = 0;
 
-        const end = Math.min(totalSteps, step + stepsPerFrame);
+        const end = Math.min(totalSteps, step + count);
         for (; step < end; step++) {
             const s = 0.5 - 0.5 * Math.cos(TURN * tideCycles * step / totalSteps);
 
@@ -937,16 +1010,10 @@
                 buckets[strandColor[k] * ALPHA_LEVELS + lvl].push(x, y, nx, ny);
             }
         }
-
-        flush();
-
-        if (step >= totalSteps) finish();
-        else setStatus(step / totalSteps, `Rendering · ${Math.round((100 * step) / totalSteps)}%`);
     }
 
     // Additive light: every stroke adds, nothing subtracts.
-    function flush() {
-        const ctx = drawingContext;
+    function flush(ctx) {
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
         ctx.lineWidth = params.lineWeight;
@@ -973,13 +1040,12 @@
         snapCanvas.width = W;
         snapCanvas.height = H;
         snapCanvas.getContext('2d').drawImage(canvasEl, 0, 0);
-        drawCaption();
+        drawCaption(drawingContext);
         setStatus(1, `Done · ${strokeCount.toLocaleString('en-US')} strokes`);
     }
 
-    function drawCaption() {
+    function drawCaption(ctx) {
         if (!params.caption) return;
-        const ctx = drawingContext;
         const s = hexToRgb(params.colors.surface);
         ctx.save();
         ctx.globalCompositeOperation = 'source-over';
@@ -998,8 +1064,30 @@
             ctx.globalCompositeOperation = 'source-over';
             ctx.drawImage(snapCanvas, 0, 0);
             ctx.restore();
-            drawCaption();
+            drawCaption(ctx);
         }
+    }
+
+    // Print path: the same simulation drawn through a scale transform into a large offscreen canvas.
+    // Used by render-print.js in a headless browser. Phones cannot hold a canvas this size.
+    function renderStill(scale) {
+        noLoop();
+        clearTimeout(restartTimer);
+        applyFormat();
+        const out = document.createElement('canvas');
+        out.width = Math.round(W * scale);
+        out.height = Math.round(H * scale);
+        const ctx = out.getContext('2d');
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        resetSimulation();
+        paintBackground(ctx);
+        while (step < totalSteps) {
+            advance(BASE_STEPS);
+            flush(ctx);
+        }
+        drawCaption(ctx);
+        finished = true;
+        return out;
     }
 
     function setStatus(progress, text) {
@@ -1022,6 +1110,25 @@
 
     function buildControls() {
         const host = document.getElementById('param-controls');
+
+        const formatTitle = document.createElement('div');
+        formatTitle.className = 'param-group-title';
+        formatTitle.textContent = 'Format';
+        host.appendChild(formatTitle);
+        const formatWrap = document.createElement('div');
+        formatWrap.className = 'control-group';
+        formatWrap.innerHTML = `
+            <label for="format">Aspect ratio</label>
+            <div class="hint" id="format-hint">Pick the shape you want to print, so the preview matches it.</div>
+            <select class="select" id="format" aria-describedby="format-hint">
+                ${Object.entries(FORMATS).map(([k, f]) => `<option value="${k}" ${k === params.format ? 'selected' : ''}>${f.label}</option>`).join('')}
+            </select>`;
+        formatWrap.querySelector('select').addEventListener('change', (e) => {
+            params.format = e.target.value;
+            scheduleRestart(30);
+        });
+        host.appendChild(formatWrap);
+
         let group = '';
         for (const spec of SPEC) {
             if (spec.group !== group) {
@@ -1090,6 +1197,7 @@
             document.getElementById(`${spec.key}-value`).textContent = formatValue(spec, params[spec.key]);
         }
         document.getElementById('caption').checked = params.caption;
+        document.getElementById('format').value = params.format;
         for (const c of COLOR_SPEC) {
             document.getElementById(`color-${c.key}`).value = params.colors[c.key];
             document.getElementById(`color-${c.key}-value`).textContent = params.colors[c.key];
@@ -1108,6 +1216,22 @@
             : 'Still rendering, so this is the image so far. Press and hold (phone) or right-click (desktop) to save it.';
         document.getElementById('snapshot').hidden = false;
         document.getElementById('snapshot-close').focus();
+    }
+
+    function copySettings() {
+        const text = JSON.stringify(params);
+        const out = document.getElementById('settings-out');
+        const note = document.getElementById('settings-note');
+        out.value = text;
+        out.hidden = false;
+        out.select();
+        const copied = () => { note.textContent = 'Copied. Paste it in the chat with Claude and say which size you need, e.g. 6000 × 9000 px.'; };
+        const manual = () => { note.textContent = 'Copying was blocked here. The text below is selected: copy it yourself and paste it in the chat.'; };
+        try {
+            navigator.clipboard.writeText(text).then(copied, manual);
+        } catch (e) {
+            manual();
+        }
     }
 
     function closeSnapshot() {
