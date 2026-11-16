@@ -63,7 +63,7 @@ li label { display: flex; align-items: center; gap: 14px; padding: 14px 16px; bo
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none }
 li small { margin-left: auto; flex: none; font-size: .8rem; color: var(--muted) }
 li small.late { color: var(--late); font-weight: 600 }
-li a { margin-left: auto; flex: none; color: var(--accent); font-size: .85rem; font-weight: 600; text-decoration: none }
+li a { margin-left: auto; flex: none; max-width: 50%; padding-block: 8px; margin-block: -8px; color: var(--accent); font-size: .85rem; font-weight: 600; text-decoration: none }
 input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--accent); cursor: inherit }
 #done label { color: var(--muted); text-decoration: line-through }
 #edit { position: absolute; inset: 0; width: 100%; box-sizing: border-box; font: inherit; color: var(--fg); background: var(--card); border: 0;
@@ -72,7 +72,7 @@ input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accen
 .row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px;
   font-size: .78rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted) }
 .row button { all: unset; cursor: pointer; color: var(--accent); font-size: .95rem; text-transform: none; letter-spacing: 0; padding: 6px 0 }
-.tabs button:focus-visible, .kids button:focus-visible, .row button:focus-visible, #addbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px }
+.tabs button:focus-visible, .kids button:focus-visible, .row button:focus-visible, #addbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px }
 .note { margin: 0; color: var(--muted); text-align: center }
 
 /* Glow: a row you tick, untick or type again lights up in the list's colour and fades over 3 s, so you can find it. */
@@ -95,9 +95,9 @@ input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accen
   <nav class="tabs" role="tablist" aria-label="Lister">
     <button role="tab" id="tab-shop" data-list="shop">Indkøb<sup id="n-shop"></sup></button>
     <button role="tab" id="tab-todo" data-list="todo">Husk<sup id="n-todo"></sup></button>
-    <button role="tab" id="tab-gift" data-list="gift" aria-label="Gaveønsker til børnene">Gaver<sup id="n-gift"></sup></button>
+    <button role="tab" id="tab-gift" data-list="gift">Gaver<sup id="n-gift"></sup></button>
   </nav>
-  <nav id="kids" class="kids" role="tablist" aria-label="Børn" hidden>
+  <nav id="kids" class="kids" role="tablist" aria-label="Gaveønsker til børnene" hidden>
     <button role="tab" data-list="dagmar">Dagmar<sup id="n-dagmar"></sup></button>
     <button role="tab" data-list="elin">Elin<sup id="n-elin"></sup></button>
     <button role="tab" data-list="agnes">Agnes<sup id="n-agnes"></sup></button>
@@ -122,7 +122,7 @@ input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accen
 <script>
 const $ = s => document.querySelector(s);
 // Each child's wishes are a list of their own, so everything the other lists do works there too.
-const wish = name => ({ ph: `Hvad ønsker ${name} sig?`, done: "Købt", empty: `Ingen ønsker til ${name} endnu. Skriv det første ovenfor.`, gift: true });
+const wish = name => ({ ph: `Hvad ønsker ${name} sig?`, done: "Købt", empty: `Ingen åbne ønsker til ${name}. Skriv et nyt ønske ovenfor.`, gift: true });
 const LISTS = {
   shop: { ph: "Tilføj varer, fx mælk, brød", done: "I kurven", empty: "Alt er købt. Skriv det, I mangler, i feltet ovenfor." },
   todo: { ph: "Tilføj noget, I skal huske", done: "Klaret", empty: "Intet at huske lige nu." },
@@ -130,7 +130,7 @@ const LISTS = {
 };
 let list = "shop", kid = "dagmar", items = [], loaded = false, col = null, last = "", fresh = new Set(), room = null, user = null, sample = null;
 const glows = new Map(); // id → when it last moved between open and done
-try { const saved = localStorage.getItem("list"); if (LISTS[saved]) list = saved; if (LISTS[saved]?.gift) kid = saved } catch {}
+try { const saved = localStorage.getItem("list"); if (LISTS[saved]) list = saved } catch {}
 
 const say = msg => $("#status").textContent = msg;
 const today = (d = 0) => new Date(Date.now() + d * 864e5).toLocaleDateString("sv"); // "2026-11-10"
@@ -142,7 +142,7 @@ function row(i) {
   const cb = label.appendChild(document.createElement("input")), t = performance.now() - glows.get(i.id);
   cb.type = "checkbox"; cb.checked = i.done; cb.dataset.id = i.id; cb.disabled = !col;
   // A web address in the text shows as the shop's name, e.g. "lego.com ↗".
-  i.text.split(/(https?:\/\/\S+)/).forEach((s, k) => s && label.append(k % 2
+  i.text.split(/(https?:\/\/\S+)/i).forEach((s, k) => s && label.append(k % 2
     ? Object.assign(document.createElement("a"), { href: s, target: "_blank", rel: "noopener", textContent: s.split("/")[2].replace(/^www\./, "") + " ↗" }) : s));
   if (i.due) label.appendChild(Object.assign(document.createElement("small"), { textContent: when(i.due), className: !i.done && i.due < today() ? "late" : "" }));
   if (t < 3000) { li.className = "glow"; label.style.animationDelay = -t + "ms" } // rows are rebuilt on every change; resume the fade
@@ -211,12 +211,13 @@ async function write(p, text) {
   }
 }
 
-// Add: commas split items on Indkøb and Gaver (not decimal commas: "1,5 l mælk"); Husk keeps them. A name the list
-// already knows is reused: from the basket or history it comes back; if it is already on the list, that row lights up
-// and shakes (and takes the new deadline, if one was picked). "iPad" keeps its small i.
+// Add: commas split shopping items (not decimal commas: "1,5 l mælk"); Husk and the wish lists keep them
+// ("Gummistøvler, str. 30"). A name the list already knows is reused: from the basket or history it comes back;
+// if it is already on the list, that row lights up and shakes (and takes the new deadline, if one was picked).
+// A wish already bought stays bought: it lights up in "Købt" instead, so it is not bought twice. "iPad" keeps its small i.
 $("#add").onsubmit = e => {
   e.preventDefault();
-  const raw = list !== "todo" ? $("#text").value.split(/(?<!\d),|,(?!\d)/) : [$("#text").value];
+  const raw = list === "shop" ? $("#text").value.split(/(?<!\d),|,(?!\d)/) : [$("#text").value];
   const texts = [...new Set(raw.map(s => s.trim()).filter(Boolean).map(s => /^\p{Ll}\p{Lu}/u.test(s) ? s : s[0].toUpperCase() + s.slice(1)))];
   if (!texts.length) return shake($("#add"), "X", 8);
   const extra = list === "todo" ? { due: $("#due").value } : {};
@@ -224,7 +225,7 @@ $("#add").onsubmit = e => {
   texts.forEach((text, k) => {
     const same = items.filter(i => i.list === list && i.text?.toLowerCase() === text.toLowerCase()).sort((a, b) => a.done - b.done)[0];
     if (!same) return write(col.add({ text, list, done: false, created: Date.now() - k, ...extra }), text);
-    if (same.done) return write(col.doc(same.id).update({ done: false, cleared: false, created: Date.now() - k, ...extra }), text);
+    if (same.done && (same.cleared || !LISTS[list].gift)) return write(col.doc(same.id).update({ done: false, cleared: false, created: Date.now() - k, ...extra }), text);
     if (extra.due) write(col.doc(same.id).update(extra), text);
     glows.set(same.id, performance.now()); render();
     const li = $(`[data-id="${same.id}"]`).closest("li");
