@@ -11,7 +11,7 @@
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=3" />
+<link rel="stylesheet" href="styles.css?v=4" />
 </head>
 <body>
 
@@ -30,29 +30,61 @@
 
 <a id="top"></a>
 
-<!-- ============ HERO ============ -->
-<section class="section hero">
+<!-- ============ OVERBLIK (first screen): price now + chart ============ -->
+<section class="section dark overview" id="chart">
   <div class="container">
-    <p class="eyebrow reveal">Østdanmark · DK2</p>
-    <h1 class="headline reveal">Strømmen koster.</h1>
-    <div class="hero-price reveal">
-      <span id="priceNow">–</span><span class="hero-price-unit">kr</span>
+    <h1 class="sr-only">Elprisen nu · Østdanmark</h1>
+    <div class="tabs" role="tablist">
+      <span class="tab-thumb" id="tabThumb" aria-hidden="true"></span>
+      <button class="tab active" data-day="today" role="tab" aria-selected="true">
+        <span class="tab-title">I dag</span>
+        <span class="tab-date" id="tabDateToday"></span>
+      </button>
+      <button class="tab" data-day="tomorrow" id="tabTomorrow" role="tab" aria-selected="false">
+        <span class="tab-title">I morgen</span>
+        <span class="tab-date" id="tabDateTomorrow"></span>
+      </button>
     </div>
-    <p class="hero-price-caption reveal">
-      <span id="priceLevel">Henter dagens priser…</span><span class="sep">·</span><span id="clock">--:--</span>
-    </p>
-    <p class="sub reveal">Spotprisen time for time. Klart og uden støj.</p>
-
-    <div class="mode-row reveal" role="group" aria-label="Vis priser med">
+    <div class="chart-card">
+      <div class="readout" id="readout">
+        <div class="readout-top">
+          <div class="readout-price" id="roPriceWrap"><span id="roPrice">–</span><span class="readout-unit">kr/kWh</span></div>
+          <button type="button" class="ro-reset" id="roReset" tabindex="-1" aria-hidden="true">↺ Nu</button>
+        </div>
+        <div class="readout-meta">
+          <span id="roHour">–</span><span class="rsep">·</span><span id="roLevel">–</span><span class="rsep">·</span><span id="roDiff">–</span>
+        </div>
+        <div class="readout-split" id="roSplit">&nbsp;</div>
+      </div>
+      <p id="chartLive" class="sr-only" aria-live="polite"></p>
+      <div class="chart-wrap">
+        <canvas id="priceChart" aria-label="Timepriser som søjlediagram"></canvas>
+        <div id="nowBadge" class="now-badge" hidden>NU</div>
+        <div id="chartEmpty" class="chart-empty">Henter dagens priser…</div>
+      </div>
+    </div>
+    <div class="mode-row" role="group" aria-label="Vis priser med">
       <span class="mode-label">Vis med</span>
       <button class="mode-chip active" id="modeTariffs" data-mode="tariffs">Afgifter</button>
       <button class="mode-chip" id="modeGasel" data-mode="gasel">Gasel +6 øre</button>
       <button class="mode-chip active" id="modeVat" data-mode="vat">Moms</button>
     </div>
 
-    <div class="cta-row reveal">
-      <a href="#plan" class="btn-pill">Find billigste time</a>
-      <a href="#chart" class="btn-link">Se hele dagen <span class="chev">›</span></a>
+    <div class="legend" id="legend">
+      <span><i class="sw green"></i><span id="lgGood">Billig</span></span>
+      <span><i class="sw yellow"></i><span id="lgOk">Normal</span></span>
+      <span><i class="sw orange"></i><span id="lgWarn">Høj</span></span>
+      <span><i class="sw red"></i><span id="lgBad">Dyr</span></span>
+    </div>
+    <div class="limits-row">
+      <button class="limits-toggle" id="limitsToggle" aria-expanded="false">Justér farvegrænser</button>
+      <div class="limits" id="limitsPanel" hidden>
+        <label>Billig under <input id="thGood" type="text" inputmode="decimal"> kr</label>
+        <label>Normal under <input id="thOk" type="text" inputmode="decimal"> kr</label>
+        <label>Høj under <input id="thWarn" type="text" inputmode="decimal"> kr</label>
+        <span class="limits-note">Dyr derover. Grænserne gælder alle dage, så farverne kan sammenlignes.</span>
+        <button class="limits-reset" id="limitsReset">Nulstil</button>
+      </div>
     </div>
   </div>
 </section>
@@ -77,61 +109,6 @@
       </div>
     </div>
     <p class="tip reveal" id="nextCheap">Leder efter billigste time…</p>
-  </div>
-</section>
-
-<!-- ============ CHART (dark) ============ -->
-<section class="section dark" id="chart">
-  <div class="container">
-    <p class="eyebrow reveal">Timepriser</p>
-    <h2 class="headline-md light reveal">24 timer. Et blik.</h2>
-    <div class="tabs reveal" role="tablist">
-      <span class="tab-thumb" id="tabThumb" aria-hidden="true"></span>
-      <button class="tab active" data-day="today" role="tab" aria-selected="true">
-        <span class="tab-title">I dag</span>
-        <span class="tab-date" id="tabDateToday"></span>
-      </button>
-      <button class="tab" data-day="tomorrow" id="tabTomorrow" role="tab" aria-selected="false">
-        <span class="tab-title">I morgen</span>
-        <span class="tab-date" id="tabDateTomorrow"></span>
-      </button>
-    </div>
-    <div class="chart-card reveal">
-      <div class="readout" id="readout">
-        <div class="readout-top">
-          <div class="readout-price" id="roPriceWrap"><span id="roPrice">–</span><span class="readout-unit">kr/kWh</span></div>
-          <button type="button" class="ro-reset" id="roReset" tabindex="-1" aria-hidden="true">↺ Nu</button>
-        </div>
-        <div class="readout-meta">
-          <span id="roHour">–</span><span class="rsep">·</span><span id="roLevel">–</span><span class="rsep">·</span><span id="roDiff">–</span>
-        </div>
-        <div class="readout-split" id="roSplit">&nbsp;</div>
-      </div>
-      <p id="chartLive" class="sr-only" aria-live="polite"></p>
-      <div class="chart-wrap">
-        <canvas id="priceChart" aria-label="Timepriser som søjlediagram"></canvas>
-        <div id="nowBadge" class="now-badge" hidden>NU</div>
-        <div id="chartEmpty" class="chart-empty" hidden>
-          Morgendagens priser udgives omkring kl. 13.
-        </div>
-      </div>
-    </div>
-    <div class="legend reveal" id="legend">
-      <span><i class="sw green"></i><span id="lgGood">Billig</span></span>
-      <span><i class="sw yellow"></i><span id="lgOk">Normal</span></span>
-      <span><i class="sw orange"></i><span id="lgWarn">Høj</span></span>
-      <span><i class="sw red"></i><span id="lgBad">Dyr</span></span>
-    </div>
-    <div class="limits-row reveal">
-      <button class="limits-toggle" id="limitsToggle" aria-expanded="false">Justér farvegrænser</button>
-      <div class="limits" id="limitsPanel" hidden>
-        <label>Billig under <input id="thGood" type="text" inputmode="decimal"> kr</label>
-        <label>Normal under <input id="thOk" type="text" inputmode="decimal"> kr</label>
-        <label>Høj under <input id="thWarn" type="text" inputmode="decimal"> kr</label>
-        <span class="limits-note">Dyr derover. Grænserne gælder alle dage, så farverne kan sammenlignes.</span>
-        <button class="limits-reset" id="limitsReset">Nulstil</button>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -242,6 +219,6 @@
 
 <div id="toast" class="toast" hidden></div>
 
-<script src="app.js?v=3"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>
