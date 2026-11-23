@@ -296,9 +296,8 @@ function refresh() {
 // Redraws from the rows already held before any refresh, so "nu" is right
 // even while a request is still under way.
 function minuteTick() {
-  renderClock();
   rollOver();
-  renderHero();
+  renderStats();
   renderTable();
   renderCalculator();
   // Chart shows other rows (day rolled over) or a new hour began: redraw.
@@ -313,7 +312,9 @@ function minuteTick() {
 }
 
 // ------------- hero -------------
-function renderHero() {
+// "Tre tal" stats, mode caption and next-cheap tip (the price now is the
+// chart readout's default)
+function renderStats() {
   // Caption echoing pricing mode
   const parts = ["Spot"];
   if (state.tariffs) parts.push("afgifter");
@@ -327,26 +328,18 @@ function renderHero() {
   // No row for the current hour (today's prices not fetched yet): show
   // nothing rather than an old price posing as "now"
   if (idx < 0) {
-    ["priceNow", "statMin", "statMax", "statAvg", "statMinHint", "statMaxHint"]
+    ["statMin", "statMax", "statAvg", "statMinHint", "statMaxHint"]
       .forEach(id => { document.getElementById(id).textContent = "–"; });
-    document.getElementById("priceLevel").textContent = "Venter på dagens priser";
     document.getElementById("nextCheap").textContent = "Leder efter billigste time…";
     return;
   }
 
   const stats = statsOf(prices);
-  const cur = fullPrice(prices[idx].DKK_per_kWh, prices[idx].time_start);
-
-  document.getElementById("priceNow").textContent = fmt(cur);
   document.getElementById("statMin").textContent = fmt(stats.min);
   document.getElementById("statMax").textContent = fmt(stats.max);
   document.getElementById("statAvg").textContent = fmt(stats.avg);
   document.getElementById("statMinHint").textContent = "kl. " + hourLabel(prices[stats.minIdx].time_start);
   document.getElementById("statMaxHint").textContent = "kl. " + hourLabel(prices[stats.maxIdx].time_start);
-
-  const lvl = levelOf(cur);
-  document.getElementById("priceLevel").textContent =
-    `${LEVEL[lvl].label} pris pr. kWh`;
 
   // Next cheap hour tip
   const forward = [...prices.slice(idx + 1), ...state.tomorrow];
@@ -672,7 +665,7 @@ function ensureChart() {
             font: { size: 10, family: "-apple-system, sans-serif" },
             callback: (v) => fmt(v),
             padding: 6,
-            maxTicksLimit: 5,
+            maxTicksLimit: 6, // 5 forced 2-kr steps: a 4,2 kr day got a 0–6 axis
           },
         },
       },
@@ -857,7 +850,10 @@ function syncReadout(animate = true) {
   if (!chartUI.prices.length) { setReadoutEmpty(); return; }
   updateReadout(activeIdx() ?? defaultReadoutIdx(), animate);
   const btn = document.getElementById("roReset");
-  btn.textContent = state.view === "today" && chartUI.nowIdx >= 0 ? "↺ Nu" : "↺ Billigst";
+  // While another hour is pinned, the pill still shows the price now
+  btn.textContent = state.view === "today" && chartUI.nowIdx >= 0
+    ? `↺ Nu ${fmt(chartUI.values[chartUI.nowIdx])}`
+    : "↺ Billigst";
   setResetVisible(chartUI.selIdx !== null);
 }
 
@@ -1259,13 +1255,6 @@ function initTheme() {
   });
 }
 
-// Updated by the minute tick, so it changes together with the price
-function renderClock() {
-  const d = new Date();
-  const el = document.getElementById("clock");
-  if (el) el.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 
 function initReveals() {
   if (!("IntersectionObserver" in window)) {
@@ -1294,7 +1283,7 @@ function initScrollTop() {
 let rendered = false;
 function renderAll() {
   rendered = true;
-  renderHero();
+  renderStats();
   renderChart();
   renderLists();
   renderTable();
@@ -1321,7 +1310,6 @@ function toast(msg) {
 async function boot() {
   initScrollTop();
   initTheme();
-  renderClock();
   initTabs();
   initSwipe();
   initAppliances();

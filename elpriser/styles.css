@@ -143,16 +143,6 @@ html[data-theme="dark"] .nav { background: rgba(0, 0, 0, 0.72); }
 }
 .section.dark .eyebrow { color: #2997ff; }
 
-.headline {
-  font-size: clamp(40px, 6.5vw, 80px);
-  font-weight: 700;
-  letter-spacing: -0.045em;
-  line-height: 1.05;
-  color: var(--text);
-  margin-bottom: 28px;
-}
-.section.dark .headline { color: var(--text-light); }
-
 .headline-md {
   font-size: clamp(32px, 5vw, 56px);
   font-weight: 700;
@@ -174,80 +164,6 @@ html[data-theme="dark"] .nav { background: rgba(0, 0, 0, 0.72); }
   line-height: 1.35;
 }
 .section.dark .sub { color: var(--text-light-sub); }
-
-/* ---------- HERO ---------- */
-.hero {
-  min-height: calc(100vh - var(--nav-h));
-  display: flex;
-  align-items: center;
-  padding-top: clamp(80px, 10vh, 120px);
-  padding-bottom: clamp(80px, 10vh, 120px);
-}
-
-.hero-price {
-  font-size: clamp(120px, 22vw, 280px);
-  font-weight: 600;
-  letter-spacing: -0.06em;
-  line-height: 1;
-  color: var(--text);
-  margin: 18px 0 20px;
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-}
-.hero-price-unit {
-  font-size: 0.2em;
-  font-weight: 400;
-  color: var(--text-sub);
-  letter-spacing: -0.02em;
-}
-
-.hero-price-caption {
-  font-size: 17px;
-  color: var(--text-sub);
-  margin-bottom: 18px;
-  letter-spacing: -0.01em;
-}
-.hero-price-caption .sep { margin: 0 10px; opacity: 0.4; }
-.hero-price-caption #priceLevel { color: var(--text); font-weight: 500; }
-
-.cta-row {
-  display: inline-flex;
-  gap: 28px;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.btn-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--accent);
-  color: #fff;
-  padding: 12px 22px;
-  border-radius: 980px;
-  font-size: 17px;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  transition: background 0.2s;
-  min-width: 28px;
-  line-height: 1.17648;
-}
-.btn-pill:hover { background: var(--accent-hover); }
-
-.btn-link {
-  color: var(--accent);
-  font-size: 17px;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  transition: opacity 0.2s;
-}
-.btn-link:hover { opacity: 0.75; }
-.btn-link .chev { display: inline-block; transition: transform 0.2s; margin-left: 2px; }
-.btn-link:hover .chev { transform: translateX(3px); }
 
 /* ---------- STATS (display typography) ---------- */
 .stats-row {
@@ -291,6 +207,10 @@ html[data-theme="dark"] .stat-num.high { color: #ff453a; }
   letter-spacing: -0.01em;
 }
 .tip strong { color: var(--accent); font-weight: 500; }
+
+/* ---------- OVERBLIK: first screen, price now + chart ---------- */
+.section.overview { padding-top: 28px; padding-bottom: 64px; }
+.section.overview .tabs { margin: 0 0 16px; }
 
 /* ---------- TABS (segmented control with sliding thumb) ---------- */
 .tabs {
@@ -376,12 +296,12 @@ html[data-theme="dark"] .stat-num.high { color: #ff453a; }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  height: 36px;
+  height: 56px;
 }
 .readout-price {
-  font-size: 34px;
+  font-size: 52px;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
   line-height: 1;
   color: #f5f5f7;
   font-variant-numeric: tabular-nums;
@@ -390,7 +310,7 @@ html[data-theme="dark"] .stat-num.high { color: #ff453a; }
   gap: 7px;
 }
 .readout-unit {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 400;
   color: #86868b;
   letter-spacing: -0.01em;
@@ -454,10 +374,11 @@ html[data-theme="dark"] .stat-num.high { color: #ff453a; }
 }
 
 @media (max-width: 520px) {
-  .readout-price { font-size: 30px; }
+  .readout-price { font-size: 48px; }
 }
 /* iPhone Display Zoom / Safari text zoom: keep both lines whole */
 @media (max-width: 345px) {
+  .readout-price { font-size: 40px; }
   .readout-meta { font-size: 13px; }
   .readout-meta .rsep { margin: 0 6px; }
   .readout-split { font-size: 11px; }
@@ -889,7 +810,7 @@ footer a:hover { color: var(--accent); }
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
 
-/* ---------- MODE ROW (pricing toggles under hero) ---------- */
+/* ---------- MODE ROW (pricing toggles under the chart) ---------- */
 .mode-row {
   display: inline-flex;
   flex-wrap: wrap;
@@ -927,9 +848,11 @@ html[data-theme="dark"] .mode-row { background: rgba(255, 255, 255, 0.06); }
   color: var(--bg);
 }
 
-@media (max-width: 520px) {
-  .mode-row { margin: 0 auto 32px; }
-}
+.section.dark .mode-row { margin: 22px 0 0; background: rgba(255, 255, 255, 0.08); }
+.section.dark .mode-label { color: #86868b; }
+.section.dark .mode-chip { color: #a1a1a6; }
+.section.dark .mode-chip:hover { color: #f5f5f7; }
+.section.dark .mode-chip.active { background: #f5f5f7; color: #000; }
 
 /* ---------- STORY SECTION (cinematic dark) ---------- */
 .section.story {
@@ -1031,13 +954,11 @@ html[data-theme="dark"] .mode-row { background: rgba(255, 255, 255, 0.06); }
 
 /* Mobile tightening */
 @media (max-width: 640px) {
-  .hero { min-height: auto; padding-top: 64px; padding-bottom: 72px; }
   .section { padding: 80px 22px; }
-  .hero-price { letter-spacing: -0.055em; }
   .stats-row { margin-top: 48px; }
   .tip { margin-top: 48px; font-size: 17px; }
   /* Chart gets more width → wider, easier-to-hit columns */
-  .section.dark#chart { padding-left: 12px; padding-right: 12px; }
+  .section.dark#chart { padding: 16px 12px 56px; }
+  .chart-wrap { height: 350px; } /* whole card on the first screen, Safari toolbars included */
   .chart-card { padding: 18px 12px 16px; border-radius: 20px; }
-  .tabs { margin: 24px 0 32px; }
 }
