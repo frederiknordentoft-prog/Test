@@ -1,0 +1,747 @@
+<title>Søvnånde</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Åndedrætstræner med lys og lyd, der hjælper dig til ro og i søvn.">
+<meta name="theme-color" content="#0d1120">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: one-screen column. Rhythm and length on top, the breathing dial in the middle,
+   the phase word under it, start/stop and sound at the bottom.
+   Dark only on purpose: it is used in a dark bedroom, and the warm ember light keeps blue light low. */
+:root {
+  --night: #0d1120;
+  --dusk: #171c30;
+  --line: #2a3150;
+  --mist: #d3d4e6;
+  --mist-dim: #8b8faa;
+  --exhale: #98a1d4;
+  --ember: #e9a45e;
+  --ember-light: #f7cf9c;
+  --ember-deep: #a4592a;
+  --display: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --body: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background-color: var(--night);
+  background-image: radial-gradient(120% 70% at 50% 0%, var(--dusk) 0%, var(--night) 62%);
+  color: var(--mist);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+.app {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 480px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.brand {
+  margin: 0;
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.6rem;
+  line-height: 1;
+  letter-spacing: .01em;
+}
+.rate {
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--mist-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.setup { display: flex; flex-direction: column; gap: 8px; transition: opacity .6s ease; }
+body.running .setup { opacity: 0; pointer-events: none; }
+.programs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.chip {
+  appearance: none;
+  font: inherit;
+  color: var(--mist-dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color .2s, color .2s, background-color .2s;
+}
+.chip[aria-pressed="true"] { color: var(--mist); background: var(--dusk); border-color: var(--ember); }
+.prog { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 8px 4px; min-width: 0; }
+.chip-name { font-weight: 600; font-size: .9rem; white-space: nowrap; }
+.chip-tag {
+  font-size: .72rem;
+  color: var(--mist-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.durations { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.dur { padding: 5px 12px; font-size: .8rem; border-radius: 999px; font-variant-numeric: tabular-nums; }
+.stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 210px;
+  opacity: var(--dim, 1);
+  transition: opacity 1.2s linear;
+}
+#dial { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: block; }
+.readout {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  opacity: var(--dim, 1);
+  transition: opacity 1.2s linear;
+}
+.phase {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: clamp(2.75rem, 12vw, 4.25rem);
+  line-height: .95;
+  letter-spacing: .005em;
+}
+.count {
+  font-family: var(--display);
+  font-size: 1.9rem;
+  line-height: 1.1;
+  color: var(--ember);
+  font-variant-numeric: tabular-nums lining-nums;
+  min-height: 1.1em;
+}
+.cue { margin: 0; color: var(--mist-dim); font-size: .92rem; max-width: 34ch; min-height: 2.9em; text-wrap: balance; }
+.controls { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.go {
+  appearance: none;
+  font: inherit;
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: .02em;
+  width: 100%;
+  max-width: 300px;
+  height: 52px;
+  border-radius: 999px;
+  border: 1px solid var(--ember);
+  background: var(--ember);
+  color: var(--night);
+  cursor: pointer;
+  transition: background-color .3s, color .3s, border-color .3s;
+}
+.go.is-stop { background: transparent; color: var(--mist); border-color: var(--line); }
+.sounds { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.toggle { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; font-size: .8rem; border-radius: 999px; }
+.toggle::before { content: ""; width: 7px; height: 7px; border-radius: 50%; border: 1px solid currentColor; }
+.toggle[aria-pressed="true"] { background: transparent; border-color: var(--line); color: var(--mist); }
+.toggle[aria-pressed="true"]::before { background: var(--ember); border-color: var(--ember); }
+.status { margin: 0; font-size: .8rem; color: var(--mist-dim); font-variant-numeric: tabular-nums; min-height: 1.2em; }
+.foot { margin: 0; font-size: .72rem; color: var(--mist-dim); opacity: .75; text-align: center; }
+button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+@media (max-width: 360px) { .programs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .setup, .stage, .readout, .chip, .go { transition: none; } }
+</style>
+
+<main class="app">
+  <header class="top">
+    <h1 class="brand">Søvnånde</h1>
+    <span class="rate" id="rate">3,2 åndedrag/min</span>
+  </header>
+
+  <section class="setup" id="setup">
+    <div class="programs" id="programs" role="group" aria-label="Rytme"></div>
+    <div class="durations" id="durations" role="group" aria-label="Varighed"></div>
+  </section>
+
+  <section class="stage" id="stage">
+    <canvas id="dial" aria-hidden="true"></canvas>
+  </section>
+
+  <section class="readout">
+    <p class="phase" id="phase" aria-live="polite">klar</p>
+    <div class="count" id="count">4 · 7 · 8</div>
+    <p class="cue" id="cue">Ind i 4, hold i 7, ud i 8. Klassisk til at falde i søvn.</p>
+  </section>
+
+  <section class="controls">
+    <button type="button" class="go" id="go">Start</button>
+    <div class="sounds" role="group" aria-label="Lyd">
+      <button type="button" class="chip toggle" id="t-wave" data-key="wave" aria-pressed="true">Bølge</button>
+      <button type="button" class="chip toggle" id="t-chime" data-key="chime" aria-pressed="true">Klokke</button>
+      <button type="button" class="chip toggle" id="t-voice" data-key="voice" aria-pressed="false">Stemme</button>
+    </div>
+    <p class="status" id="status">5 min · 16 runder</p>
+    <p class="foot">Bliver du svimmel, så træk vejret normalt et øjeblik.</p>
+  </section>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------- tokens ---------- */
+  const $ = (id) => document.getElementById(id);
+  const root = document.documentElement;
+  const cs = getComputedStyle(root);
+  const tok = (n) => cs.getPropertyValue(n).trim();
+  const COL = {
+    mist: tok('--mist'), mistDim: tok('--mist-dim'), exhale: tok('--exhale'), night: tok('--night'),
+    ember: tok('--ember'), emberLight: tok('--ember-light'), emberDeep: tok('--ember-deep'),
+  };
+  function rgba(hex, a) {
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map((x) => x + x).join('');
+    const n = parseInt(h, 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+  }
+
+  /* ---------- breathing programmes ---------- */
+  // Each cycle is a list of [phase, seconds]. f runs 0 → 1 over a session (used by the ramp).
+  const PROGRAMS = {
+    '478': {
+      name: '4-7-8', tag: 'søvn', pattern: '4 · 7 · 8',
+      note: 'Ind i 4, hold i 7, ud i 8. Klassisk til at falde i søvn.',
+      out: 'Langsomt ud gennem munden',
+      cycle: () => [['in', 4], ['hold', 7], ['out', 8]],
+    },
+    rolig: {
+      name: 'Rolig', tag: 'mod stress', pattern: '4 · 6',
+      note: 'Seks åndedrag i minuttet med lang udånding. Den bedst dokumenterede rytme mod stress.',
+      out: 'Lang og langsom udånding',
+      cycle: () => [['in', 4], ['out', 6]],
+    },
+    suk: {
+      name: 'Suk', tag: 'hurtig ro', pattern: '2 · 1 · 6',
+      note: 'To indåndinger gennem næsen, så en lang udånding. Hurtig ro, når kroppen er oppe at køre.',
+      out: 'Lad det hele sive ud gennem munden',
+      cycle: () => [['in', 2], ['top', 1], ['out', 6]],
+    },
+    ned: {
+      name: 'Glid ned', tag: 'til sengen', pattern: '4 · 6 → 4 · 7 · 8',
+      note: 'Starter som Rolig og bliver langsommere for hver runde, til du er nede i 4-7-8.',
+      out: 'Langsomt ud, lad kroppen blive tung',
+      cycle: (f) => [['in', 4], ['hold', Math.round(7 * f)], ['out', Math.round(6 + 2 * f)]],
+    },
+  };
+  const DURATIONS = [
+    { key: 'r4', label: '4 runder' },
+    { key: '300', label: '5 min' },
+    { key: '600', label: '10 min' },
+    { key: '1200', label: '20 min' },
+  ];
+  const WORD = { in: 'ind', top: 'lidt mere', hold: 'hold', out: 'ud' };
+  const CUE = { in: 'Roligt ind gennem næsen', top: 'Et kort ekstra snus ind', hold: 'Hold blødt, og slip skuldrene' };
+  const CHIME = { in: 392.0, top: 440.0, hold: 329.63, out: 261.63 }; // G4, A4, E4, C4
+  const PHASE_COLOR = { in: COL.mist, top: COL.mist, hold: COL.ember, out: COL.exhale };
+  const LEAD = 3;        // seconds of "get ready" before the first breath
+  const LOOKAHEAD = 30;  // seconds of audio scheduled ahead, so a sleepy screen does not starve it
+  const reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  /* ---------- settings ---------- */
+  const state = { prog: '478', dur: '300', wave: true, chime: true, voice: false };
+  try {
+    const saved = JSON.parse(localStorage.getItem('soevnaande') || '{}');
+    for (const k of Object.keys(state)) if (k in saved && typeof saved[k] === typeof state[k]) state[k] = saved[k];
+  } catch (e) { /* storage unavailable */ }
+  if (!PROGRAMS[state.prog]) state.prog = '478';
+  if (!DURATIONS.some((d) => d.key === state.dur)) state.dur = '300';
+  function save() { try { localStorage.setItem('soevnaande', JSON.stringify(state)); } catch (e) { /* ignore */ } }
+
+  /* ---------- schedule ---------- */
+  function build(progKey, durKey) {
+    const prog = PROGRAMS[progKey];
+    const rounds = durKey === 'r4' ? 4 : 0;
+    const limit = rounds ? 0 : Number(durKey);
+    const cycles = [];
+    const phases = [];
+    let t = 0;
+    for (let i = 0; i < 3000; i++) {
+      if (rounds ? i >= rounds : t >= limit) break;
+      const f = rounds ? (rounds > 1 ? i / (rounds - 1) : 1) : Math.min(1, t / (limit * 0.6));
+      const cyc = { start: t, len: 0, phases: [], index: i };
+      for (const [type, dur] of prog.cycle(f)) {
+        if (dur <= 0) continue;
+        const ph = { type, dur, start: t, cycle: i, idx: phases.length };
+        cyc.phases.push(ph);
+        phases.push(ph);
+        t += dur;
+      }
+      cyc.len = t - cyc.start;
+      cycles.push(cyc);
+    }
+    return { cycles, phases, total: t, rounds };
+  }
+
+  const ease = (p) => 0.5 - 0.5 * Math.cos(Math.PI * p);
+  const smooth = (x) => { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); };
+  // Lung "fullness" 0..1 at the start and end of a phase. Audio settles a little during the hold.
+  function range(i, audio) {
+    const ph = sched.phases[i];
+    const nx = sched.phases[i + 1];
+    const pv = sched.phases[i - 1];
+    switch (ph.type) {
+      case 'in': return [0, nx && nx.type === 'top' ? 0.75 : 1];
+      case 'top': return [0.75, 1];
+      case 'hold': return [1, audio ? 0.82 : 1];
+      default: return [audio && pv && pv.type === 'hold' ? 0.82 : 1, 0];
+    }
+  }
+  function levelAt(i, p, audio) { const [a, b] = range(i, audio); return a + (b - a) * ease(p); }
+
+  const perMin = (len) => (60 / len).toLocaleString('da-DK', { maximumFractionDigits: 1 });
+  const fmt = (s) => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  function setText(el, v) { if (el.textContent !== v) el.textContent = v; }
+
+  /* ---------- DOM ---------- */
+  const stage = $('stage'), canvas = $('dial'), ctx = canvas.getContext('2d');
+  const phaseEl = $('phase'), countEl = $('count'), cueEl = $('cue'), statusEl = $('status'), rateEl = $('rate');
+  const goBtn = $('go'), setupEl = $('setup'), progWrap = $('programs'), durWrap = $('durations');
+
+  for (const [key, p] of Object.entries(PROGRAMS)) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip prog'; b.id = 'prog-' + key; b.dataset.key = key;
+    b.innerHTML = `<span class="chip-name">${p.name}</span><span class="chip-tag">${p.tag}</span>`;
+    b.addEventListener('click', () => { if (running) return; state.prog = key; save(); syncSetup(); toIdle(); });
+    progWrap.appendChild(b);
+  }
+  for (const d of DURATIONS) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip dur'; b.id = 'dur-' + d.key; b.dataset.key = d.key; b.textContent = d.label;
+    b.addEventListener('click', () => { if (running) return; state.dur = d.key; save(); syncSetup(); toIdle(); });
+    durWrap.appendChild(b);
+  }
+  function syncSetup() {
+    progWrap.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.key === state.prog)));
+    durWrap.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.key === state.dur)));
+    document.querySelectorAll('.toggle').forEach((b) => b.setAttribute('aria-pressed', String(!!state[b.dataset.key])));
+  }
+
+  /* ---------- canvas ---------- */
+  let S = 300, DPR = 1;
+  function resize() {
+    const r = stage.getBoundingClientRect();
+    S = Math.floor(Math.max(150, Math.min(r.width, r.height)));
+    DPR = Math.min(3, window.devicePixelRatio || 1);
+    canvas.style.width = S + 'px';
+    canvas.style.height = S + 'px';
+    canvas.width = Math.round(S * DPR);
+    canvas.height = Math.round(S * DPR);
+    if (!running) drawStatic();
+  }
+
+  function label(ph) {
+    const n = ph.dur.toLocaleString('da-DK');
+    return ph.type === 'in' ? `ind · ${n}` : ph.type === 'top' ? `+${n}` : ph.type === 'hold' ? `hold · ${n}` : `ud · ${n}`;
+  }
+
+  function drawScene(cyc, tc, L, activePh, time) {
+    const c = ctx, TAU = Math.PI * 2, top = -Math.PI / 2;
+    c.setTransform(DPR, 0, 0, DPR, 0, 0);
+    c.clearRect(0, 0, S, S);
+    const cx = S / 2, cy = S / 2;
+    const fontPx = Math.round(Math.max(11, Math.min(14, S / 26)));
+    const lw = Math.max(2.5, S / 120);
+    const pad = lw + fontPx * 1.9 + 4;
+    const R = S / 2 - pad;
+    const gap = Math.max(0.045, (lw * 2.6) / R);
+    const aNow = top + TAU * Math.min(1, Math.max(0, tc / cyc.len));
+
+    // the breath: a warm orb that fills and empties
+    const rMin = R * 0.3, rMax = R * 0.72;
+    let r = rMin + (rMax - rMin) * L;
+    if (activePh && activePh.type === 'hold' && !reduceMotion) r *= 1 + 0.012 * Math.sin(time * TAU * 0.5);
+    const glow = c.createRadialGradient(cx, cy, r * 0.4, cx, cy, r * 1.7);
+    glow.addColorStop(0, rgba(COL.ember, 0.14 + 0.16 * L));
+    glow.addColorStop(1, rgba(COL.ember, 0));
+    c.fillStyle = glow;
+    c.beginPath(); c.arc(cx, cy, r * 1.7, 0, TAU); c.fill();
+    const orb = c.createRadialGradient(cx - r * 0.28, cy - r * 0.32, r * 0.05, cx, cy, r);
+    orb.addColorStop(0, rgba(COL.emberLight, 0.5 + 0.3 * L));
+    orb.addColorStop(0.6, rgba(COL.ember, 0.4 + 0.3 * L));
+    orb.addColorStop(1, rgba(COL.emberDeep, 0.3 + 0.25 * L));
+    c.fillStyle = orb;
+    c.beginPath(); c.arc(cx, cy, r, 0, TAU); c.fill();
+
+    // one tick per second around the dial
+    const bounds = new Set();
+    let acc = 0;
+    for (const ph of cyc.phases) { acc += ph.dur; bounds.add(Math.round(acc * 1000)); }
+    c.lineCap = 'butt';
+    c.lineWidth = 1.25;
+    for (let s = 1; s < cyc.len - 0.001; s++) {
+      if (bounds.has(s * 1000)) continue;
+      const a = top + (TAU * s) / cyc.len;
+      c.strokeStyle = rgba(COL.mist, s <= tc ? 0.55 : 0.2);
+      c.beginPath();
+      c.moveTo(cx + Math.cos(a) * (R - lw * 1.8), cy + Math.sin(a) * (R - lw * 1.8));
+      c.lineTo(cx + Math.cos(a) * (R + lw * 1.8), cy + Math.sin(a) * (R + lw * 1.8));
+      c.stroke();
+    }
+
+    // phase segments, lit as the breath passes along them, with labels set along the ring
+    c.lineCap = 'round';
+    c.lineWidth = lw;
+    c.font = `500 ${fontPx}px Figtree, system-ui, sans-serif`;
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    let a0 = top;
+    for (const ph of cyc.phases) {
+      const a1 = a0 + (TAU * ph.dur) / cyc.len;
+      const s0 = a0 + gap / 2, s1 = a1 - gap / 2;
+      const col = PHASE_COLOR[ph.type];
+      c.strokeStyle = rgba(col, 0.2);
+      c.beginPath(); c.arc(cx, cy, R, s0, s1); c.stroke();
+      if (aNow > s0) {
+        c.strokeStyle = rgba(col, 0.95);
+        c.beginPath(); c.arc(cx, cy, R, s0, Math.min(aNow, s1)); c.stroke();
+      }
+      const am = (a0 + a1) / 2;
+      const lr = R + lw + fontPx * 0.95;
+      let rot = am + Math.PI / 2;
+      rot = Math.atan2(Math.sin(rot), Math.cos(rot));
+      if (Math.abs(rot) > Math.PI / 2 + 0.01) rot -= Math.PI;
+      c.save();
+      c.translate(cx + Math.cos(am) * lr, cy + Math.sin(am) * lr);
+      c.rotate(rot);
+      c.fillStyle = activePh && activePh === ph ? rgba(COL.mist, 0.95) : rgba(COL.mistDim, 0.85);
+      c.fillText(label(ph), 0, 0);
+      c.restore();
+      a0 = a1;
+    }
+
+    // the marker that travels around
+    const dx = cx + Math.cos(aNow) * R, dy = cy + Math.sin(aNow) * R;
+    const halo = c.createRadialGradient(dx, dy, 0, dx, dy, lw * 6);
+    halo.addColorStop(0, rgba(COL.ember, 0.45));
+    halo.addColorStop(1, rgba(COL.ember, 0));
+    c.fillStyle = halo;
+    c.beginPath(); c.arc(dx, dy, lw * 6, 0, TAU); c.fill();
+    c.fillStyle = COL.mist;
+    c.strokeStyle = COL.night;
+    c.lineWidth = lw * 0.8;
+    c.beginPath(); c.arc(dx, dy, lw * 1.9, 0, TAU); c.fill(); c.stroke();
+  }
+
+  function drawStatic() {
+    if (running || !sched) return;
+    if (mode === 'done') {
+      const cyc = sched.cycles[sched.cycles.length - 1];
+      drawScene(cyc, cyc.len, 0, null, 0);
+    } else {
+      drawScene(sched.cycles[0], 0, 0.2, null, 0);
+    }
+  }
+
+  /* ---------- sound ---------- */
+  let ac = null, master, waveBus, chimeBus, waveGain, f1, f2, unlockEl = null, sleepTimer = 0;
+  const gainFor = (L) => 0.06 + 0.42 * Math.pow(L, 1.3);
+  const freqFor = (L) => 170 + 1100 * Math.pow(L, 1.1);
+
+  function silentWav() {
+    const rate = 8000, n = 4000, buf = new Uint8Array(44 + n), dv = new DataView(buf.buffer);
+    const w = (o, s) => { for (let i = 0; i < s.length; i++) buf[o + i] = s.charCodeAt(i); };
+    w(0, 'RIFF'); dv.setUint32(4, 36 + n, true); w(8, 'WAVE'); w(12, 'fmt ');
+    dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, rate, true); dv.setUint32(28, rate, true); dv.setUint16(32, 1, true); dv.setUint16(34, 8, true);
+    w(36, 'data'); dv.setUint32(40, n, true); buf.fill(128, 44);
+    let s = '';
+    for (let i = 0; i < buf.length; i++) s += String.fromCharCode(buf[i]);
+    return 'data:audio/wav;base64,' + btoa(s);
+  }
+
+  // iPhones mute web audio when the ring switch is on silent. Asking for a "playback" session,
+  // and playing a silent media element, lets the guidance be heard anyway.
+  function unlock() {
+    try {
+      if (!unlockEl) { unlockEl = new Audio(silentWav()); unlockEl.loop = true; unlockEl.setAttribute('playsinline', ''); }
+      const p = unlockEl.play();
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) { /* ignore */ }
+  }
+
+  function initAudio() {
+    if (!ac) {
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* ignore */ }
+      const AC = window.AudioContext || window.webkitAudioContext;
+      ac = new AC();
+      master = ac.createGain(); master.gain.value = 0; master.connect(ac.destination);
+      waveBus = ac.createGain(); waveBus.gain.value = state.wave ? 1 : 0; waveBus.connect(master);
+      // stereo white noise, darkened by two low-pass filters: it rises and falls like a wave with the breath
+      const len = Math.floor(ac.sampleRate * 6);
+      const buf = ac.createBuffer(2, len, ac.sampleRate);
+      for (let ch = 0; ch < 2; ch++) { const d = buf.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1; }
+      const noise = ac.createBufferSource(); noise.buffer = buf; noise.loop = true;
+      f1 = ac.createBiquadFilter(); f1.type = 'lowpass'; f1.Q.value = 0.4; f1.frequency.value = freqFor(0);
+      f2 = ac.createBiquadFilter(); f2.type = 'lowpass'; f2.Q.value = 0.8; f2.frequency.value = freqFor(0) * 1.15;
+      waveGain = ac.createGain(); waveGain.gain.value = gainFor(0);
+      noise.connect(f1); f1.connect(f2); f2.connect(waveGain); waveGain.connect(waveBus);
+      noise.start();
+    }
+    if (ac.state !== 'running') { const p = ac.resume(); if (p && p.catch) p.catch(() => {}); }
+    unlock();
+  }
+
+  function hold(param, at) {
+    if (param.cancelAndHoldAtTime) { param.cancelAndHoldAtTime(at); return; }
+    const v = param.value;
+    param.cancelScheduledValues(at);
+    param.setValueAtTime(v, at);
+  }
+
+  function chime(T, freq, vol) {
+    const o1 = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), g2 = ac.createGain();
+    o1.type = 'sine'; o1.frequency.value = freq;
+    o2.type = 'sine'; o2.frequency.value = freq * 2.01;
+    g2.gain.value = 0.22;
+    g.gain.setValueAtTime(0.0001, T);
+    g.gain.exponentialRampToValueAtTime(vol, T + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, T + 3.2);
+    o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(chimeBus);
+    o1.start(T); o2.start(T); o1.stop(T + 3.3); o2.stop(T + 3.3);
+  }
+
+  function schedulePhase(i) {
+    const ph = sched.phases[i];
+    const T = t0 + ph.start;
+    const N = Math.max(6, Math.round(ph.dur * 6));
+    for (let k = 1; k <= N; k++) {
+      const p = k / N, tt = T + ph.dur * p, L = levelAt(i, p, true);
+      waveGain.gain.linearRampToValueAtTime(gainFor(L), tt);
+      f1.frequency.linearRampToValueAtTime(freqFor(L), tt);
+      f2.frequency.linearRampToValueAtTime(freqFor(L) * 1.15, tt);
+    }
+    chime(T, CHIME[ph.type], 0.07);
+  }
+
+  let nextSched = 0, endScheduled = false;
+  function scheduler() {
+    if (!running) return;
+    const horizon = ac.currentTime + LOOKAHEAD;
+    while (nextSched < sched.phases.length && t0 + sched.phases[nextSched].start < horizon) schedulePhase(nextSched++);
+    if (nextSched >= sched.phases.length && !endScheduled) {
+      const T = t0 + sched.total;
+      chime(T, 196.0, 0.06);
+      chime(T + 0.4, 261.63, 0.05);
+      master.gain.setValueAtTime(1, T + 0.5);
+      master.gain.linearRampToValueAtTime(0, T + 6);
+      endScheduled = true;
+    }
+  }
+
+  function sleepAudioLater(ms) {
+    clearTimeout(sleepTimer);
+    sleepTimer = setTimeout(() => {
+      if (running) return;
+      try { if (unlockEl) unlockEl.pause(); } catch (e) { /* ignore */ }
+      try { if (ac && ac.state === 'running') ac.suspend(); } catch (e) { /* ignore */ }
+    }, ms);
+  }
+
+  /* ---------- voice ---------- */
+  let daVoice = null;
+  const hasSpeech = 'speechSynthesis' in window;
+  function pickVoice() {
+    try { daVoice = speechSynthesis.getVoices().find((v) => /^da([-_]|$)/i.test(v.lang)) || null; } catch (e) { daVoice = null; }
+  }
+  if (hasSpeech) { pickVoice(); try { speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch (e) { /* ignore */ } }
+  function say(text) {
+    if (!state.voice || !hasSpeech) return;
+    try {
+      if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'da-DK';
+      if (daVoice) u.voice = daVoice;
+      u.rate = 0.78; u.pitch = 0.9; u.volume = 0.85;
+      speechSynthesis.speak(u);
+    } catch (e) { /* ignore */ }
+  }
+
+  /* ---------- screen ---------- */
+  let wakeLock = null;
+  async function lockScreen() {
+    try {
+      if ('wakeLock' in navigator && document.visibilityState === 'visible') wakeLock = await navigator.wakeLock.request('screen');
+    } catch (e) { wakeLock = null; }
+  }
+  function releaseLock() { try { if (wakeLock) wakeLock.release(); } catch (e) { /* ignore */ } wakeLock = null; }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !running) return;
+    lockScreen();
+    if (ac && ac.state !== 'running') { const p = ac.resume(); if (p && p.catch) p.catch(() => {}); }
+  });
+
+  /* ---------- session ---------- */
+  let sched = null, running = false, mode = 'idle', t0 = 0, raf = 0, timer = 0;
+  let pi = 0, shownPi = -1, shownCycle = -1, lastDim = 1, runProg = state.prog;
+
+  function setDim(v) { if (Math.abs(v - lastDim) > 0.01 || v === 1) { root.style.setProperty('--dim', v.toFixed(3)); lastDim = v; } }
+
+  function toIdle() {
+    mode = 'idle';
+    sched = build(state.prog, state.dur);
+    const p = PROGRAMS[state.prog];
+    goBtn.textContent = 'Start';
+    goBtn.classList.remove('is-stop');
+    setText(phaseEl, 'klar');
+    setText(countEl, p.pattern);
+    setText(cueEl, p.note);
+    const first = sched.cycles[0].len, last = sched.cycles[sched.cycles.length - 1].len;
+    setText(rateEl, first === last ? `${perMin(first)} åndedrag/min` : `${perMin(first)} → ${perMin(last)} åndedrag/min`);
+    const durLabel = DURATIONS.find((d) => d.key === state.dur).label;
+    setText(statusEl, sched.rounds ? `${durLabel} · ${fmt(sched.total)}` : `${durLabel} · ${sched.cycles.length} runder`);
+    setDim(1);
+    drawStatic();
+  }
+
+  function onPhase(ph) {
+    shownPi = ph.idx;
+    setText(phaseEl, WORD[ph.type]);
+    setText(cueEl, ph.type === 'out' ? PROGRAMS[runProg].out : CUE[ph.type]);
+    if (ph.cycle !== shownCycle) {
+      shownCycle = ph.cycle;
+      setText(rateEl, `${perMin(sched.cycles[ph.cycle].len)} åndedrag/min`);
+    }
+    say(WORD[ph.type]);
+  }
+
+  function frame() {
+    if (!running) return;
+    const t = ac.currentTime - t0;
+    if (t >= sched.total) { finish(); return; }
+    if (t < 0) {
+      setText(phaseEl, 'klar');
+      setText(countEl, String(Math.ceil(-t)));
+      setText(cueEl, 'Læg dig godt til rette');
+      drawScene(sched.cycles[0], 0, 0, null, t);
+    } else {
+      while (pi + 1 < sched.phases.length && t >= sched.phases[pi + 1].start) pi++;
+      const ph = sched.phases[pi];
+      if (pi !== shownPi) onPhase(ph);
+      const p = Math.min(1, Math.max(0, (t - ph.start) / ph.dur));
+      const cyc = sched.cycles[ph.cycle];
+      drawScene(cyc, t - cyc.start, levelAt(pi, p, false), ph, t);
+      setText(countEl, String(Math.max(1, Math.ceil(ph.start + ph.dur - t - 1e-6))));
+      setText(statusEl, sched.rounds ? `Runde ${ph.cycle + 1} af ${sched.rounds}` : `${fmt(sched.total - t)} tilbage`);
+      setDim(1 - 0.5 * smooth((t / sched.total - 0.15) / 0.85)); // the screen grows darker as you settle
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  function start() {
+    initAudio();
+    clearTimeout(sleepTimer);
+    runProg = state.prog;
+    sched = build(state.prog, state.dur);
+    const now = ac.currentTime;
+    t0 = now + LEAD;
+    if (chimeBus) { try { chimeBus.disconnect(); } catch (e) { /* ignore */ } }
+    chimeBus = ac.createGain();
+    chimeBus.gain.value = state.chime ? 1 : 0;
+    chimeBus.connect(master);
+    hold(master.gain, now);
+    master.gain.linearRampToValueAtTime(1, t0);
+    const rest = [gainFor(0), freqFor(0), freqFor(0) * 1.15];
+    [waveGain.gain, f1.frequency, f2.frequency].forEach((prm, k) => {
+      hold(prm, now);
+      prm.linearRampToValueAtTime(rest[k], now + 0.4);
+      prm.setValueAtTime(rest[k], t0);
+    });
+    nextSched = 0; endScheduled = false; pi = 0; shownPi = -1; shownCycle = -1;
+    running = true; mode = 'run';
+    document.body.classList.add('running');
+    setupEl.inert = true;
+    goBtn.textContent = 'Stop';
+    goBtn.classList.add('is-stop');
+    setText(rateEl, `${perMin(sched.cycles[0].len)} åndedrag/min`);
+    setText(statusEl, sched.rounds ? `Runde 1 af ${sched.rounds}` : `${fmt(sched.total)} tilbage`);
+    scheduler();
+    timer = setInterval(scheduler, 250);
+    lockScreen();
+    say('Læg dig godt til rette');
+    raf = requestAnimationFrame(frame);
+  }
+
+  function endRun() {
+    running = false;
+    cancelAnimationFrame(raf);
+    clearInterval(timer);
+    document.body.classList.remove('running');
+    setupEl.inert = false;
+    releaseLock();
+  }
+
+  function finish() {
+    endRun();
+    mode = 'done';
+    goBtn.textContent = 'Start igen';
+    goBtn.classList.remove('is-stop');
+    setText(phaseEl, 'færdig');
+    setText(countEl, '');
+    setText(cueEl, 'Bliv liggende, og lad vejret gå af sig selv.');
+    setText(statusEl, `${sched.cycles.length} runder · ${fmt(sched.total)}`);
+    sleepAudioLater(8000);
+    drawStatic();
+  }
+
+  function stop() {
+    endRun();
+    if (ac) {
+      const now = ac.currentTime;
+      hold(master.gain, now);
+      master.gain.linearRampToValueAtTime(0, now + 0.8);
+      [waveGain.gain, f1.frequency, f2.frequency].forEach((prm) => hold(prm, now));
+      if (chimeBus) chimeBus.gain.setTargetAtTime(0, now, 0.05);
+    }
+    if (hasSpeech) { try { speechSynthesis.cancel(); } catch (e) { /* ignore */ } }
+    sleepAudioLater(3000);
+    toIdle();
+  }
+
+  goBtn.addEventListener('click', () => (running ? stop() : start()));
+
+  document.querySelectorAll('.toggle').forEach((b) => {
+    b.addEventListener('click', () => {
+      const key = b.dataset.key;
+      state[key] = !state[key];
+      save();
+      syncSetup();
+      if (ac) {
+        const now = ac.currentTime;
+        if (key === 'wave') waveBus.gain.setTargetAtTime(state.wave ? 1 : 0, now, 0.2);
+        if (key === 'chime' && chimeBus) chimeBus.gain.setTargetAtTime(state.chime ? 1 : 0, now, 0.05);
+      }
+      if (key === 'voice') {
+        if (state.voice) say('Stemme til');
+        else if (hasSpeech) { try { speechSynthesis.cancel(); } catch (e) { /* ignore */ } }
+      }
+    });
+  });
+
+  /* ---------- boot ---------- */
+  syncSetup();
+  toIdle();
+  if ('ResizeObserver' in window) new ResizeObserver(resize).observe(stage);
+  else window.addEventListener('resize', resize);
+  resize();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!running) drawStatic(); });
+})();
+</script>
