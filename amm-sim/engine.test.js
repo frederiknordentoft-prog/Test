@@ -76,6 +76,16 @@ test('forventet subsidie uden gebyr ≈ b·KL(p‖p0) når prisen har fundet san
   near(-(0.7 * m.houseResult(YES) + 0.3 * m.houseResult(NO)), A.expectedSubsidy(m.b, 0.5, 0.7), 1e-6, 'subsidie');
 });
 
+test('omsætning = sum af handlernes beløb, fordelt på JA og NEJ', () => {
+  const sim = new A.Simulation({ rngSeed: 4, players: 200, trades: 2000 });
+  sim.run(2000);
+  near(sim.volBySide[0] + sim.volBySide[1], sim.volume, 1e-6, 'sider');
+  near(sim.hist.volYes.at(-1) + sim.hist.volNo.at(-1), sim.volume, 1e-6, 'historik');
+  assert.ok(sim.trades > 1000, `kun ${sim.trades} handler`);
+  // gebyr er en fast andel af omsætningen
+  near(sim.mm.fees, sim.cfg.fee * sim.volume, 1e-6, 'gebyr');
+});
+
 test('deterministisk med samme seed', () => {
   const a = new A.Simulation({ rngSeed: 9 }); a.run(300);
   const b = new A.Simulation({ rngSeed: 9 }); b.run(300);

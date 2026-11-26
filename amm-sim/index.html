@@ -109,6 +109,7 @@ input[type="number"] { width: 100%; font: inherit; color: var(--ink); background
 .sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 .dash { width: 14px; height: 0; border-top: 2px dashed var(--ink-2); }
 .chart-box { position: relative; height: 280px; }
+.chart-box.short { height: 200px; }
 
 .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
 
@@ -159,7 +160,7 @@ td.neg { color: var(--bad); }
     </div>
     <div class="runbar">
       <button class="btn primary" id="btnPlay" type="button">Afspil fra start</button>
-      <button class="btn" id="btnStep" type="button">+10 handler</button>
+      <button class="btn" id="btnStep" type="button">+250 handler</button>
       <button class="btn" id="btnSeed" type="button">Ny tilfældig kørsel</button>
     </div>
   </header>
@@ -175,7 +176,7 @@ td.neg { color: var(--bad); }
             <legend class="eyebrow">Huset</legend>
             <div class="field">
               <div class="field-head"><label for="capital">Startkapital (maks. tab)</label><output id="capitalOut" for="capital"></output></div>
-              <input type="range" id="capital" min="100" max="10000" step="100" value="1000">
+              <input type="range" id="capital" min="200" max="20000" step="100" value="2000">
             </div>
             <div class="field">
               <div class="field-head"><label for="fee">Gebyr pr. handel</label><output id="feeOut" for="fee"></output></div>
@@ -198,7 +199,7 @@ td.neg { color: var(--bad); }
             <div class="row2">
               <div class="field">
                 <label for="shockAt">Nyhed ved handel</label>
-                <input type="number" id="shockAt" min="0" max="5000" step="10" value="0">
+                <input type="number" id="shockAt" min="0" max="20000" step="100" value="0">
               </div>
               <div class="field">
                 <div class="field-head"><label for="shockP">Ny sand p</label><output id="shockPOut" for="shockP"></output></div>
@@ -212,16 +213,16 @@ td.neg { color: var(--bad); }
             <legend class="eyebrow">Spillere</legend>
             <div class="field">
               <div class="field-head"><label for="players">Antal spillere</label><output id="playersOut" for="players"></output></div>
-              <input type="range" id="players" min="5" max="200" step="5" value="40">
+              <input type="range" id="players" min="100" max="2000" step="50" value="500">
             </div>
             <div class="field">
               <div class="field-head"><label for="informed">Andel informerede</label><output id="informedOut" for="informed"></output></div>
               <input type="range" id="informed" min="0" max="100" step="5" value="35">
-              <p class="hint">Resten handler tilfældigt. Alle starter med 1.000 kr.</p>
+              <p class="hint">Resten handler tilfældigt. Alle starter med 1.000 kr. Hver handel vælger en tilfældig spiller.</p>
             </div>
             <div class="field">
               <div class="field-head"><label for="trades">Antal handler</label><output id="tradesOut" for="trades"></output></div>
-              <input type="range" id="trades" min="50" max="3000" step="50" value="600">
+              <input type="range" id="trades" min="1000" max="20000" step="500" value="5000">
             </div>
           </fieldset>
         </form>
@@ -237,6 +238,14 @@ td.neg { color: var(--bad); }
           <div class="legend"><span class="lg"><span class="sw" style="background:var(--yes)"></span>Pris JA</span><span class="lg"><span class="dash"></span>Sand p</span></div>
         </div>
         <div class="chart-box"><canvas id="chPrice" role="img" aria-label="Pris for JA over handler"></canvas></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div><h2>Omsætning</h2><p>Køb og salg i kr pr. interval, delt på JA- og NEJ-aktier.</p></div>
+          <div class="legend"><span class="lg"><span class="sw" style="background:var(--yes)"></span>JA</span><span class="lg"><span class="sw" style="background:var(--no)"></span>NEJ</span></div>
+        </div>
+        <div class="chart-box short"><canvas id="chVol" role="img" aria-label="Omsætning pr. interval fordelt på JA og NEJ"></canvas></div>
       </section>
 
       <section class="panel">
@@ -323,18 +332,18 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
   const cls = (v) => (Math.round(v) > 0 ? 'pos' : Math.round(v) < 0 ? 'neg' : '');
   const sideTag = (s) => `<span class="${s ? 'no' : 'yes'}">${s ? 'NEJ' : 'JA'}</span>`;
 
-  const BASE = { capital: 1000, fee: 2, p0: 50, trueP: 68, shockAt: 0, shockP: 30, players: 40, informed: 35, trades: 600 };
+  const BASE = { capital: 2000, fee: 2, p0: 50, trueP: 68, shockAt: 0, shockP: 30, players: 500, informed: 35, trades: 5000 };
   const PRESETS = [
     ['Standard', {}],
-    ['Lille startkapital', { capital: 200 }],
-    ['Dybt marked', { capital: 8000 }],
-    ['Nyhed undervejs', { trueP: 70, shockAt: 300, shockP: 25, trades: 900 }],
+    ['Lille startkapital', { capital: 300 }],
+    ['Dybt marked', { capital: 15000 }],
+    ['Nyhed undervejs', { trueP: 70, shockAt: 2500, shockP: 25, trades: 6000 }],
+    ['Travl dag', { players: 2000, trades: 20000 }],
     ['Uden gebyr', { fee: 0 }],
     ['Kun tilfældige', { informed: 0 }],
   ];
 
   let T = readTokens(), sim, cfg, rngSeed = 7, playing = false, rafId = 0, tAction = 'buy', tSide = 0, charts = {};
-  const cache = { sim: null, n: 0 };
 
   function readTokens() {
     const cs = getComputedStyle(document.documentElement), g = (n) => cs.getPropertyValue(n).trim();
@@ -375,7 +384,7 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
     $('btnPlay').textContent = 'Pause';
     const frame = () => {
       if (!playing) return;
-      sim.run(Math.min(5, cfg.trades - sim.t));
+      sim.run(Math.min(Math.max(10, Math.round(cfg.trades / 180)), cfg.trades - sim.t));
       renderAll();
       if (sim.t < cfg.trades) rafId = requestAnimationFrame(frame); else stopPlay();
     };
@@ -456,22 +465,48 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
         line('Maks. tab', 'Maks. tab', T.ink2, { borderDash: [5, 4], borderWidth: 1.5, _ref: true })] },
       options: options({ yFmt: (x) => nf0.format(x), tip: skr }),
     });
-    cache.sim = null;
+    const vo = options({ yFmt: (x) => nf0.format(x), tip: kr });
+    vo.parsing = true;
+    vo.scales.x.stacked = true;
+    vo.scales.x.offset = false;
+    vo.scales.y.stacked = true;
+    vo.scales.y.min = 0;
+    vo.plugins.tooltip.callbacks.title = (it) => (it.length ? it[0].raw.label : '');
+    vo.plugins.tooltip.callbacks.footer = (it) => (it.length ? `I alt: ${kr(it.reduce((s, x) => s + x.parsed.y, 0))}` : '');
+    vo.plugins.tooltip.footerColor = T.ink;
+    const bar = (label, color, extra) => ({ label, data: [], backgroundColor: color, borderColor: T.panel, barPercentage: 0.9, categoryPercentage: 1, ...extra });
+    charts.vol = new Chart($('chVol'), {
+      type: 'bar', plugins: [crosshair],
+      data: { datasets: [bar('JA', T.yes, { borderWidth: 0 }),
+        bar('NEJ', T.no, { borderWidth: { bottom: 2, top: 0, left: 0, right: 0 }, borderSkipped: false, borderRadius: { topLeft: 3, topRight: 3 } })] },
+      options: vo,
+    });
   }
+  // Op til ~1.200 punkter pr. linje; samme punkter i alle linjer, så tooltip viser samme handel
   function syncCharts() {
-    const pc = charts.price.data.datasets, hc = charts.house.data.datasets, h = sim.hist;
-    if (cache.sim !== sim) { pc.forEach((d) => (d.data = [])); hc.slice(0, 3).forEach((d) => (d.data = [])); cache.n = 0; cache.sim = sim; }
-    for (let i = cache.n; i < h.price.length; i++) {
-      pc[0].data.push({ x: i, y: h.price[i] });
-      pc[1].data.push({ x: i, y: h.truth[i] });
-      hc[0].data.push({ x: i, y: h.ifYes[i] });
-      hc[1].data.push({ x: i, y: h.ifNo[i] });
-      hc[2].data.push({ x: i, y: h.expected[i] });
-    }
-    cache.n = h.price.length;
-    const xMax = Math.max(cfg.trades, cache.n - 1);
+    const h = sim.hist, n = h.price.length, xMax = Math.max(cfg.trades, n - 1);
+    const stride = Math.max(1, Math.ceil(xMax / 1200)), idx = [];
+    for (let i = 0; i < n; i += stride) idx.push(i);
+    if (idx[idx.length - 1] !== n - 1) idx.push(n - 1);
+    const pts = (arr) => idx.map((i) => ({ x: i, y: arr[i] }));
+    const pc = charts.price.data.datasets, hc = charts.house.data.datasets, vc = charts.vol.data.datasets;
+    pc[0].data = pts(h.price);
+    pc[1].data = pts(h.truth);
+    hc[0].data = pts(h.ifYes);
+    hc[1].data = pts(h.ifNo);
+    hc[2].data = pts(h.expected);
     hc[3].data = [{ x: 0, y: -cfg.capital }, { x: xMax, y: -cfg.capital }];
-    for (const c of [charts.price, charts.house]) { c.options.scales.x.max = xMax; c.update('none'); }
+
+    // omsætning pr. interval: 50 intervaller over hele kørslen
+    const size = Math.max(1, Math.ceil(xMax / 50)), yes = [], no = [];
+    for (let a = 0; a < n - 1; a += size) {
+      const b = Math.min(a + size, n - 1), x = a + size / 2, label = `Handel ${nf0.format(a + 1)}–${nf0.format(b)}`;
+      yes.push({ x, y: h.volYes[b] - h.volYes[a], label });
+      no.push({ x, y: h.volNo[b] - h.volNo[a], label });
+    }
+    vc[0].data = yes;
+    vc[1].data = no;
+    for (const c of [charts.price, charts.house, charts.vol]) { c.options.scales.x.max = xMax; c.update('none'); }
   }
 
   // ---------- visning ----------
@@ -479,12 +514,13 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
     const m = sim.mm, tp = sim.trueP(), p = m.price();
     const exp = tp * m.houseResult(A.YES) + (1 - tp) * m.houseResult(A.NO);
     const risk = Math.max(0, -Math.min(m.houseResult(A.YES), m.houseResult(A.NO))), share = Math.min(1, risk / cfg.capital);
-    const shock = cfg.shockAt > 0 ? (sim.t >= cfg.shockAt ? ` · nyhed ved handel ${nf0.format(cfg.shockAt)}` : ` · nyhed kommer ved ${nf0.format(cfg.shockAt)}`) : '';
+    const shock = cfg.shockAt > 0 ? (sim.t >= cfg.shockAt ? ` · nyhed ved handel ${nf0.format(cfg.shockAt)}` : ` · nyhed ved ${nf0.format(cfg.shockAt)}`) : '';
+    const margin = sim.volume > 0 ? exp / sim.volume : 0, yesShare = sim.volume > 0 ? sim.volBySide[0] / sim.volume : 0;
     $('tiles').innerHTML =
-      `<div class="tile"><span class="k">Pris JA nu</span><span class="v">${pct(p)}</span><span class="s">odds JA ${odds(p)} · NEJ ${odds(1 - p)}</span></div>` +
-      `<div class="tile"><span class="k">Sand sandsynlighed</span><span class="v">${pct(tp)}</span><span class="s">prisen afviger ${nf1.format(Math.abs(p - tp) * 100)} pp${shock}</span></div>` +
-      `<div class="tile"><span class="k">Husets forventede resultat</span><span class="v">${skr(exp)}</span><span class="s">heraf gebyr ${kr(m.fees)}</span></div>` +
-      `<div class="tile"><span class="k">Kapital i risiko nu</span><span class="v">${kr(risk)}</span><span class="s">af maks. ${kr(cfg.capital)} · ${nf0.format(sim.t)} handler, ${kr(sim.volume)}</span>` +
+      `<div class="tile"><span class="k">Pris JA nu</span><span class="v">${pct(p)}</span><span class="s">odds ${odds(p)} / ${odds(1 - p)} · sand ${pct(tp)}${shock}</span></div>` +
+      `<div class="tile"><span class="k">Omsætning</span><span class="v">${kr(sim.volume)}</span><span class="s">${nf0.format(sim.trades)} handler · gns. ${kr(sim.trades ? sim.volume / sim.trades : 0)} · ${Math.round(yesShare * 100)} % på JA</span></div>` +
+      `<div class="tile"><span class="k">Husets forventede resultat</span><span class="v">${skr(exp)}</span><span class="s">${nf1.format(margin * 100)} % af omsætningen · gebyr ${kr(m.fees)}</span></div>` +
+      `<div class="tile"><span class="k">Kapital i risiko nu</span><span class="v">${kr(risk)}</span><span class="s">af maks. ${kr(cfg.capital)} · ${sim.players.length} spillere</span>` +
       `<div class="meter-bar" role="meter" aria-valuemin="0" aria-valuemax="${cfg.capital}" aria-valuenow="${Math.round(risk)}" aria-label="Kapital i risiko"><span class="${share > 0.75 ? 'hot' : ''}" style="width:${(share * 100).toFixed(1)}%"></span></div></div>`;
     $('derived').innerHTML = `Likviditet <b>b = ${nf0.format(m.b)}</b>. Et køb på 100 kr flytter prisen fra ${pct(p)} til ${pct(m.quoteBuy(A.YES, 100).newPrice)}.`;
   }
@@ -497,6 +533,7 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
       row(`Tilfældige (${sim.players.length - nInf})`, r.random) +
       row('Dig', r.you) +
       row('Huset', r.house) +
+      `<tr><td class="sub">margin af omsætning ${kr(sim.volume)}</td><td>${nf1.format(sim.volume ? (100 * r.house) / sim.volume : 0)} %</td></tr>` +
       row('heraf gebyrer', m.fees, true) +
       row('heraf handel (subsidie)', r.house - m.fees, true) +
       `<tr><td class="sub">teori ved fuld prisopdagelse, b·KL</td><td>${skr(-A.expectedSubsidy(m.b, cfg.p0, tp))}</td></tr>` +
@@ -535,7 +572,7 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
   $('tAmount').addEventListener('input', renderTrade);
   $('btnTrade').addEventListener('click', () => { stopPlay(); const a = tradeAmount(); if (a > 0) { sim.manual(tAction, tSide, a); renderAll(); } });
   $('btnPlay').addEventListener('click', () => (playing ? stopPlay() : play()));
-  $('btnStep').addEventListener('click', () => { stopPlay(); sim.run(10); renderAll(); });
+  $('btnStep').addEventListener('click', () => { stopPlay(); sim.run(250); renderAll(); });
   $('btnSeed').addEventListener('click', () => { stopPlay(); rngSeed = 1 + Math.floor(Math.random() * 99999); rebuild(true); });
 
   $('presets').innerHTML = PRESETS.map(([label], i) => `<button type="button" class="chip" data-i="${i}">${label}</button>`).join('');

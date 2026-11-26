@@ -91,15 +91,15 @@
   }
 
   const DEFAULTS = {
-    capital: 1000,   // startkapital = husets maks. tab (kr)
+    capital: 2000,   // startkapital = husets maks. tab (kr)
     fee: 0.02,
     p0: 0.5,         // åbningspris
     trueP: 0.68,     // sand sandsynlighed for JA
     shockAt: 0,      // handel nr. hvor nyhed ændrer sandheden (0 = fra)
     shockP: 0.3,
-    players: 40,
+    players: 500,
     informedShare: 0.35,
-    trades: 600,
+    trades: 5000,
     rngSeed: 7,
   };
   const BANKROLL = 1000, YOU_BANKROLL = 10000;
@@ -121,9 +121,11 @@
       }
       this.you = { id: 0, type: 'you', cash: YOU_BANKROLL, hold: [0, 0] };
       this.t = 0;
-      this.volume = 0;
+      this.volume = 0;          // omsætning: samlet beløb i køb og salg
+      this.volBySide = [0, 0];  // omsætning i JA- og NEJ-aktier
+      this.trades = 0;          // gennemførte handler (en informeret kan vælge at stå over)
       this.log = [];
-      this.hist = { truth: [], price: [], ifYes: [], ifNo: [], expected: [] };
+      this.hist = { truth: [], price: [], ifYes: [], ifNo: [], expected: [], volYes: [], volNo: [] };
       this._record();
     }
     trueP() { return this.cfg.shockAt > 0 && this.t >= this.cfg.shockAt ? this.cfg.shockP : this.cfg.trueP; }
@@ -136,6 +138,8 @@
       p.cash -= amount;
       p.hold[side] += r.shares;
       this.volume += amount;
+      this.volBySide[side] += amount;
+      this.trades++;
       return this._log(p, 'Køb', side, amount, r.shares, before);
     }
     sell(p, side, shares) {
@@ -146,6 +150,8 @@
       p.cash += r.proceeds;
       p.hold[side] -= shares;
       this.volume += r.gross;
+      this.volBySide[side] += r.gross;
+      this.trades++;
       return this._log(p, 'Sælg', side, r.proceeds, shares, before);
     }
     _log(p, action, side, kr, shares, before) {
@@ -162,37 +168,41 @@
       this.hist.ifYes.push(y);
       this.hist.ifNo.push(n);
       this.hist.expected.push(tp * y + (1 - tp) * n);
+      this.hist.volYes.push(this.volBySide[0]);  // kumuleret
+      this.hist.volNo.push(this.volBySide[1]);
     }
 
+    // Én handel: vælg spillere indtil én faktisk handler (informerede står over, når kanten er for lille)
     step() {
       this.t++;
+      for (let i = 0; i < 25 && !this._attempt(); i++);
+      this._record();
+    }
+    _attempt() {
       const r = this.rng, p = this.players[Math.floor(r() * this.players.length)];
       const u1 = r(), u2 = r(), u3 = r(), g = gauss(r);
       const price = this.mm.price(), maxStake = Math.min(p.cash, BANKROLL * 0.25);
 
       if (p.type === 'random') {
         // Tilfældig: køber en tilfældig side for ~40 kr, eller sælger en del af det, den ejer
-        if (p.hold[0] + p.hold[1] > 1e-6 && u2 < 0.35) {
+        if (p.hold[0] + p.hold[1] >= 5 && u2 < 0.35) {
           let side = u1 < 0.5 ? YES : NO;
-          if (p.hold[side] < 1e-6) side = 1 - side;
-          this.sell(p, side, p.hold[side] * (0.25 + 0.75 * u3));
-        } else {
-          this.buy(p, u1 < 0.5 ? YES : NO, Math.min(maxStake, 40 * -Math.log(1 - u3 * 0.999)));
+          if (p.hold[side] < 5) side = 1 - side;
+          return this.sell(p, side, p.hold[side] * (0.25 + 0.75 * u3));
         }
+        return this.buy(p, u1 < 0.5 ? YES : NO, Math.min(maxStake, 40 * -Math.log(1 - u3 * 0.999)));
       } else {
         // Informeret: skøn = sandhed + egen bias + lidt støj. Handler kun hvis kanten slår gebyret.
         const belief = clamp(this.trueP() + p.bias + 0.015 * g, 0.01, 0.99), edge = belief - price;
         if (Math.abs(edge) >= 0.02 + this.mm.fee) {
           const target = price + p.aggr * edge, want = edge > 0 ? YES : NO, opp = 1 - want;
           const s = sharesToReach(this.mm, opp, target, p.hold[opp]); // luk modsat position først
-          if (s > 1e-6) this.sell(p, opp, s);
-          else {
-            const a = amountToReach(this.mm, want, target, maxStake);
-            if (a >= 1) this.buy(p, want, a);
-          }
+          if (s > 1e-6) return this.sell(p, opp, s);
+          const a = amountToReach(this.mm, want, target, maxStake);
+          if (a >= 1) return this.buy(p, want, a);
         }
       }
-      this._record();
+      return null;
     }
     run(n) { for (let i = 0; i < n; i++) this.step(); }
 
