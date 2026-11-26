@@ -8,5 +8,5 @@ Simulator for et binært prediction market med LMSR (Hanson): spillerne handler 
     b       = startkapital / ln(1/min(p0, 1−p0))   → husets maks. tab = startkapital
 
 - `engine.js` – motor uden afhængigheder (browser og Node): LMSR, informerede og tilfældige spillere, nyhedschok, din egen handel og omsætning (samlet og pr. side). Hver simuleret runde er én gennemført handel; standard er 500 spillere og 5.000 handler.
-- `index.html` – UI (Chart.js fra cdnjs). Åbn via en statisk server, fx `python3 -m http.server` i denne mappe.
+- `index.html` – UI (Chart.js fra cdnjs). Markedet kører live med 2, 10 (standard), 50 eller 250 handler pr. sekund; "Spring til slut" kører resten med det samme. Åbn via en statisk server, fx `python3 -m http.server` i denne mappe.
 - `engine.test.js` – `node amm-sim/engine.test.js`: startpris, tabsgrænse, køb+salg uden gebyr, nulsum, b·KL-subsidie, omsætning og gebyr, determinisme.

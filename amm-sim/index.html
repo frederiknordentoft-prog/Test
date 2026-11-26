@@ -19,6 +19,7 @@
   --no: #f47230;
   --btn: #14171c;
   --btn-ink: #ffffff;
+  --flash: #e3ebf7;
   --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -28,14 +29,14 @@
   :root:not([data-theme="light"]) {
     --bg: #0d0f13; --panel: #161a20; --panel-2: #1c2129; --ink: #e8ebf0; --ink-2: #9ba3b1;
     --line: #262c35; --line-strong: #3a424e; --good: #53c556; --bad: #f07071;
-    --yes: #338ced; --no: #e76624; --btn: #e8ebf0; --btn-ink: #0d0f13;
+    --yes: #338ced; --no: #e76624; --btn: #e8ebf0; --btn-ink: #0d0f13; --flash: #22303f;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0d0f13; --panel: #161a20; --panel-2: #1c2129; --ink: #e8ebf0; --ink-2: #9ba3b1;
   --line: #262c35; --line-strong: #3a424e; --good: #53c556; --bad: #f07071;
-  --yes: #338ced; --no: #e76624; --btn: #e8ebf0; --btn-ink: #0d0f13;
+  --yes: #338ced; --no: #e76624; --btn: #e8ebf0; --btn-ink: #0d0f13; --flash: #22303f;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -138,6 +139,12 @@ td.neg { color: var(--bad); }
 .note { font-size: 12.5px; color: var(--ink-2); }
 
 .log { max-height: 320px; overflow: auto; }
+@keyframes fresh { from { background: var(--flash); } to { background: transparent; } }
+tr.fresh td { animation: fresh 1.4s ease-out both; animation-delay: var(--age, 0ms); }
+.runbar { align-items: center; }
+.progress { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; min-width: 11ch; }
+.speed-label { font-size: 12px; color: var(--ink-2); }
+@media (prefers-reduced-motion: reduce) { tr.fresh td { animation: none; } }
 .log table.data td { font-size: 12.5px; }
 
 .explain { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 24px; }
@@ -159,9 +166,17 @@ td.neg { color: var(--bad); }
       <p class="lede">Et binært marked med LMSR: spillerne handler mod huset, men det er deres køb og salg, der flytter prisen. Huset stiller en startkapital, som er det mest, det kan tabe.</p>
     </div>
     <div class="runbar">
-      <button class="btn primary" id="btnPlay" type="button">Afspil fra start</button>
-      <button class="btn" id="btnStep" type="button">+250 handler</button>
-      <button class="btn" id="btnSeed" type="button">Ny tilfældig kørsel</button>
+      <span class="progress" id="progress" aria-live="off"></span>
+      <span class="speed-label" id="speedLabel">Handler pr. sekund</span>
+      <div class="seg" id="speedSeg" role="group" aria-labelledby="speedLabel">
+        <button type="button" data-v="2" aria-pressed="false">2</button>
+        <button type="button" data-v="10" aria-pressed="true">10</button>
+        <button type="button" data-v="50" aria-pressed="false">50</button>
+        <button type="button" data-v="250" aria-pressed="false">250</button>
+      </div>
+      <button class="btn primary" id="btnPlay" type="button">Pause</button>
+      <button class="btn" id="btnEnd" type="button">Spring til slut</button>
+      <button class="btn" id="btnSeed" type="button">Forfra</button>
     </div>
   </header>
 
@@ -337,13 +352,13 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
     ['Standard', {}],
     ['Lille startkapital', { capital: 300 }],
     ['Dybt marked', { capital: 15000 }],
-    ['Nyhed undervejs', { trueP: 70, shockAt: 2500, shockP: 25, trades: 6000 }],
+    ['Nyhed undervejs', { trueP: 70, shockAt: 500, shockP: 25 }],
     ['Travl dag', { players: 2000, trades: 20000 }],
     ['Uden gebyr', { fee: 0 }],
     ['Kun tilfældige', { informed: 0 }],
   ];
 
-  let T = readTokens(), sim, cfg, rngSeed = 7, playing = false, rafId = 0, tAction = 'buy', tSide = 0, charts = {};
+  let T = readTokens(), sim, cfg, rngSeed = 7, tAction = 'buy', tSide = 0, charts = {};
 
   function readTokens() {
     const cs = getComputedStyle(document.documentElement), g = (n) => cs.getPropertyValue(n).trim();
@@ -367,30 +382,45 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
     $('informedOut').textContent = v('informed') + ' %';
     $('tradesOut').textContent = nf0.format(v('trades'));
   }
-  function rebuild(runAll) {
+  // ---------- afspilning: et live-marked med et fast antal handler pr. sekund ----------
+  let speed = 10, playing = false, rafId = 0, lastTs = 0, carry = 0;
+  const done = () => sim.t >= cfg.trades;
+  function tick(ts) {
+    if (!playing) return;
+    const dt = lastTs ? Math.min(0.25, (ts - lastTs) / 1000) : 0;
+    lastTs = ts;
+    carry += dt * speed;
+    const n = Math.min(Math.floor(carry), cfg.trades - sim.t);
+    if (n > 0) { carry -= n; sim.run(n); renderAll(); }
+    if (done()) { pause(); return; }
+    rafId = requestAnimationFrame(tick);
+  }
+  function start() {
+    if (done()) return;
+    playing = true; lastTs = 0; carry = 0;
+    updateRunbar();
+    rafId = requestAnimationFrame(tick);
+  }
+  function pause() { playing = false; cancelAnimationFrame(rafId); updateRunbar(); }
+  function updateRunbar() {
+    if (!sim) return;
+    $('btnPlay').textContent = playing ? 'Pause' : done() ? 'Afspil igen' : 'Fortsæt';
+    $('btnEnd').disabled = done();
+    $('progress').textContent = `Handel ${nf0.format(Math.min(sim.t, cfg.trades))} af ${nf0.format(cfg.trades)}`;
+  }
+  // Ny kørsel fra handel 0. prefill = antal handler der køres med det samme (kun ved første visning).
+  function restart(prefill = 0) {
+    pause();
     cfg = readCfg();
     sim = new A.Simulation(cfg);
-    if (runAll) sim.run(cfg.trades);
+    seen.clear();
+    seenAllOld = true;
+    if (prefill) sim.run(prefill);
     renderAll();
+    start();
   }
   let timer = 0;
-  $('paramForm').addEventListener('input', () => { updateOutputs(); clearTimeout(timer); timer = setTimeout(() => { stopPlay(); rebuild(true); }, 120); });
-
-  // ---------- afspilning ----------
-  function play() {
-    stopPlay();
-    rebuild(false);
-    playing = true;
-    $('btnPlay').textContent = 'Pause';
-    const frame = () => {
-      if (!playing) return;
-      sim.run(Math.min(Math.max(10, Math.round(cfg.trades / 180)), cfg.trades - sim.t));
-      renderAll();
-      if (sim.t < cfg.trades) rafId = requestAnimationFrame(frame); else stopPlay();
-    };
-    rafId = requestAnimationFrame(frame);
-  }
-  function stopPlay() { playing = false; cancelAnimationFrame(rafId); $('btnPlay').textContent = 'Afspil fra start'; }
+  $('paramForm').addEventListener('input', () => { updateOutputs(); clearTimeout(timer); timer = setTimeout(() => restart(), 200); });
 
   // ---------- grafer ----------
   const crosshair = {
@@ -539,9 +569,19 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
       `<tr><td class="sub">teori ved fuld prisopdagelse, b·KL</td><td>${skr(-A.expectedSubsidy(m.b, cfg.p0, tp))}</td></tr>` +
       `<tr><td>Kontrol: alle tilsammen</td><td>${sim.zeroSumError() < 0.01 ? '<span class="ok">✓ 0 kr</span>' : `<span class="neg">${nf2.format(sim.zeroSumError())} kr</span>`}</td></tr></tbody>`;
   }
+  // Nye rækker blinker kort; animation-delay holder blinket i gang på tværs af gentegninger
+  const seen = new Map();
+  let seenAllOld = true;
   function renderLog() {
-    const rows = sim.log.slice(-50).reverse().map((e) =>
-      `<tr><td>${e.who}</td><td>${nf0.format(e.t)}</td><td>${e.action} ${sideTag(e.side)}</td><td>${kr(e.kr)}</td><td>${nf1.format(e.shares)}</td><td>${pct(e.kr / e.shares)}</td><td>${pct(e.before)} → ${pct(e.after)}</td></tr>`).join('');
+    const now = performance.now();
+    if (seen.size > 600) seen.clear();
+    const rows = sim.log.slice(-50).reverse().map((e) => {
+      if (!seen.has(e.t)) seen.set(e.t, seenAllOld ? now - 1e4 : now);
+      const age = now - seen.get(e.t);
+      const tr = age < 1400 ? `<tr class="fresh" style="--age:${-Math.round(age)}ms">` : '<tr>';
+      return `${tr}<td>${e.who}</td><td>${nf0.format(e.t)}</td><td>${e.action} ${sideTag(e.side)}</td><td>${kr(e.kr)}</td><td>${nf1.format(e.shares)}</td><td>${pct(e.kr / e.shares)}</td><td>${pct(e.before)} → ${pct(e.after)}</td></tr>`;
+    }).join('');
+    seenAllOld = false;
     $('log').innerHTML = `<thead><tr><th>Spiller</th><th>Handel</th><th>Handling</th><th>Beløb</th><th>Aktier</th><th>Gns. pris</th><th>Pris JA før → efter</th></tr></thead><tbody>` +
       (rows || `<tr><td colspan="7" class="muted">Ingen handler endnu.</td></tr>`) + '</tbody>';
   }
@@ -556,7 +596,7 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
     const y = sim.you;
     $('holdings').innerHTML = `Din beholdning: ${nf1.format(y.hold[0])} JA, ${nf1.format(y.hold[1])} NEJ · kontanter ${kr(y.cash)}`;
   }
-  function renderAll() { renderTiles(); syncCharts(); renderWho(); renderLog(); renderTrade(); }
+  function renderAll() { renderTiles(); syncCharts(); renderWho(); renderLog(); renderTrade(); updateRunbar(); }
 
   // ---------- hændelser ----------
   function bindSeg(id, fn) {
@@ -570,17 +610,18 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
   bindSeg('actSeg', (val) => { tAction = val; $('tAmount').value = val === 'buy' ? 500 : 100; renderTrade(); });
   bindSeg('sideSeg', (val) => { tSide = +val; renderTrade(); });
   $('tAmount').addEventListener('input', renderTrade);
-  $('btnTrade').addEventListener('click', () => { stopPlay(); const a = tradeAmount(); if (a > 0) { sim.manual(tAction, tSide, a); renderAll(); } });
-  $('btnPlay').addEventListener('click', () => (playing ? stopPlay() : play()));
-  $('btnStep').addEventListener('click', () => { stopPlay(); sim.run(250); renderAll(); });
-  $('btnSeed').addEventListener('click', () => { stopPlay(); rngSeed = 1 + Math.floor(Math.random() * 99999); rebuild(true); });
+  $('btnTrade').addEventListener('click', () => { const a = tradeAmount(); if (a > 0) { sim.manual(tAction, tSide, a); renderAll(); } });
+  $('btnPlay').addEventListener('click', () => (playing ? pause() : done() ? restart() : start()));
+  $('btnEnd').addEventListener('click', () => { pause(); sim.run(cfg.trades - sim.t); renderAll(); });
+  $('btnSeed').addEventListener('click', () => { rngSeed = 1 + Math.floor(Math.random() * 99999); restart(); });
+  bindSeg('speedSeg', (val) => { speed = +val; });
 
   $('presets').innerHTML = PRESETS.map(([label], i) => `<button type="button" class="chip" data-i="${i}">${label}</button>`).join('');
   $('presets').addEventListener('click', (e) => {
     const b = e.target.closest('.chip'); if (!b) return;
     const vals = { ...BASE, ...PRESETS[+b.dataset.i][1] };
     for (const id in vals) $(id).value = vals[id];
-    updateOutputs(); stopPlay(); rebuild(true);
+    updateOutputs(); restart();
   });
 
   function applyTheme() { T = readTokens(); createCharts(); renderAll(); }
@@ -591,6 +632,6 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
 
   updateOutputs();
   createCharts();
-  rebuild(true);
+  restart(150); // første visning har lidt historik, derefter kører markedet live
 })();
 </script>
