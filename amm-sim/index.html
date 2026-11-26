@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
 <style>
-/* Layout: parameterpanel til venstre, analyse til højre; UI'et er monokromt, kun data har farve. */
+/* Layout: parametre til venstre, nøgletal og grafer til højre. UI'et er monokromt; JA er blå, NEJ er orange. */
 :root {
   --bg: #f2f3f5;
   --panel: #ffffff;
@@ -15,9 +15,8 @@
   --line-strong: #c3c9d2;
   --good: #0b7a24;
   --bad: #c22f30;
-  --s1: #257de0;
-  --s2: #f47230;
-  --s3: #00b894;
+  --yes: #257de0;
+  --no: #f47230;
   --btn: #14171c;
   --btn-ink: #ffffff;
   --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
@@ -29,54 +28,46 @@
   :root:not([data-theme="light"]) {
     --bg: #0d0f13; --panel: #161a20; --panel-2: #1c2129; --ink: #e8ebf0; --ink-2: #9ba3b1;
     --line: #262c35; --line-strong: #3a424e; --good: #53c556; --bad: #f07071;
-    --s1: #338ced; --s2: #e76624; --s3: #00a888; --btn: #e8ebf0; --btn-ink: #0d0f13;
+    --yes: #338ced; --no: #e76624; --btn: #e8ebf0; --btn-ink: #0d0f13;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0d0f13; --panel: #161a20; --panel-2: #1c2129; --ink: #e8ebf0; --ink-2: #9ba3b1;
   --line: #262c35; --line-strong: #3a424e; --good: #53c556; --bad: #f07071;
-  --s1: #338ced; --s2: #e76624; --s3: #00a888; --btn: #e8ebf0; --btn-ink: #0d0f13;
+  --yes: #338ced; --no: #e76624; --btn: #e8ebf0; --btn-ink: #0d0f13;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
 table { font-size: inherit; }
-.app { max-width: 1440px; margin: 0 auto; padding-block: 20px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 18px; }
-h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+.app { max-width: 1320px; margin: 0 auto; padding-block: 20px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 18px; }
+h1, h2 { font-family: var(--font-display); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
 h1 { font-size: 26px; }
 h2 { font-size: 16px; }
-h3 { font-size: 14px; }
 p { margin: 0; }
 .muted { color: var(--ink-2); }
-.num { font-variant-numeric: tabular-nums; }
-.mono { font-family: var(--font-mono); font-size: 12.5px; }
 .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); font-weight: 600; }
 
-/* top */
 .top { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: flex-end; justify-content: space-between; }
-.top .lede { max-width: 62ch; color: var(--ink-2); margin-top: 4px; }
-.runbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.status { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-2); }
-.status b { color: var(--ink); font-weight: 600; }
+.top .lede { max-width: 64ch; color: var(--ink-2); margin-top: 4px; }
+.runbar { display: flex; flex-wrap: wrap; gap: 8px; }
 
 button { font: inherit; cursor: pointer; }
 .btn { border: 1px solid var(--line-strong); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 7px 12px; font-weight: 500; font-size: 13px; line-height: 1.2; }
 .btn:hover { background: var(--panel-2); }
 .btn.primary { background: var(--btn); color: var(--btn-ink); border-color: var(--btn); }
 .btn.primary:hover { opacity: 0.88; }
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-
 .seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; }
-.seg button { border: 0; background: transparent; color: var(--ink-2); padding: 6px 11px; font-size: 13px; font-weight: 500; }
+.seg button { border: 0; background: transparent; color: var(--ink-2); padding: 6px 12px; font-size: 13px; font-weight: 500; }
 .seg button + button { border-left: 1px solid var(--line-strong); }
 .seg button[aria-pressed="true"] { background: var(--btn); color: var(--btn-ink); }
 
-.layout { display: grid; grid-template-columns: 310px minmax(0, 1fr); gap: 18px; align-items: start; }
+.layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 18px; align-items: start; }
 main { display: grid; gap: 18px; min-width: 0; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
-.panel-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.panel-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
 .panel-head p { font-size: 13px; color: var(--ink-2); }
 
 /* parametre */
@@ -94,39 +85,30 @@ legend { padding: 0; margin-bottom: 4px; }
 .field { display: grid; gap: 4px; }
 .field-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
 .field label { font-size: 13px; font-weight: 500; }
-.field output { font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; white-space: nowrap; }
+.field output { font-size: 12.5px; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
 .hint { font-size: 12px; color: var(--ink-2); }
 input[type="range"] { width: 100%; accent-color: var(--ink); margin: 2px 0; }
 input[type="number"] { width: 100%; font: inherit; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: 7px; padding: 6px 8px; font-variant-numeric: tabular-nums; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.derived { font-size: 12px; color: var(--ink-2); background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; display: grid; gap: 2px; }
-.derived b { color: var(--ink); font-weight: 600; }
+.derived { font-size: 12.5px; color: var(--ink-2); background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; }
+.derived b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
 
-/* mekanismekort */
-.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 10px; min-width: 0; }
-.card-top { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-.name { display: flex; gap: 8px; align-items: center; font-family: var(--font-display); font-weight: 600; font-size: 15px; }
-.sw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
-.tag { font-size: 11px; font-weight: 600; border: 1px solid var(--line-strong); border-radius: 999px; padding: 2px 8px; color: var(--ink-2); white-space: nowrap; }
-.card .sub { font-size: 12.5px; color: var(--ink-2); }
-.kv { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.kv .k { font-size: 11.5px; color: var(--ink-2); }
-.kv .v { font-family: var(--font-display); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
-.meter { display: grid; gap: 4px; }
-.meter-bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+/* nøgletal */
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.tile .k { font-size: 12px; color: var(--ink-2); }
+.tile .v { font-family: var(--font-display); font-size: 24px; font-weight: 600; line-height: 1.15; }
+.tile .s { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.meter-bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 4px; }
 .meter-bar span { display: block; height: 100%; background: var(--ink-2); border-radius: 3px; }
 .meter-bar span.hot { background: var(--bad); }
-.meter-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 
-/* charts */
+/* grafer */
 .legend { display: flex; flex-wrap: wrap; gap: 6px; }
-.lg { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px; padding: 3px 10px 3px 8px; font-size: 12px; }
-.lg[aria-pressed="false"] { opacity: 0.45; }
-.lg .sw { width: 10px; height: 10px; }
-.lg .dash { width: 14px; height: 0; border-top: 2px dashed var(--ink-2); }
-.chart-box { position: relative; height: 290px; }
-.chart-box.small { height: 250px; }
+.lg { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 8px; font-size: 12px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.dash { width: 14px; height: 0; border-top: 2px dashed var(--ink-2); }
+.chart-box { position: relative; height: 280px; }
 
 .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
 
@@ -136,202 +118,145 @@ table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabul
 table.data th, table.data td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
 table.data th:first-child, table.data td:first-child { text-align: left; white-space: normal; }
 table.data thead th { font-size: 12px; color: var(--ink-2); font-weight: 600; border-bottom: 1px solid var(--line-strong); }
-table.data thead th .name { justify-content: flex-end; font-size: 13px; color: var(--ink); }
-table.data tr.group td { padding-top: 14px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); font-weight: 600; border-bottom: 1px solid var(--line-strong); }
+table.data td.sub { padding-left: 22px; color: var(--ink-2); }
 td.pos { color: var(--good); }
 td.neg { color: var(--bad); }
 .ok { color: var(--good); font-weight: 600; }
+.yes { color: var(--ink); font-weight: 600; }
+.yes::before, .no::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 1px; }
+.yes::before { background: var(--yes); }
+.no { color: var(--ink); font-weight: 600; }
+.no::before { background: var(--no); }
 
-/* handel */
-.trade { display: grid; gap: 12px; }
+.trade { display: grid; gap: 12px; align-content: start; }
 .trade-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
-.trade-controls .field { min-width: 140px; flex: 1; }
+.trade-controls .field { min-width: 120px; flex: 1; }
+.quote { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.quote .k { font-size: 11.5px; color: var(--ink-2); }
+.quote .v { font-weight: 600; font-variant-numeric: tabular-nums; }
 .note { font-size: 12.5px; color: var(--ink-2); }
 
-/* log */
-.log { max-height: 340px; overflow: auto; }
+.log { max-height: 320px; overflow: auto; }
 .log table.data td { font-size: 12.5px; }
-.side-yes, .side-no { font-weight: 600; }
 
-/* forklaring */
-.explain { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.explain article { display: grid; gap: 8px; align-content: start; min-width: 0; }
-.explain dl { margin: 0; display: grid; gap: 6px; font-size: 13px; }
-.explain dt { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); font-weight: 600; }
-.explain dd { margin: 0; }
-.formula { font-family: var(--font-mono); font-size: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; overflow-x: auto; white-space: pre; line-height: 1.6; }
-.limits { margin: 14px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 13px; display: grid; gap: 4px; max-width: 90ch; }
+.explain { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 24px; }
+.explain p { font-size: 13.5px; max-width: 62ch; }
+.formula { align-self: start; font-family: var(--font-mono); font-size: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; padding: 10px 12px; overflow-x: auto; white-space: pre; line-height: 1.7; }
 
-@media (max-width: 1180px) { .split { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 980px) {
+@media (max-width: 1100px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .split, .explain { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 900px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
   aside.params { position: static; max-height: none; }
-  .explain { grid-template-columns: minmax(0, 1fr); }
 }
-@media (max-width: 720px) {
-  .cards { grid-template-columns: minmax(0, 1fr); }
-  .chart-box { height: 240px; }
-  h1 { font-size: 22px; }
-}
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (max-width: 560px) { .chart-box { height: 230px; } h1 { font-size: 22px; } .tile .v { font-size: 20px; } }
 </style>
 
 <div class="app">
   <header class="top">
     <div>
       <h1>AMM-laboratoriet</h1>
-      <p class="lede">Ét binært marked, tre prismekanismer. Samme spillere og samme tilfældige ordreimpulser sendes gennem dem alle, så forskellen du ser skyldes mekanismen.</p>
+      <p class="lede">Et binært marked med LMSR: spillerne handler mod huset, men det er deres køb og salg, der flytter prisen. Huset stiller en startkapital, som er det mest, det kan tabe.</p>
     </div>
     <div class="runbar">
       <button class="btn primary" id="btnPlay" type="button">Afspil fra start</button>
-      <button class="btn" id="btnStep1" type="button">+1 handel</button>
-      <button class="btn" id="btnStep50" type="button">+50 handler</button>
-      <button class="btn" id="btnReset" type="button">Kør igen</button>
+      <button class="btn" id="btnStep" type="button">+10 handler</button>
+      <button class="btn" id="btnSeed" type="button">Ny tilfældig kørsel</button>
     </div>
   </header>
-  <div class="status" id="status" aria-live="polite"></div>
 
   <div class="layout">
     <aside class="params panel" aria-label="Parametre">
       <details id="paramDetails" open>
         <summary><h2>Parametre</h2></summary>
         <form class="params-body" id="paramForm" onsubmit="return false">
-          <div class="field">
-            <span class="eyebrow">Scenarier</span>
-            <div class="presets" id="presets"></div>
-          </div>
+          <div class="presets" id="presets"></div>
 
           <fieldset>
-            <legend class="eyebrow">Marked</legend>
+            <legend class="eyebrow">Huset</legend>
             <div class="field">
-              <div class="field-head"><label for="p0">Startpris (åbningsodds)</label><output id="p0Out" for="p0"></output></div>
-              <input type="range" id="p0" min="5" max="95" step="1" value="50">
+              <div class="field-head"><label for="capital">Startkapital (maks. tab)</label><output id="capitalOut" for="capital"></output></div>
+              <input type="range" id="capital" min="100" max="10000" step="100" value="1000">
             </div>
-            <div class="field">
-              <div class="field-head"><label for="trueP">Sand sandsynlighed for JA</label><output id="truePOut" for="trueP"></output></div>
-              <input type="range" id="trueP" min="5" max="95" step="1" value="68">
-              <p class="hint">Skjult for spillerne. Informerede spillere ser den med støj.</p>
-            </div>
-            <div class="row2">
-              <div class="field">
-                <label for="shockAt">Nyhedschok ved handel</label>
-                <input type="number" id="shockAt" min="0" max="5000" step="10" value="0">
-              </div>
-              <div class="field">
-                <div class="field-head"><label for="shockP">Ny sand p</label><output id="shockPOut" for="shockP"></output></div>
-                <input type="range" id="shockP" min="5" max="95" step="1" value="35">
-              </div>
-            </div>
-            <p class="hint">0 = intet chok. Ved chokket skifter den sande sandsynlighed, fx efter et mål.</p>
-          </fieldset>
-
-          <fieldset>
-            <legend class="eyebrow">Operatør og cold start</legend>
-            <div class="field">
-              <div class="field-head"><label for="seed">Startkapital i risiko</label><output id="seedOut" for="seed"></output></div>
-              <input type="range" id="seed" min="100" max="10000" step="100" value="1000">
-              <p class="hint">Samme maks. tab i alle tre modeller, så de kan sammenlignes.</p>
-            </div>
-            <div class="derived" id="derived"></div>
             <div class="field">
               <div class="field-head"><label for="fee">Gebyr pr. handel</label><output id="feeOut" for="fee"></output></div>
               <input type="range" id="fee" min="0" max="10" step="0.5" value="2">
             </div>
+            <div class="field">
+              <div class="field-head"><label for="p0">Åbningspris for JA</label><output id="p0Out" for="p0"></output></div>
+              <input type="range" id="p0" min="5" max="95" step="1" value="50">
+            </div>
+            <p class="derived" id="derived"></p>
+          </fieldset>
+
+          <fieldset>
+            <legend class="eyebrow">Virkeligheden</legend>
+            <div class="field">
+              <div class="field-head"><label for="trueP">Sand sandsynlighed for JA</label><output id="truePOut" for="trueP"></output></div>
+              <input type="range" id="trueP" min="5" max="95" step="1" value="68">
+              <p class="hint">Skjult for spillerne. De informerede kender den med lidt støj.</p>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label for="shockAt">Nyhed ved handel</label>
+                <input type="number" id="shockAt" min="0" max="5000" step="10" value="0">
+              </div>
+              <div class="field">
+                <div class="field-head"><label for="shockP">Ny sand p</label><output id="shockPOut" for="shockP"></output></div>
+                <input type="range" id="shockP" min="5" max="95" step="1" value="30">
+              </div>
+            </div>
+            <p class="hint">0 = ingen nyhed.</p>
           </fieldset>
 
           <fieldset>
             <legend class="eyebrow">Spillere</legend>
-            <div class="row2">
-              <div class="field">
-                <div class="field-head"><label for="nAgents">Antal</label><output id="nAgentsOut" for="nAgents"></output></div>
-                <input type="range" id="nAgents" min="5" max="200" step="5" value="40">
-              </div>
-              <div class="field">
-                <div class="field-head"><label for="bankroll">Bankroll</label><output id="bankrollOut" for="bankroll"></output></div>
-                <input type="range" id="bankroll" min="100" max="10000" step="100" value="1000">
-              </div>
+            <div class="field">
+              <div class="field-head"><label for="players">Antal spillere</label><output id="playersOut" for="players"></output></div>
+              <input type="range" id="players" min="5" max="200" step="5" value="40">
             </div>
             <div class="field">
-              <div class="field-head"><label for="mixInf">Informerede</label><output id="mixInfOut" for="mixInf"></output></div>
-              <input type="range" id="mixInf" min="0" max="100" step="5" value="30">
+              <div class="field-head"><label for="informed">Andel informerede</label><output id="informedOut" for="informed"></output></div>
+              <input type="range" id="informed" min="0" max="100" step="5" value="35">
+              <p class="hint">Resten handler tilfældigt. Alle starter med 1.000 kr.</p>
             </div>
             <div class="field">
-              <div class="field-head"><label for="mixNoise">Støjhandlere</label><output id="mixNoiseOut" for="mixNoise"></output></div>
-              <input type="range" id="mixNoise" min="0" max="100" step="5" value="55">
+              <div class="field-head"><label for="trades">Antal handler</label><output id="tradesOut" for="trades"></output></div>
+              <input type="range" id="trades" min="50" max="3000" step="50" value="600">
             </div>
-            <div class="field">
-              <div class="field-head"><label for="mixMom">Momentum (flok)</label><output id="mixMomOut" for="mixMom"></output></div>
-              <input type="range" id="mixMom" min="0" max="100" step="5" value="15">
-            </div>
-            <div class="field">
-              <div class="field-head"><label for="sigma">Uenighed blandt informerede</label><output id="sigmaOut" for="sigma"></output></div>
-              <input type="range" id="sigma" min="0" max="20" step="1" value="6">
-            </div>
-            <div class="field">
-              <div class="field-head"><label for="noiseSize">Gns. støjhandel</label><output id="noiseSizeOut" for="noiseSize"></output></div>
-              <input type="range" id="noiseSize" min="5" max="500" step="5" value="40">
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend class="eyebrow">Simulation</legend>
-            <div class="field">
-              <div class="field-head"><label for="nTrades">Antal handler</label><output id="nTradesOut" for="nTrades"></output></div>
-              <input type="range" id="nTrades" min="50" max="3000" step="50" value="600">
-            </div>
-            <div class="row2">
-              <div class="field">
-                <label for="rngSeed">Tilfældigheds-seed</label>
-                <input type="number" id="rngSeed" min="1" max="999999" step="1" value="7">
-              </div>
-              <div class="field">
-                <div class="field-head"><label for="speed">Afspilning</label><output id="speedOut" for="speed"></output></div>
-                <input type="range" id="speed" min="1" max="40" step="1" value="5">
-              </div>
-            </div>
-            <button class="btn" id="btnNewSeed" type="button">Ny seed</button>
           </fieldset>
         </form>
       </details>
     </aside>
 
     <main>
-      <section class="cards" id="cards" aria-label="Mekanismer"></section>
+      <section class="tiles" id="tiles" aria-label="Nøgletal" aria-live="polite"></section>
 
       <section class="panel">
         <div class="panel-head">
-          <div><h2>Prisudvikling</h2><p>Sandsynlighed for JA efter hver handel. Stiplet linje er den sande sandsynlighed.</p></div>
-          <div class="legend" data-legend="price"></div>
+          <div><h2>Pris for JA</h2><p>Efter hver handel. Stiplet linje er den sande sandsynlighed.</p></div>
+          <div class="legend"><span class="lg"><span class="sw" style="background:var(--yes)"></span>Pris JA</span><span class="lg"><span class="dash"></span>Sand p</span></div>
         </div>
-        <div class="chart-box"><canvas id="chPrice" role="img" aria-label="Pris for JA over handler i tre mekanismer"></canvas></div>
+        <div class="chart-box"><canvas id="chPrice" role="img" aria-label="Pris for JA over handler"></canvas></div>
       </section>
 
       <section class="panel">
         <div class="panel-head">
-          <div><h2>Operatørens resultat</h2><p>Huset (LMSR, pulje) eller LP (CPMM), som om markedet blev afgjort nu.</p></div>
-          <div class="seg" id="pnlSeg" role="group" aria-label="Udfald">
-            <button type="button" data-v="exp" aria-pressed="true">Forventet</button>
-            <button type="button" data-v="yes" aria-pressed="false">Hvis JA</button>
-            <button type="button" data-v="no" aria-pressed="false">Hvis NEJ</button>
+          <div><h2>Husets resultat</h2><p>Som om markedet blev afgjort nu. Forventet er vægtet med den sande sandsynlighed.</p></div>
+          <div class="legend">
+            <span class="lg"><span class="sw" style="background:var(--yes)"></span>Hvis JA</span>
+            <span class="lg"><span class="sw" style="background:var(--no)"></span>Hvis NEJ</span>
+            <span class="lg"><span class="sw" style="background:var(--ink)"></span>Forventet</span>
+            <span class="lg"><span class="dash"></span>Maks. tab</span>
           </div>
         </div>
-        <div class="legend" data-legend="pnl" style="margin-bottom:8px"></div>
-        <div class="chart-box"><canvas id="chPnl" role="img" aria-label="Operatørens resultat over handler"></canvas></div>
-        <p class="note" style="margin-top:8px">Forventet = vægtet med den sande sandsynlighed. Maks. tab er startkapitalen.</p>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head">
-          <div><h2>Nøgletal</h2><p>Alle kr-beløb er forventede værdier ved den aktuelle sande sandsynlighed, medmindre andet står.</p></div>
-        </div>
-        <div class="table-wrap"><table class="data" id="kpi"></table></div>
+        <div class="chart-box"><canvas id="chHouse" role="img" aria-label="Husets resultat over handler"></canvas></div>
       </section>
 
       <div class="split">
         <section class="panel trade">
           <div>
             <h2>Din handel</h2>
-            <p class="note">Sendes til alle tre markeder på én gang, så du kan se, hvordan samme ordre prissættes. Du har 10.000 kr i hvert marked.</p>
+            <p class="note">Du har 10.000 kr. Prøv et stort køb og se, hvor meget prisen flytter sig.</p>
           </div>
           <div class="trade-controls">
             <div class="seg" id="actSeg" role="group" aria-label="Handling">
@@ -346,72 +271,36 @@ td.neg { color: var(--bad); }
               <label for="tAmount" id="tAmountLabel">Beløb (kr)</label>
               <input type="number" id="tAmount" min="1" step="10" value="500">
             </div>
-            <button class="btn primary" id="btnTrade" type="button">Udfør i alle tre</button>
+            <button class="btn primary" id="btnTrade" type="button">Udfør</button>
           </div>
-          <div class="table-wrap"><table class="data" id="quote"></table></div>
+          <div class="quote" id="quote"></div>
           <p class="note" id="holdings"></p>
-          <p class="note" id="tradeNote"></p>
         </section>
 
         <section class="panel">
-          <div class="panel-head">
-            <div><h2>Prispåvirkning</h2><p>Pris efter ét køb af JA for x kr, fra markedets nuværende tilstand.</p></div>
-            <div class="legend" data-legend="slip"></div>
-          </div>
-          <div class="chart-box small"><canvas id="chSlip" role="img" aria-label="Pris efter køb af JA som funktion af beløb"></canvas></div>
+          <div class="panel-head"><div><h2>Hvem tjener pengene</h2><p>Forventet resultat ved den sande sandsynlighed.</p></div></div>
+          <div class="table-wrap"><table class="data" id="who"></table></div>
         </section>
       </div>
 
       <section class="panel">
-        <div class="panel-head">
-          <div><h2>Handelslog</h2><p>Seneste 60 handler, nyeste øverst.</p></div>
-          <div class="seg" id="logSeg" role="group" aria-label="Marked">
-            <button type="button" data-v="cpmm" aria-pressed="true">CPMM</button>
-            <button type="button" data-v="lmsr" aria-pressed="false">LMSR</button>
-            <button type="button" data-v="pari" aria-pressed="false">Pulje</button>
-          </div>
-        </div>
+        <div class="panel-head"><div><h2>Handelslog</h2><p>Seneste 50 handler, nyeste øverst.</p></div></div>
         <div class="log table-wrap"><table class="data" id="log"></table></div>
       </section>
 
       <section class="panel">
-        <div class="panel-head"><h2>Mekanismerne</h2></div>
+        <div class="panel-head"><h2>Sådan virker LMSR</h2></div>
         <div class="explain">
-          <article>
-            <div class="name"><span class="sw" style="background:var(--s1)"></span>CPMM · spiller mod spiller</div>
-            <dl>
-              <dt>Modpart</dt><dd>Puljen. Hver aktie er dækket af 1 kr indskud, så vinderne betales af tabernes penge plus LP'ens indskud.</dd>
-              <dt>Pris</dt><dd><div class="formula">p(JA) = NEJ / (JA + NEJ)
-JA · NEJ = k</div></dd>
-              <dt>Køb for a kr</dt><dd>a præges til a JA + a NEJ. NEJ bliver i puljen, puljen udleverer JA til k er bevaret.</dd>
-              <dt>Cold start</dt><dd>LP indskyder L kr = L JA + L NEJ. LP bærer ubalancen og kan tabe op mod L, når prisen går mod 0 eller 1.</dd>
-            </dl>
-          </article>
-          <article>
-            <div class="name"><span class="sw" style="background:var(--s2)"></span>LMSR · mod huset</div>
-            <dl>
-              <dt>Modpart</dt><dd>Huset på hver handel. Prisen bestemmes stadig af spillernes nettovolumen.</dd>
-              <dt>Pris</dt><dd><div class="formula">C(q) = b·ln(e^(qJA/b) + e^(qNEJ/b))
-p(JA) = e^(qJA/b) / (e^(qJA/b) + e^(qNEJ/b))
-køb Δ aktier koster C(q+Δ) − C(q)</div></dd>
-              <dt>Cold start</dt><dd>Maks. tab = b·ln(1/min(p0, 1−p0)), uanset volumen. Forventet subsidie ved fuld prisopdagelse = b·KL(p‖p0). b styrer dybden.</dd>
-            </dl>
-          </article>
-          <article>
-            <div class="name"><span class="sw" style="background:var(--s3)"></span>Pulje · parimutuel</div>
-            <dl>
-              <dt>Modpart</dt><dd>De andre spillere. Huset har kun sit startindskud i puljen.</dd>
-              <dt>Pris</dt><dd><div class="formula">p(JA) = JA-pulje / total
-udbetaling pr. kr = total / vinderpulje</div></dd>
-              <dt>Cold start</dt><dd>Startindskuddet giver åbningsodds og kan højst tabes. Udbetalingen kendes først ved lukning, og der kan ikke sælges undervejs.</dd>
-            </dl>
-          </article>
+          <div class="formula">C(q)    = b · ln(e^(qJA/b) + e^(qNEJ/b))
+pris JA = e^(qJA/b) / (e^(qJA/b) + e^(qNEJ/b))
+køb Δ   koster C(q + Δ) − C(q)
+b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
+          <div style="display:grid;gap:8px">
+            <p>q er antallet af solgte aktier på hver side. Hver aktie udbetaler 1 kr, hvis dens side vinder. Prisen stiger, når der købes, og falder, når der sælges, så nettovolumen bestemmer oddsene.</p>
+            <p>b er likviditeten. Stor b giver et dybt marked, hvor prisen flytter sig lidt pr. kr, men også en større startkapital. Husets tab kan aldrig overstige startkapitalen, uanset hvor meget der handles.</p>
+            <p>Når informerede spillere flytter prisen fra åbningsprisen til sandheden, koster det huset b·KL(p‖p0) i forventning. Gebyret skal dække det.</p>
+          </div>
         </div>
-        <ul class="limits">
-          <li>Spillerne er heuristiske: informerede handler mod deres skøn, støjhandlere tilfældigt, momentum forlænger de seneste 8 handlers bevægelse.</li>
-          <li>Gebyr trækkes af indsatsen ved køb og af provenuet ved salg. I puljen trækkes det ved indsats i stedet for ved lukning.</li>
-          <li>Ikke med: ordrebog, LP'er der tilføjer eller trækker likviditet undervejs, liquidity-sensitive LMSR, kreditrisiko og latens.</li>
-        </ul>
       </section>
     </main>
   </div>
@@ -424,87 +313,61 @@ udbetaling pr. kr = total / vinderpulje</div></dd>
   'use strict';
   const A = window.AMM;
   const $ = (id) => document.getElementById(id);
-  const KEYS = ['cpmm', 'lmsr', 'pari'];
-  const META = {
-    cpmm: { name: 'CPMM', long: 'LP-pulje med konstant produkt', mode: 'Spiller mod spiller', cp: 'Puljen (fuldt dækket)', risk: 'LP', tok: '--s1' },
-    lmsr: { name: 'LMSR', long: 'Logaritmisk market maker', mode: 'Mod huset', cp: 'Huset', risk: 'Huset', tok: '--s2' },
-    pari: { name: 'Pulje', long: 'Parimutuel pulje', mode: 'Spiller mod spiller', cp: 'De andre spillere', risk: 'Huset', tok: '--s3' },
-  };
   const nf0 = new Intl.NumberFormat('da-DK', { maximumFractionDigits: 0 });
   const nf1 = new Intl.NumberFormat('da-DK', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const nf2 = new Intl.NumberFormat('da-DK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const kr = (v) => nf0.format(Math.round(v)) + ' kr';
   const skr = (v) => { const r = Math.round(v); return (r > 0 ? '+' : r < 0 ? '−' : '') + nf0.format(Math.abs(r)) + ' kr'; };
   const pct = (p) => nf1.format(p * 100) + ' %';
-  const pp = (d) => { const r = d * 100; return (r >= 0.05 ? '+' : r <= -0.05 ? '−' : '') + nf1.format(Math.abs(r)) + ' pp'; };
   const odds = (p) => (p > 0 ? nf2.format(1 / p) : '–');
   const cls = (v) => (Math.round(v) > 0 ? 'pos' : Math.round(v) < 0 ? 'neg' : '');
+  const sideTag = (s) => `<span class="${s ? 'no' : 'yes'}">${s ? 'NEJ' : 'JA'}</span>`;
 
+  const BASE = { capital: 1000, fee: 2, p0: 50, trueP: 68, shockAt: 0, shockP: 30, players: 40, informed: 35, trades: 600 };
   const PRESETS = [
-    { label: 'Standard', v: { p0: 50, trueP: 68, shockAt: 0, shockP: 35, seed: 1000, fee: 2, nAgents: 40, bankroll: 1000, mixInf: 30, mixNoise: 55, mixMom: 15, sigma: 6, noiseSize: 40, nTrades: 600 } },
-    { label: 'Cold start, lille kapital', v: { seed: 200, fee: 2, trueP: 68, shockAt: 0, mixInf: 30, mixNoise: 55, mixMom: 15 } },
-    { label: 'Dybt marked', v: { seed: 10000, fee: 2, shockAt: 0 } },
-    { label: 'Nyhedschok', v: { p0: 50, trueP: 70, shockAt: 300, shockP: 25, nTrades: 900, seed: 1000, mixInf: 40, mixNoise: 45, mixMom: 15 } },
-    { label: 'Flokadfærd', v: { mixInf: 20, mixNoise: 30, mixMom: 50, shockAt: 0 } },
-    { label: 'Kun støj', v: { mixInf: 0, mixNoise: 100, mixMom: 0, shockAt: 0 } },
-    { label: 'Uden gebyr', v: { fee: 0 } },
+    ['Standard', {}],
+    ['Lille startkapital', { capital: 200 }],
+    ['Dybt marked', { capital: 8000 }],
+    ['Nyhed undervejs', { trueP: 70, shockAt: 300, shockP: 25, trades: 900 }],
+    ['Uden gebyr', { fee: 0 }],
+    ['Kun tilfældige', { informed: 0 }],
   ];
 
-  let T = readTokens();
-  let sim = null, simId = 0, cfg = null;
-  let playing = false, rafId = 0;
-  const vis = { cpmm: true, lmsr: true, pari: true };
-  let pnlMode = 'exp', logKey = 'cpmm', tAction = 'buy', tSide = 0;
-  let charts = {};
-  const cache = { id: -1, n: 0 };
+  let T = readTokens(), sim, cfg, rngSeed = 7, playing = false, rafId = 0, tAction = 'buy', tSide = 0, charts = {};
+  const cache = { sim: null, n: 0 };
 
   function readTokens() {
-    const cs = getComputedStyle(document.documentElement);
-    const g = (n) => cs.getPropertyValue(n).trim();
-    return { ink: g('--ink'), ink2: g('--ink-2'), line: g('--line'), lineStrong: g('--line-strong'), panel: g('--panel'),
-      s: { cpmm: g('--s1'), lmsr: g('--s2'), pari: g('--s3') } };
+    const cs = getComputedStyle(document.documentElement), g = (n) => cs.getPropertyValue(n).trim();
+    return { ink: g('--ink'), ink2: g('--ink-2'), line: g('--line'), lineStrong: g('--line-strong'), panel: g('--panel'), yes: g('--yes'), no: g('--no') };
   }
 
-  // ---------------- parametre ----------------
-  const IDS = ['p0', 'trueP', 'shockAt', 'shockP', 'seed', 'fee', 'nAgents', 'bankroll', 'mixInf', 'mixNoise', 'mixMom', 'sigma', 'noiseSize', 'nTrades', 'rngSeed'];
+  // ---------- parametre ----------
   const v = (id) => +$(id).value;
   function readCfg() {
-    return {
-      p0: v('p0') / 100, trueP: v('trueP') / 100, shockAt: Math.max(0, Math.round(v('shockAt'))), shockP: v('shockP') / 100,
-      seed: v('seed'), fee: v('fee') / 100, nAgents: v('nAgents'), bankroll: v('bankroll'),
-      mix: { informed: v('mixInf'), noise: v('mixNoise'), momentum: v('mixMom') },
-      sigma: v('sigma') / 100, noiseSize: v('noiseSize'), rngSeed: Math.max(1, Math.round(v('rngSeed')) || 1), nTrades: v('nTrades'),
-    };
+    return { capital: v('capital'), fee: v('fee') / 100, p0: v('p0') / 100, trueP: v('trueP') / 100,
+      shockAt: Math.max(0, Math.round(v('shockAt')) || 0), shockP: v('shockP') / 100,
+      players: v('players'), informedShare: v('informed') / 100, trades: v('trades'), rngSeed };
   }
   function updateOutputs() {
+    $('capitalOut').textContent = kr(v('capital'));
+    $('feeOut').textContent = nf1.format(v('fee')) + ' %';
     $('p0Out').textContent = `${v('p0')} % · odds ${odds(v('p0') / 100)}`;
-    $('truePOut').textContent = `${v('trueP')} %`;
-    $('shockPOut').textContent = `${v('shockP')} %`;
-    $('seedOut').textContent = kr(v('seed'));
-    $('feeOut').textContent = `${nf1.format(v('fee'))} %`;
-    $('nAgentsOut').textContent = v('nAgents');
-    $('bankrollOut').textContent = kr(v('bankroll'));
-    const sum = v('mixInf') + v('mixNoise') + v('mixMom') || 1;
-    $('mixInfOut').textContent = `${Math.round((100 * v('mixInf')) / sum)} %`;
-    $('mixNoiseOut').textContent = `${Math.round((100 * v('mixNoise')) / sum)} %`;
-    $('mixMomOut').textContent = `${Math.round((100 * v('mixMom')) / sum)} %`;
-    $('sigmaOut').textContent = `± ${v('sigma')} pp`;
-    $('noiseSizeOut').textContent = kr(v('noiseSize'));
-    $('nTradesOut').textContent = nf0.format(v('nTrades'));
-    $('speedOut').textContent = `${v('speed')} / frame`;
+    $('truePOut').textContent = v('trueP') + ' %';
+    $('shockPOut').textContent = v('shockP') + ' %';
+    $('playersOut').textContent = v('players');
+    $('informedOut').textContent = v('informed') + ' %';
+    $('tradesOut').textContent = nf0.format(v('trades'));
   }
-
-  let rebuildTimer = 0;
-  function scheduleRebuild() { clearTimeout(rebuildTimer); rebuildTimer = setTimeout(() => { stopPlay(); rebuild(true); }, 120); }
   function rebuild(runAll) {
     cfg = readCfg();
     sim = new A.Simulation(cfg);
-    simId++;
-    if (runAll) sim.run(cfg.nTrades);
+    if (runAll) sim.run(cfg.trades);
     renderAll();
   }
+  let timer = 0;
+  $('paramForm').addEventListener('input', () => { updateOutputs(); clearTimeout(timer); timer = setTimeout(() => { stopPlay(); rebuild(true); }, 120); });
 
-  // ---------------- afspilning ----------------
+  // ---------- afspilning ----------
   function play() {
     stopPlay();
     rebuild(false);
@@ -512,44 +375,37 @@ udbetaling pr. kr = total / vinderpulje</div></dd>
     $('btnPlay').textContent = 'Pause';
     const frame = () => {
       if (!playing) return;
-      const n = Math.min(v('speed'), cfg.nTrades - sim.t);
-      if (n > 0) sim.run(n);
+      sim.run(Math.min(5, cfg.trades - sim.t));
       renderAll();
-      if (sim.t < cfg.nTrades) rafId = requestAnimationFrame(frame); else stopPlay();
+      if (sim.t < cfg.trades) rafId = requestAnimationFrame(frame); else stopPlay();
     };
     rafId = requestAnimationFrame(frame);
   }
   function stopPlay() { playing = false; cancelAnimationFrame(rafId); $('btnPlay').textContent = 'Afspil fra start'; }
 
-  // ---------------- charts ----------------
+  // ---------- grafer ----------
   const crosshair = {
     id: 'crosshair',
     beforeDatasetsDraw(chart) {
       const act = chart.tooltip && chart.tooltip.getActiveElements();
       if (!act || !act.length) return;
       const x = act[0].element.x, { top, bottom } = chart.chartArea, ctx = chart.ctx;
-      ctx.save(); ctx.strokeStyle = T.lineStrong; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bottom); ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.strokeStyle = T.lineStrong; ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bottom); ctx.stroke(); ctx.restore();
     },
   };
+  // Navn ved hver linjes endepunkt, skubbet fra hinanden så de ikke overlapper
   const endLabels = {
     id: 'endLabels',
     afterDatasetsDraw(chart) {
       const { ctx, chartArea } = chart, items = [];
       chart.data.datasets.forEach((ds, i) => {
-        if (!chart.isDatasetVisible(i) || !ds._short) return;
-        const pts = chart.getDatasetMeta(i).data;
-        const pt = pts[pts.length - 1];
+        const pts = chart.getDatasetMeta(i).data, pt = pts[pts.length - 1];
         if (!pt || !isFinite(pt.y)) return;
         items.push({ x: Math.min(pt.x, chartArea.right), y: Math.max(chartArea.top, Math.min(chartArea.bottom, pt.y)), label: ds._short, color: ds.borderColor, dash: !!ds.borderDash });
       });
       items.sort((a, b) => a.y - b.y);
-      const gap = 14;
-      for (let i = 1; i < items.length; i++) if (items[i].y - items[i - 1].y < gap) items[i].y = items[i - 1].y + gap;
-      for (let i = items.length - 1; i >= 0; i--) {
-        const lim = i === items.length - 1 ? chartArea.bottom : items[i + 1].y - gap;
-        if (items[i].y > lim) items[i].y = lim;
-      }
+      for (let i = 1; i < items.length; i++) if (items[i].y - items[i - 1].y < 14) items[i].y = items[i - 1].y + 14;
+      for (let i = items.length - 1; i >= 0; i--) { const lim = i === items.length - 1 ? chartArea.bottom : items[i + 1].y - 14; if (items[i].y > lim) items[i].y = lim; }
       ctx.save();
       ctx.font = '600 11px Inter, system-ui, sans-serif';
       ctx.textBaseline = 'middle';
@@ -562,299 +418,141 @@ udbetaling pr. kr = total / vinderpulje</div></dd>
       ctx.restore();
     },
   };
-
-  function baseOptions({ yFmt, xTitle, yMin, yMax, tipTitle, tipLabel, padRight = 64 }) {
+  function options({ yFmt, yMin, yMax, tip }) {
     return {
       animation: false, responsive: true, maintainAspectRatio: false, parsing: false, normalized: true,
       interaction: { mode: 'index', intersect: false },
-      layout: { padding: { right: padRight, top: 4 } },
+      layout: { padding: { right: 72, top: 4 } },
       plugins: {
         legend: { display: false },
         tooltip: {
           filter: (it) => !it.dataset._ref,
-          backgroundColor: T.panel, borderColor: T.lineStrong, borderWidth: 1, titleColor: T.ink, bodyColor: T.ink,
-          padding: 10, boxPadding: 4, usePointStyle: true,
-          callbacks: { title: tipTitle, label: tipLabel, labelPointStyle: () => ({ pointStyle: 'rectRounded', rotation: 0 }) },
+          backgroundColor: T.panel, borderColor: T.lineStrong, borderWidth: 1, titleColor: T.ink, bodyColor: T.ink, padding: 10, boxPadding: 4,
+          callbacks: { title: (it) => (it.length ? `Handel ${nf0.format(it[0].parsed.x)}` : ''), label: (c) => ` ${c.dataset.label}: ${tip(c.parsed.y)}` },
         },
       },
       scales: {
-        x: { type: 'linear', min: 0, title: { display: true, text: xTitle, color: T.ink2 }, grid: { display: false }, border: { color: T.lineStrong },
-          ticks: { color: T.ink2, maxTicksLimit: 7, callback: (val) => nf0.format(val) } },
+        x: { type: 'linear', min: 0, title: { display: true, text: 'Handel nr.', color: T.ink2 }, grid: { display: false }, border: { color: T.lineStrong },
+          ticks: { color: T.ink2, maxTicksLimit: 7, callback: (x) => nf0.format(x) } },
         y: { min: yMin, max: yMax, border: { display: false }, ticks: { color: T.ink2, maxTicksLimit: 6, callback: yFmt },
           grid: { color: (c) => (c.tick && c.tick.value === 0 ? T.lineStrong : T.line) } },
       },
-      elements: { point: { radius: 0, hoverRadius: 4, hitRadius: 6 }, line: { borderWidth: 2, tension: 0, borderJoinStyle: 'round' } },
+      elements: { point: { radius: 0, hoverRadius: 4, hitRadius: 6 }, line: { borderWidth: 2, tension: 0 } },
     };
   }
-  function mechDatasets() {
-    return KEYS.map((k) => ({ label: META[k].name, _short: META[k].name, _key: k, data: [], borderColor: T.s[k], backgroundColor: T.s[k],
-      pointHoverBackgroundColor: T.s[k], pointHoverBorderColor: T.panel, pointHoverBorderWidth: 2, hidden: !vis[k] }));
-  }
+  const line = (label, short, color, extra) => ({ label, _short: short, data: [], borderColor: color, backgroundColor: color, pointHoverBorderColor: T.panel, pointHoverBorderWidth: 2, ...extra });
   function createCharts() {
     Object.values(charts).forEach((c) => c.destroy());
     Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
     Chart.defaults.font.size = 11;
-    Chart.defaults.color = T.ink2;
-    const tipTitle = (items) => (items.length ? `Handel ${nf0.format(items[0].parsed.x)}` : '');
-
-    const pDs = mechDatasets();
-    pDs.push({ label: 'Sand sandsynlighed', _short: 'Sand p', _truth: true, data: [], borderColor: T.ink2, backgroundColor: T.ink2, borderDash: [5, 4], borderWidth: 1.5, stepped: true });
     charts.price = new Chart($('chPrice'), {
-      type: 'line', data: { datasets: pDs }, plugins: [crosshair, endLabels],
-      options: baseOptions({ yFmt: (x) => `${Math.round(x * 100)} %`, xTitle: 'Handel nr.', yMin: 0, yMax: 1, tipTitle,
-        tipLabel: (c) => ` ${c.dataset.label}: ${pct(c.parsed.y)}` }),
+      type: 'line', plugins: [crosshair, endLabels],
+      data: { datasets: [line('Pris JA', 'Pris', T.yes), line('Sand sandsynlighed', 'Sand p', T.ink2, { borderDash: [5, 4], borderWidth: 1.5, stepped: true })] },
+      options: options({ yFmt: (x) => Math.round(x * 100) + ' %', yMin: 0, yMax: 1, tip: pct }),
     });
-
-    const nDs = mechDatasets();
-    nDs.push({ label: 'Maks. tab', _short: 'Maks. tab', _ref: true, data: [], borderColor: T.ink2, borderDash: [5, 4], borderWidth: 1.5 });
-    charts.pnl = new Chart($('chPnl'), {
-      type: 'line', data: { datasets: nDs }, plugins: [crosshair, endLabels],
-      options: baseOptions({ yFmt: (x) => nf0.format(x), xTitle: 'Handel nr.', tipTitle, padRight: 76,
-        tipLabel: (c) => ` ${c.dataset.label}: ${skr(c.parsed.y)}` }),
+    charts.house = new Chart($('chHouse'), {
+      type: 'line', plugins: [crosshair, endLabels],
+      data: { datasets: [line('Hvis JA', 'Hvis JA', T.yes), line('Hvis NEJ', 'Hvis NEJ', T.no), line('Forventet', 'Forventet', T.ink, { borderWidth: 2.5 }),
+        line('Maks. tab', 'Maks. tab', T.ink2, { borderDash: [5, 4], borderWidth: 1.5, _ref: true })] },
+      options: options({ yFmt: (x) => nf0.format(x), tip: skr }),
     });
-
-    charts.slip = new Chart($('chSlip'), {
-      type: 'line', data: { datasets: mechDatasets() }, plugins: [crosshair, endLabels],
-      options: baseOptions({ yFmt: (x) => `${Math.round(x * 100)} %`, xTitle: 'Køb af JA (kr)', yMin: 0, yMax: 1,
-        tipTitle: (items) => (items.length ? `Køb for ${kr(items[0].parsed.x)}` : ''),
-        tipLabel: (c) => ` ${c.dataset.label}: ${pct(c.parsed.y)}` }),
-    });
-    cache.id = -1;
+    cache.sim = null;
   }
-
-  function pnlArr(k) { const h = sim.markets[k].hist; return pnlMode === 'yes' ? h.pnlYes : pnlMode === 'no' ? h.pnlNo : h.pnlExp; }
-  function syncSeries() {
-    const pc = charts.price, nc = charts.pnl;
-    if (cache.id !== simId) {
-      pc.data.datasets.forEach((d) => (d.data = []));
-      nc.data.datasets.forEach((d) => (d.data = []));
-      cache.n = 0; cache.id = simId;
+  function syncCharts() {
+    const pc = charts.price.data.datasets, hc = charts.house.data.datasets, h = sim.hist;
+    if (cache.sim !== sim) { pc.forEach((d) => (d.data = [])); hc.slice(0, 3).forEach((d) => (d.data = [])); cache.n = 0; cache.sim = sim; }
+    for (let i = cache.n; i < h.price.length; i++) {
+      pc[0].data.push({ x: i, y: h.price[i] });
+      pc[1].data.push({ x: i, y: h.truth[i] });
+      hc[0].data.push({ x: i, y: h.ifYes[i] });
+      hc[1].data.push({ x: i, y: h.ifNo[i] });
+      hc[2].data.push({ x: i, y: h.expected[i] });
     }
-    const n = sim.trueHist.length;
-    for (let i = cache.n; i < n; i++) {
-      KEYS.forEach((k, j) => {
-        pc.data.datasets[j].data.push({ x: i, y: sim.markets[k].hist.price[i] });
-        nc.data.datasets[j].data.push({ x: i, y: pnlArr(k)[i] });
-      });
-      pc.data.datasets[3].data.push({ x: i, y: sim.trueHist[i] });
-    }
-    cache.n = n;
-    const xMax = Math.max(cfg.nTrades, n - 1);
-    const ml = Math.max(...KEYS.map((k) => sim.markets[k].mech.maxLoss()));
-    nc.data.datasets[3].data = [{ x: 0, y: -ml }, { x: xMax, y: -ml }];
-    pc.options.scales.x.max = xMax;
-    nc.options.scales.x.max = xMax;
-    KEYS.forEach((k, j) => { pc.setDatasetVisibility(j, vis[k]); nc.setDatasetVisibility(j, vis[k]); });
-    pc.update('none');
-    nc.update('none');
-  }
-  function syncSlippage() {
-    const sc = charts.slip, maxX = Math.max(500, 2 * cfg.seed), steps = 48;
-    KEYS.forEach((k, j) => {
-      const m = sim.markets[k].mech, data = [];
-      for (let i = 0; i <= steps; i++) { const x = (maxX * i) / steps; data.push({ x, y: i === 0 ? m.price() : m.quoteBuy(A.YES, x).newPrice }); }
-      sc.data.datasets[j].data = data;
-      sc.setDatasetVisibility(j, vis[k]);
-    });
-    sc.options.scales.x.max = maxX;
-    sc.update('none');
+    cache.n = h.price.length;
+    const xMax = Math.max(cfg.trades, cache.n - 1);
+    hc[3].data = [{ x: 0, y: -cfg.capital }, { x: xMax, y: -cfg.capital }];
+    for (const c of [charts.price, charts.house]) { c.options.scales.x.max = xMax; c.update('none'); }
   }
 
-  // ---------------- render ----------------
-  function riskNow(m) { return Math.max(0, -Math.min(m.operatorPnL(A.YES), m.operatorPnL(A.NO))); }
-
-  function renderStatus() {
-    const tp = sim.trueP();
-    const shock = cfg.shockAt > 0 ? (sim.t >= cfg.shockAt ? ` · chok ramte ved handel ${nf0.format(cfg.shockAt)}` : ` · chok ved handel ${nf0.format(cfg.shockAt)}`) : '';
-    $('status').innerHTML = `<span>Handel <b class="num">${nf0.format(sim.t)}</b> af ${nf0.format(cfg.nTrades)}</span>` +
-      `<span>Sand sandsynlighed nu <b class="num">${pct(tp)}</b>${shock}</span>` +
-      `<span>Spillere <b class="num">${cfg.nAgents}</b> + dig</span>`;
+  // ---------- visning ----------
+  function renderTiles() {
+    const m = sim.mm, tp = sim.trueP(), p = m.price();
+    const exp = tp * m.houseResult(A.YES) + (1 - tp) * m.houseResult(A.NO);
+    const risk = Math.max(0, -Math.min(m.houseResult(A.YES), m.houseResult(A.NO))), share = Math.min(1, risk / cfg.capital);
+    const shock = cfg.shockAt > 0 ? (sim.t >= cfg.shockAt ? ` · nyhed ved handel ${nf0.format(cfg.shockAt)}` : ` · nyhed kommer ved ${nf0.format(cfg.shockAt)}`) : '';
+    $('tiles').innerHTML =
+      `<div class="tile"><span class="k">Pris JA nu</span><span class="v">${pct(p)}</span><span class="s">odds JA ${odds(p)} · NEJ ${odds(1 - p)}</span></div>` +
+      `<div class="tile"><span class="k">Sand sandsynlighed</span><span class="v">${pct(tp)}</span><span class="s">prisen afviger ${nf1.format(Math.abs(p - tp) * 100)} pp${shock}</span></div>` +
+      `<div class="tile"><span class="k">Husets forventede resultat</span><span class="v">${skr(exp)}</span><span class="s">heraf gebyr ${kr(m.fees)}</span></div>` +
+      `<div class="tile"><span class="k">Kapital i risiko nu</span><span class="v">${kr(risk)}</span><span class="s">af maks. ${kr(cfg.capital)} · ${nf0.format(sim.t)} handler, ${kr(sim.volume)}</span>` +
+      `<div class="meter-bar" role="meter" aria-valuemin="0" aria-valuemax="${cfg.capital}" aria-valuenow="${Math.round(risk)}" aria-label="Kapital i risiko"><span class="${share > 0.75 ? 'hot' : ''}" style="width:${(share * 100).toFixed(1)}%"></span></div></div>`;
+    $('derived').innerHTML = `Likviditet <b>b = ${nf0.format(m.b)}</b>. Et køb på 100 kr flytter prisen fra ${pct(p)} til ${pct(m.quoteBuy(A.YES, 100).newPrice)}.`;
   }
-  function renderDerived() {
-    const l = sim.markets.lmsr.mech, c = sim.markets.cpmm.mech, p = sim.markets.pari.mech;
-    $('derived').innerHTML =
-      `<span>LMSR: <b class="num">b = ${nf0.format(l.b)}</b></span>` +
-      `<span>CPMM: LP indskyder <b class="num">${kr(c.L)}</b>, pulje ${nf0.format(c.L - c.lpKept[0])} JA / ${nf0.format(c.L - c.lpKept[1])} NEJ</span>` +
-      `<span>Pulje: huset sætter <b class="num">${kr(p.house[0])}</b> på JA og <b class="num">${kr(p.house[1])}</b> på NEJ</span>`;
-  }
-  function renderCards() {
-    const tp = sim.trueP();
-    $('cards').innerHTML = KEYS.map((k) => {
-      const mk = sim.markets[k], m = mk.mech, M = META[k];
-      const pe = tp * m.operatorPnL(A.YES) + (1 - tp) * m.operatorPnL(A.NO);
-      const risk = riskNow(m), ml = m.maxLoss(), share = Math.min(1, risk / ml);
-      return `<article class="card">
-        <div class="card-top"><span class="name"><span class="sw" style="background:var(${M.tok})"></span>${M.name}</span><span class="tag">${M.mode}</span></div>
-        <p class="sub">${M.long}. Modpart: ${M.cp.toLowerCase()}.</p>
-        <div class="kv">
-          <div><div class="k">Pris JA</div><div class="v">${pct(m.price())}</div></div>
-          <div><div class="k">${M.risk} forventet</div><div class="v">${skr(pe)}</div></div>
-        </div>
-        <div class="meter">
-          <div class="meter-label"><span>Kapital i risiko nu</span><span>${kr(risk)} af ${kr(ml)}</span></div>
-          <div class="meter-bar" role="meter" aria-valuemin="0" aria-valuemax="${Math.round(ml)}" aria-valuenow="${Math.round(risk)}" aria-label="Kapital i risiko ${M.name}"><span class="${share > 0.75 ? 'hot' : ''}" style="width:${(share * 100).toFixed(1)}%"></span></div>
-        </div>
-      </article>`;
-    }).join('');
-  }
-  function renderLegends() {
-    document.querySelectorAll('[data-legend]').forEach((el) => {
-      el.innerHTML = KEYS.map((k) => `<button type="button" class="lg" data-k="${k}" aria-pressed="${vis[k]}"><span class="sw" style="background:var(${META[k].tok})"></span>${META[k].name}</button>`).join('') +
-        (el.dataset.legend === 'price' ? `<span class="lg" aria-hidden="true"><span class="dash"></span>Sand p</span>` :
-         el.dataset.legend === 'pnl' ? `<span class="lg" aria-hidden="true"><span class="dash"></span>Maks. tab</span>` : '');
-    });
-  }
-  function renderKpi() {
-    const tp = sim.trueP();
-    const rows = [];
-    const row = (label, fn, opt = {}) => rows.push(`<tr><td>${label}</td>${KEYS.map((k) => { const r = fn(sim.markets[k], k); return `<td class="${r.c || ''}">${r.t}</td>`; }).join('')}</tr>`);
-    const group = (label) => rows.push(`<tr class="group"><td colspan="4">${label}</td></tr>`);
-    const head = `<thead><tr><th>Nøgletal</th>${KEYS.map((k) => `<th><span class="name"><span class="sw" style="background:var(${META[k].tok})"></span>${META[k].name}</span></th>`).join('')}</tr></thead>`;
-
-    group('Pris');
-    row('Pris JA (decimalodds)', (mk) => ({ t: `${pct(mk.mech.price())} (${odds(mk.mech.price())})` }));
-    row('Afvigelse fra sand sandsynlighed', (mk) => ({ t: pp(mk.mech.price() - tp) }));
-    row('Gns. prisfejl over hele forløbet', (mk) => ({ t: nf1.format((100 * mk.absErrSum) / mk.errSteps) + ' pp' }));
-    row('Handler · volumen', (mk) => ({ t: `${nf0.format(mk.trades)} · ${kr(mk.volume)}` }));
-
-    group('Operatør (huset eller LP)');
-    row('Resultat hvis JA', (mk) => { const x = mk.mech.operatorPnL(A.YES); return { t: skr(x), c: cls(x) }; });
-    row('Resultat hvis NEJ', (mk) => { const x = mk.mech.operatorPnL(A.NO); return { t: skr(x), c: cls(x) }; });
-    row('Forventet resultat', (mk) => { const x = tp * mk.mech.operatorPnL(A.YES) + (1 - tp) * mk.mech.operatorPnL(A.NO); return { t: skr(x), c: cls(x) }; });
-    row('heraf gebyrindtægt', (mk) => ({ t: kr(mk.mech.fees) }));
-    row('heraf handel ekskl. gebyr (subsidie)', (mk) => { const x = tp * mk.mech.operatorPnL(A.YES) + (1 - tp) * mk.mech.operatorPnL(A.NO) - mk.mech.fees; return { t: skr(x), c: cls(x) }; });
-    row('Teoretisk subsidie ved fuld prisopdagelse', (mk, k) => ({ t: k === 'lmsr' ? '−' + kr(A.lmsrExpectedLoss(mk.mech.b, cfg.p0, tp)) : '–' }));
-    row('Kapital i risiko nu (værste udfald)', (mk) => ({ t: kr(riskNow(mk.mech)) }));
-    row('Teoretisk maks. tab', (mk) => ({ t: kr(mk.mech.maxLoss()) }));
-
-    group('Spillere, forventet resultat');
-    for (const [type, label] of [['informed', 'Informerede'], ['noise', 'Støjhandlere'], ['momentum', 'Momentum'], ['you', 'Dig']]) {
-      row(label, (mk) => { const x = mk.pnlByType(tp)[type]; return { t: skr(x), c: cls(x) }; });
-    }
-    row('Nulsum-kontrol (spillere + operatør)', (mk) => { const e = mk.zeroSumError(); return e < 0.01 ? { t: '<span class="ok">✓ 0 kr</span>' } : { t: `afvigelse ${nf2.format(e)} kr`, c: 'neg' }; });
-
-    group('Tilstand');
-    row('Kurve', (mk, k) => {
-      const m = mk.mech;
-      if (k === 'lmsr') return { t: `b ${nf0.format(m.b)} · q ${nf0.format(m.q[0])} / ${nf0.format(m.q[1])}` };
-      return { t: `JA ${nf0.format(m.pool[0])} · NEJ ${nf0.format(m.pool[1])}` };
-    });
-    row('Udestående aktier hos spillere (JA / NEJ)', (mk, k) => ({ t: k === 'pari' ? `indsats ${nf0.format(mk.mech.out[0])} / ${nf0.format(mk.mech.out[1])} kr` : `${nf0.format(mk.mech.out[0])} / ${nf0.format(mk.mech.out[1])}` }));
-    $('kpi').innerHTML = head + '<tbody>' + rows.join('') + '</tbody>';
+  function renderWho() {
+    const r = sim.results(), m = sim.mm, tp = sim.trueP();
+    const row = (label, x, sub) => `<tr><td class="${sub ? 'sub' : ''}">${label}</td><td class="${sub ? '' : cls(x)}">${skr(x)}</td></tr>`;
+    const nInf = sim.players.filter((p) => p.type === 'informed').length;
+    $('who').innerHTML = `<thead><tr><th>Gruppe</th><th>Forventet</th></tr></thead><tbody>` +
+      row(`Informerede (${nInf})`, r.informed) +
+      row(`Tilfældige (${sim.players.length - nInf})`, r.random) +
+      row('Dig', r.you) +
+      row('Huset', r.house) +
+      row('heraf gebyrer', m.fees, true) +
+      row('heraf handel (subsidie)', r.house - m.fees, true) +
+      `<tr><td class="sub">teori ved fuld prisopdagelse, b·KL</td><td>${skr(-A.expectedSubsidy(m.b, cfg.p0, tp))}</td></tr>` +
+      `<tr><td>Kontrol: alle tilsammen</td><td>${sim.zeroSumError() < 0.01 ? '<span class="ok">✓ 0 kr</span>' : `<span class="neg">${nf2.format(sim.zeroSumError())} kr</span>`}</td></tr></tbody>`;
   }
   function renderLog() {
-    const mk = sim.markets[logKey], entries = mk.log.slice(-60).reverse();
-    const isPari = logKey === 'pari';
-    const head = `<thead><tr><th>Spiller</th><th>Handel nr.</th><th>Handling</th><th>Beløb</th><th>${isPari ? 'Indsats' : 'Aktier'}</th><th>${isPari ? 'Fordeling' : 'Gns. pris'}</th><th>Pris før → efter</th></tr></thead>`;
-    const body = entries.length ? entries.map((e) => {
-      const avg = isPari ? '' : nf1.format((100 * e.kr) / e.shares) + ' %';
-      return `<tr><td>${e.who}</td><td>${nf0.format(e.t)}</td><td><span class="side-${e.side ? 'no' : 'yes'}">${e.action} ${e.side ? 'NEJ' : 'JA'}</span></td>` +
-        `<td>${kr(e.kr)}</td><td>${nf1.format(e.shares)}</td><td>${isPari ? '–' : avg}</td><td>${pct(e.before)} → ${pct(e.after)}</td></tr>`;
-    }).join('') : `<tr><td colspan="7" class="muted">Ingen handler endnu. Tryk på +1 handel eller Afspil fra start.</td></tr>`;
-    $('log').innerHTML = head + '<tbody>' + body + '</tbody>';
+    const rows = sim.log.slice(-50).reverse().map((e) =>
+      `<tr><td>${e.who}</td><td>${nf0.format(e.t)}</td><td>${e.action} ${sideTag(e.side)}</td><td>${kr(e.kr)}</td><td>${nf1.format(e.shares)}</td><td>${pct(e.kr / e.shares)}</td><td>${pct(e.before)} → ${pct(e.after)}</td></tr>`).join('');
+    $('log').innerHTML = `<thead><tr><th>Spiller</th><th>Handel</th><th>Handling</th><th>Beløb</th><th>Aktier</th><th>Gns. pris</th><th>Pris JA før → efter</th></tr></thead><tbody>` +
+      (rows || `<tr><td colspan="7" class="muted">Ingen handler endnu.</td></tr>`) + '</tbody>';
   }
+  function tradeAmount() { const a = Math.max(0, +$('tAmount').value || 0); return tAction === 'buy' ? a : Math.min(100, a) / 100; }
   function renderTrade() {
-    const amtRaw = Math.max(0, +$('tAmount').value || 0);
-    const amount = tAction === 'buy' ? amtRaw : Math.min(100, amtRaw) / 100;
     $('tAmountLabel').textContent = tAction === 'buy' ? 'Beløb (kr)' : 'Andel af beholdning (%)';
-    const q = sim.quoteManual(tAction, tSide, amount);
-    const side = tSide ? 'NEJ' : 'JA';
-    const head = `<thead><tr><th>Marked</th><th>${tAction === 'buy' ? 'Du får' : 'Du modtager'}</th><th>Gns. pris</th><th>Pris JA efter</th></tr></thead>`;
-    const body = KEYS.map((k) => {
-      const r = q[k], you = sim.you(k), isPari = k === 'pari';
-      const name = `<span class="name" style="font-size:13px"><span class="sw" style="background:var(${META[k].tok})"></span>${META[k].name}</span>`;
-      if (!r) {
-        const why = tAction === 'sell' ? (isPari ? 'Puljen kan ikke sælges før lukning' : `Du har ingen ${side}-aktier`) : 'Beløb mangler';
-        return `<tr><td>${name}</td><td colspan="3" class="muted" style="text-align:left">${why}</td></tr>`;
-      }
-      if (tAction === 'buy') {
-        const got = isPari ? `${kr(r.shares)} i ${side}-puljen` : `${nf1.format(r.shares)} ${side}-aktier`;
-        const avg = isPari ? `odds nu ${odds(tSide ? 1 - r.newPrice : r.newPrice)}` : pct(r.kr / r.shares);
-        return `<tr><td>${name}</td><td>${got}</td><td>${avg}</td><td>${pct(r.newPrice)}</td></tr>`;
-      }
-      return `<tr><td>${name}</td><td>${kr(r.proceeds)} for ${nf1.format(r.sharesSold)} aktier</td><td>${pct(r.proceeds / r.sharesSold)}</td><td>${pct(r.newPrice)}</td></tr>`;
-    }).join('');
-    $('quote').innerHTML = head + '<tbody>' + body + '</tbody>';
-    $('holdings').innerHTML = 'Din beholdning: ' + KEYS.map((k) => {
-      const y = sim.you(k);
-      return k === 'pari' ? `<b>${META[k].name}</b> ${kr(y.hold[0])} på JA, ${kr(y.hold[1])} på NEJ`
-        : `<b>${META[k].name}</b> ${nf1.format(y.hold[0])} JA, ${nf1.format(y.hold[1])} NEJ`;
-    }).join(' · ');
-    $('tradeNote').textContent = tAction === 'buy'
-      ? 'Gns. pris inkluderer gebyr. I puljen er odds kun et øjebliksbillede; udbetalingen afhænger af den endelige fordeling.'
-      : 'Salg er kun muligt i CPMM og LMSR. Puljen låser indsatsen til lukning.';
+    const q = sim.quote(tAction, tSide, tradeAmount()), side = tSide ? 'NEJ' : 'JA';
+    const cell = (k, val) => `<div><div class="k">${k}</div><div class="v">${val}</div></div>`;
+    if (!q) $('quote').innerHTML = `<div class="note" style="grid-column:1/-1">${tAction === 'sell' ? `Du ejer ingen ${side}-aktier endnu.` : 'Skriv et beløb.'}</div>`;
+    else if (tAction === 'buy') $('quote').innerHTML = cell('Du får', `${nf1.format(q.shares)} ${side}`) + cell('Gns. pris inkl. gebyr', pct(q.amount / q.shares)) + cell('Pris JA efter', pct(q.newPrice));
+    else $('quote').innerHTML = cell('Du får', kr(q.proceeds)) + cell('Gns. pris efter gebyr', pct(q.proceeds / q.shares)) + cell('Pris JA efter', pct(q.newPrice));
+    const y = sim.you;
+    $('holdings').innerHTML = `Din beholdning: ${nf1.format(y.hold[0])} JA, ${nf1.format(y.hold[1])} NEJ · kontanter ${kr(y.cash)}`;
   }
-  function renderAll() {
-    renderStatus();
-    renderDerived();
-    renderCards();
-    syncSeries();
-    syncSlippage();
-    renderKpi();
-    renderLog();
-    renderTrade();
+  function renderAll() { renderTiles(); syncCharts(); renderWho(); renderLog(); renderTrade(); }
+
+  // ---------- hændelser ----------
+  function bindSeg(id, fn) {
+    const el = $(id);
+    el.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      fn(b.dataset.v);
+    });
   }
-
-  // ---------------- events ----------------
-  function setSeg(el, val) { el.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === String(val)))); }
-  function bindSeg(id, fn) { const el = $(id); el.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; setSeg(el, b.dataset.v); fn(b.dataset.v); }); }
-
-  $('paramForm').addEventListener('input', (e) => {
-    updateOutputs();
-    if (e.target.id !== 'speed') scheduleRebuild();
-  });
-  $('btnPlay').addEventListener('click', () => (playing ? stopPlay() : play()));
-  $('btnStep1').addEventListener('click', () => { stopPlay(); sim.step(); renderAll(); });
-  $('btnStep50').addEventListener('click', () => { stopPlay(); sim.run(50); renderAll(); });
-  $('btnReset').addEventListener('click', () => { stopPlay(); rebuild(true); });
-  $('btnNewSeed').addEventListener('click', () => { $('rngSeed').value = 1 + Math.floor(Math.random() * 99999); scheduleRebuild(); });
-  $('btnTrade').addEventListener('click', () => {
-    stopPlay();
-    const amtRaw = Math.max(0, +$('tAmount').value || 0);
-    const amount = tAction === 'buy' ? amtRaw : Math.min(100, amtRaw) / 100;
-    if (amount <= 0) return;
-    sim.manual(tAction, tSide, amount);
-    renderAll();
-  });
-  $('tAmount').addEventListener('input', renderTrade);
   bindSeg('actSeg', (val) => { tAction = val; $('tAmount').value = val === 'buy' ? 500 : 100; renderTrade(); });
   bindSeg('sideSeg', (val) => { tSide = +val; renderTrade(); });
-  bindSeg('logSeg', (val) => { logKey = val; renderLog(); });
-  bindSeg('pnlSeg', (val) => { pnlMode = val; cache.id = -1; syncSeries(); });
-  document.addEventListener('click', (e) => {
-    const b = e.target.closest('.lg[data-k]');
-    if (!b) return;
-    const k = b.dataset.k;
-    if (KEYS.filter((x) => vis[x]).length === 1 && vis[k]) return; // mindst én synlig
-    vis[k] = !vis[k];
-    renderLegends();
-    cache.id = -1;
-    syncSeries();
-    syncSlippage();
-  });
+  $('tAmount').addEventListener('input', renderTrade);
+  $('btnTrade').addEventListener('click', () => { stopPlay(); const a = tradeAmount(); if (a > 0) { sim.manual(tAction, tSide, a); renderAll(); } });
+  $('btnPlay').addEventListener('click', () => (playing ? stopPlay() : play()));
+  $('btnStep').addEventListener('click', () => { stopPlay(); sim.run(10); renderAll(); });
+  $('btnSeed').addEventListener('click', () => { stopPlay(); rngSeed = 1 + Math.floor(Math.random() * 99999); rebuild(true); });
 
-  $('presets').innerHTML = PRESETS.map((p, i) => `<button type="button" class="chip" data-i="${i}">${p.label}</button>`).join('');
+  $('presets').innerHTML = PRESETS.map(([label], i) => `<button type="button" class="chip" data-i="${i}">${label}</button>`).join('');
   $('presets').addEventListener('click', (e) => {
-    const b = e.target.closest('.chip');
-    if (!b) return;
-    const base = PRESETS[0].v, p = PRESETS[+b.dataset.i].v;
-    const vals = +b.dataset.i === 0 ? base : { ...base, ...p };
-    for (const id of Object.keys(vals)) $(id).value = vals[id];
-    updateOutputs();
-    stopPlay();
-    rebuild(true);
+    const b = e.target.closest('.chip'); if (!b) return;
+    const vals = { ...BASE, ...PRESETS[+b.dataset.i][1] };
+    for (const id in vals) $(id).value = vals[id];
+    updateOutputs(); stopPlay(); rebuild(true);
   });
 
   function applyTheme() { T = readTokens(); createCharts(); renderAll(); }
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
   if (mq.addEventListener) mq.addEventListener('change', applyTheme);
   new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (window.matchMedia('(max-width: 900px)').matches) $('paramDetails').open = false;
 
-  if (window.matchMedia('(max-width: 980px)').matches) $('paramDetails').open = false;
-
-  // start i en færdig tilstand
   updateOutputs();
-  renderLegends();
   createCharts();
   rebuild(true);
 })();

@@ -1,15 +1,12 @@
 # AMM-laboratoriet
 
-Simulator for et binært prediction market. Samme spillerpopulation og samme tilfældige ordreimpulser sendes gennem tre mekanismer, så forskellene skyldes mekanismen:
+Simulator for et binært prediction market med LMSR (Hanson): spillerne handler mod huset, men deres nettovolumen bestemmer prisen.
 
-| Mekanisme | Modpart | Hvem bærer cold start-risikoen | Maks. tab |
-|---|---|---|---|
-| CPMM (konstant produkt, FPMM-stil) | Puljen, fuldt dækket af spillernes indskud | LP | → startkapital L |
-| LMSR (Hanson) | Huset | Huset | b·ln(1/min(p0, 1−p0)) = startkapital |
-| Parimutuel pulje | De andre spillere | Huset, kun startindskud | ≤ startindskud |
+    C(q)    = b·ln(e^(qJA/b) + e^(qNEJ/b))
+    pris JA = e^(qJA/b) / (e^(qJA/b) + e^(qNEJ/b))
+    køb Δ   koster C(q+Δ) − C(q)
+    b       = startkapital / ln(1/min(p0, 1−p0))   → husets maks. tab = startkapital
 
-- `engine.js` – ren motor uden afhængigheder (browser og Node).
+- `engine.js` – motor uden afhængigheder (browser og Node): LMSR, informerede og tilfældige spillere, nyhedschok, din egen handel.
 - `index.html` – UI (Chart.js fra cdnjs). Åbn via en statisk server, fx `python3 -m http.server` i denne mappe.
-- `engine.test.js` – `node amm-sim/engine.test.js`: startpriser, tabsgrænser, k-invariant, stiuafhængighed, nulsum, determinisme.
-
-Regnskabsidentitet for alle tre: operatørens resultat ved udfald o = netto indskud + gebyrer − udbetaling til spillere(o) = −Σ spillernes resultat.
+- `engine.test.js` – `node amm-sim/engine.test.js`: startpris, tabsgrænse, køb+salg uden gebyr, nulsum, b·KL-subsidie, determinisme.
