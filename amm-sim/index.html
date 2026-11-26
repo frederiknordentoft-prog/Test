@@ -20,6 +20,19 @@
   --btn: #14171c;
   --btn-ink: #ffffff;
   --flash: #e3ebf7;
+  --cx-bg: #ffffff;
+  --yes-soft: #e8f1fc;
+  --no-soft: #fdeee6;
+  --yes-ink: #1a5fb0;
+  --no-ink: #a3441a;
+  --yes-strong: #1f6fca;
+  --no-strong: #b84d16;
+  --on-strong: #ffffff;
+  --shadow: rgba(20, 23, 28, 0.06);
+  --bar-bg: #14171c;
+  --bar-fg: #e8ebf0;
+  --bar-mute: #9ba3b1;
+  --bar-line: #343b46;
   --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -30,6 +43,7 @@
     --bg: #0d0f13; --panel: #161a20; --panel-2: #1c2129; --ink: #e8ebf0; --ink-2: #9ba3b1;
     --line: #262c35; --line-strong: #3a424e; --good: #53c556; --bad: #f07071;
     --yes: #338ced; --no: #e76624; --btn: #e8ebf0; --btn-ink: #0d0f13; --flash: #22303f;
+    --cx-bg: #0f1216; --yes-soft: #12253b; --no-soft: #34200f; --yes-ink: #8bbcf6; --no-ink: #f3a678; --shadow: rgba(0, 0, 0, 0.3); --bar-bg: #05070a; --bar-line: #262c35;
     color-scheme: dark;
   }
 }
@@ -37,9 +51,11 @@
   --bg: #0d0f13; --panel: #161a20; --panel-2: #1c2129; --ink: #e8ebf0; --ink-2: #9ba3b1;
   --line: #262c35; --line-strong: #3a424e; --good: #53c556; --bad: #f07071;
   --yes: #338ced; --no: #e76624; --btn: #e8ebf0; --btn-ink: #0d0f13; --flash: #22303f;
+    --cx-bg: #0f1216; --yes-soft: #12253b; --no-soft: #34200f; --yes-ink: #8bbcf6; --no-ink: #f3a678; --shadow: rgba(0, 0, 0, 0.3); --bar-bg: #05070a; --bar-line: #262c35;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
 table { font-size: inherit; }
 .app { max-width: 1320px; margin: 0 auto; padding-block: 20px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 18px; }
@@ -124,11 +140,11 @@ table.data td.sub { padding-left: 22px; color: var(--ink-2); }
 td.pos { color: var(--good); }
 td.neg { color: var(--bad); }
 .ok { color: var(--good); font-weight: 600; }
-.yes { color: var(--ink); font-weight: 600; }
-.yes::before, .no::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 1px; }
-.yes::before { background: var(--yes); }
-.no { color: var(--ink); font-weight: 600; }
-.no::before { background: var(--no); }
+#viewOperator .yes { color: var(--ink); font-weight: 600; }
+#viewOperator .yes::before, #viewOperator .no::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 1px; }
+#viewOperator .yes::before { background: var(--yes); }
+#viewOperator .no { color: var(--ink); font-weight: 600; }
+#viewOperator .no::before { background: var(--no); }
 
 .trade { display: grid; gap: 12px; align-content: start; }
 .trade-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
@@ -157,17 +173,153 @@ tr.fresh td { animation: fresh 1.4s ease-out both; animation-delay: var(--age, 0
   aside.params { position: static; max-height: none; }
 }
 @media (max-width: 560px) { .chart-box { height: 230px; } h1 { font-size: 22px; } .tile .v { font-size: 20px; } }
+
+/* ---------- demobjælke: visningsskift og afspilning, ens i begge visninger ---------- */
+body[data-view="kunde"] { background: var(--cx-bg); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 21; background: var(--bar-bg); }
+.demobar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bar-bg); color: var(--bar-fg); border-bottom: 1px solid var(--bar-line); }
+.demobar-in { max-width: 1320px; margin: 0 auto; padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.demobar-left, .demobar-right { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.demo-tag { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bar-mute); font-weight: 600; }
+.demobar .seg { border-color: var(--bar-line); }
+.demobar .seg button { color: var(--bar-mute); }
+.demobar .seg button + button { border-left-color: var(--bar-line); }
+.demobar .seg button[aria-pressed="true"] { background: var(--bar-fg); color: var(--bar-bg); }
+.demobar .btn { background: transparent; color: var(--bar-fg); border-color: var(--bar-line); }
+.demobar .btn:hover { background: var(--bar-line); }
+.demobar .btn.primary { background: var(--bar-fg); color: var(--bar-bg); border-color: var(--bar-fg); }
+.demobar .progress, .demobar .speed-label { color: var(--bar-mute); }
+.demobar :focus-visible { outline-color: var(--bar-fg); }
+@media (max-width: 700px) { .demobar .op-extra { display: none; } }
+
+/* ---------- kundevisning ---------- */
+.cx { color: var(--ink); }
+.cx-nav { border-bottom: 1px solid var(--line); }
+.cx-in { max-width: 1200px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.cx-nav .cx-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 12px; }
+.cx-brand { display: flex; align-items: center; gap: 9px; font-family: var(--font-display); font-weight: 600; font-size: 19px; letter-spacing: -0.01em; }
+.cx-mark { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, var(--yes) 0 50%, var(--no) 50% 100%); flex: none; }
+.cx-demo { font-family: var(--font-body); font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid var(--line-strong); color: var(--ink-2); border-radius: 999px; padding: 1px 7px; }
+.cx-wallet { display: flex; gap: 8px; align-items: baseline; font-size: 13px; }
+.cx-wallet .k { color: var(--ink-2); }
+.cx-wallet b { font-variant-numeric: tabular-nums; font-size: 15px; }
+
+.cx-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-areas: "head side" "rest side"; grid-template-rows: auto 1fr; gap: 24px 36px; padding-block: 24px 48px; align-items: start; }
+.cx-head { grid-area: head; display: grid; gap: 16px; min-width: 0; }
+.cx-rest { grid-area: rest; display: grid; gap: 16px; min-width: 0; }
+.cx-side { grid-area: side; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 64px); min-width: 0; }
+.cx-crumb { font-size: 13px; color: var(--ink-2); }
+.cx-title { display: flex; gap: 14px; align-items: center; }
+.cx-icon { width: 52px; height: 52px; border-radius: 14px; background: var(--yes-soft); color: var(--yes-ink); display: grid; place-items: center; flex: none; }
+.cx-title h1 { font-size: 26px; line-height: 1.2; }
+.cx-meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.cx-meta b { color: var(--ink); font-weight: 600; }
+.cx-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.cx-prob { display: flex; align-items: baseline; gap: 10px; }
+.cx-big { font-family: var(--font-display); font-size: 46px; font-weight: 600; line-height: 1; color: var(--yes-ink); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.cx-chance { font-size: 15px; color: var(--ink-2); }
+.cx-delta { font-size: 13px; color: var(--ink-2); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.cx-delta .mv { color: var(--ink); font-weight: 600; }
+.cx-range button { padding: 4px 11px; font-size: 12px; }
+.cx-chart { position: relative; height: 300px; }
+
+.cx-news { display: flex; gap: 10px; align-items: baseline; border-radius: 12px; padding: 11px 14px; background: var(--panel-2); border: 1px solid var(--line); font-size: 13.5px; }
+.cx-news-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); background: var(--flash); border-radius: 6px; padding: 2px 7px; flex: none; }
+.cx-card { border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 10px; }
+.cx-card h2 { font-size: 16px; }
+.cx-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.cx-pill { font-size: 11.5px; font-weight: 700; border-radius: 6px; padding: 2px 8px; flex: none; letter-spacing: 0.02em; }
+.cx-pill.yes { background: var(--yes-soft); color: var(--yes-ink); }
+.cx-pill.no { background: var(--no-soft); color: var(--no-ink); }
+.cx-pos { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 4px 14px; align-items: center; padding-top: 10px; border-top: 1px solid var(--line); }
+.cx-pos-main, .cx-pos-val { display: grid; gap: 2px; font-variant-numeric: tabular-nums; }
+.cx-pos-main span, .cx-pos-val span { font-size: 12.5px; }
+.cx-pos-val { text-align: right; }
+.cx-pos-val .pos { color: var(--good); }
+.cx-pos-val .neg { color: var(--bad); }
+.cx-feed { list-style: none; margin: 0; padding: 0; display: grid; }
+.cx-feed li { display: flex; gap: 10px; align-items: center; padding: 8px 6px; border-top: 1px solid var(--line); font-size: 13.5px; border-radius: 6px; font-variant-numeric: tabular-nums; }
+.cx-feed li:first-child { border-top: 0; }
+.cx-feed .who { color: var(--ink-2); }
+.cx-feed time { margin-left: auto; color: var(--ink-2); font-size: 12px; white-space: nowrap; padding-left: 8px; }
+li.fresh { animation: fresh 1s ease-out both; animation-delay: var(--age, 0ms); }
+.cx-rules { display: grid; gap: 8px; font-size: 13.5px; }
+.cx-rules p { max-width: 68ch; }
+.cx-rules b { font-weight: 600; }
+
+.cx-ticket { border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; gap: 14px; background: var(--cx-bg); box-shadow: 0 1px 2px var(--shadow), 0 10px 28px var(--shadow); }
+.cx-tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--line); }
+.cx-tabs button { background: none; border: 0; padding: 0 0 10px; font-weight: 600; font-size: 15px; color: var(--ink-2); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.cx-tabs button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.cx-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cx-sbtn { border: 1.5px solid var(--line-strong); background: var(--cx-bg); border-radius: 12px; padding: 10px 12px; display: grid; gap: 1px; text-align: left; color: var(--ink); }
+.cx-sbtn .l { font-weight: 700; font-size: 13px; letter-spacing: 0.02em; }
+.cx-sbtn .p { font-family: var(--font-display); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.cx-sbtn .o { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.cx-sbtn.yes[aria-pressed="true"] { border-color: var(--yes-strong); background: var(--yes-soft); }
+.cx-sbtn.yes[aria-pressed="true"] .l, .cx-sbtn.yes[aria-pressed="true"] .p { color: var(--yes-ink); }
+.cx-sbtn.no[aria-pressed="true"] { border-color: var(--no-strong); background: var(--no-soft); }
+.cx-sbtn.no[aria-pressed="true"] .l, .cx-sbtn.no[aria-pressed="true"] .p { color: var(--no-ink); }
+.cx-field { display: grid; gap: 6px; }
+.cx-field label { font-size: 13px; font-weight: 500; }
+.cx-amt { display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--line-strong); border-radius: 12px; padding: 2px 14px; }
+.cx-amt:focus-within { border-color: var(--ink); }
+.cx-amt input { border: 0; background: transparent; font: 600 26px var(--font-display); color: var(--ink); width: 100%; min-width: 0; padding: 6px 0; font-variant-numeric: tabular-nums; outline: none; }
+.cx-amt span { color: var(--ink-2); font-weight: 600; }
+.cx-quick { display: flex; gap: 6px; flex-wrap: wrap; }
+.cx-quick button { border: 1px solid var(--line-strong); background: var(--panel-2); color: var(--ink); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; font-weight: 500; }
+.cx-quick button:hover { border-color: var(--ink-2); }
+.cx-sum { margin: 0; display: grid; gap: 6px; font-size: 13.5px; }
+.cx-sum div { display: flex; justify-content: space-between; gap: 12px; }
+.cx-sum dt { color: var(--ink-2); }
+.cx-sum dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 500; text-align: right; }
+.cx-sum .win { padding-top: 10px; margin-top: 4px; border-top: 1px dashed var(--line-strong); align-items: baseline; }
+.cx-sum .win dt { color: var(--ink); font-weight: 600; }
+.cx-sum .win dd b { font-family: var(--font-display); font-size: 22px; font-weight: 600; display: block; }
+.cx-sum .win dd span { font-size: 12px; color: var(--ink-2); }
+.cx-warn { font-size: 12.5px; color: var(--bad); }
+.cx-cta { border: 0; border-radius: 12px; padding: 14px; font-weight: 600; font-size: 15px; color: var(--on-strong); background: var(--yes-strong); }
+.cx-cta.no { background: var(--no-strong); }
+.cx-cta:hover:not(:disabled) { filter: brightness(1.08); }
+.cx-cta:disabled { opacity: 0.45; cursor: not-allowed; }
+.cx-fine { font-size: 11.5px; color: var(--ink-2); text-align: center; }
+.cx-foot { border-top: 1px solid var(--line); }
+.cx-foot .cx-in { padding-block: 18px 28px; font-size: 12px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.cx-sticky { display: none; }
+.cx-stk { border: 0; border-radius: 12px; padding: 11px 10px; font-weight: 600; font-size: 14.5px; color: var(--on-strong); background: var(--yes-strong); display: flex; justify-content: center; gap: 8px; font-variant-numeric: tabular-nums; }
+.cx-stk.no { background: var(--no-strong); }
+.cx-stk .o { font-weight: 500; opacity: 0.9; }
+.cx-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--cx-bg); padding: 10px 16px; border-radius: 10px; font-size: 13.5px; font-weight: 500; z-index: 30; max-width: calc(100% - 32px); }
+
+@media (max-width: 960px) {
+  .cx-wrap { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "side" "rest"; grid-template-rows: auto; gap: 20px; padding-bottom: 100px; }
+  .cx-side { position: static; }
+  .cx-sticky { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: var(--cx-bg); border-top: 1px solid var(--line); }
+  .cx-toast { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 560px) {
+  .cx-title h1 { font-size: 21px; }
+  .cx-big { font-size: 38px; }
+  .cx-chart { height: 230px; }
+  .cx-icon { width: 42px; height: 42px; border-radius: 12px; }
+  .cx-pos { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .cx-pos .btn { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) { li.fresh { animation: none; } }
 </style>
 
-<div class="app">
-  <header class="top">
-    <div>
-      <h1>AMM-laboratoriet</h1>
-      <p class="lede">Et binært marked med LMSR: spillerne handler mod huset, men det er deres køb og salg, der flytter prisen. Huset stiller en startkapital, som er det mest, det kan tabe.</p>
+<div class="demobar">
+  <div class="demobar-in">
+    <div class="demobar-left">
+      <span class="demo-tag">Simulering</span>
+      <div class="seg" id="viewSeg" role="group" aria-label="Visning">
+        <button type="button" data-v="operator" aria-pressed="true">Operatør</button>
+        <button type="button" data-v="kunde" aria-pressed="false">Kunde</button>
+      </div>
     </div>
-    <div class="runbar">
-      <span class="progress" id="progress" aria-live="off"></span>
-      <span class="speed-label" id="speedLabel">Handler pr. sekund</span>
+    <div class="demobar-right">
+      <span class="progress op-extra" id="progress" aria-live="off"></span>
+      <span class="speed-label op-extra" id="speedLabel">Handler pr. sekund</span>
       <div class="seg" id="speedSeg" role="group" aria-labelledby="speedLabel">
         <button type="button" data-v="2" aria-pressed="false">2</button>
         <button type="button" data-v="10" aria-pressed="true">10</button>
@@ -175,8 +327,17 @@ tr.fresh td { animation: fresh 1.4s ease-out both; animation-delay: var(--age, 0
         <button type="button" data-v="250" aria-pressed="false">250</button>
       </div>
       <button class="btn primary" id="btnPlay" type="button">Pause</button>
-      <button class="btn" id="btnEnd" type="button">Spring til slut</button>
-      <button class="btn" id="btnSeed" type="button">Forfra</button>
+      <button class="btn op-extra" id="btnEnd" type="button">Spring til slut</button>
+      <button class="btn op-extra" id="btnSeed" type="button">Forfra</button>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="viewOperator">
+  <header class="top">
+    <div>
+      <h1>AMM-laboratoriet</h1>
+      <p class="lede">Et binært marked med LMSR: spillerne handler mod huset, men det er deres køb og salg, der flytter prisen. Huset stiller en startkapital, som er det mest, det kan tabe.</p>
     </div>
   </header>
 
@@ -330,6 +491,85 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
   </div>
 </div>
 
+<div class="cx" id="viewCustomer" hidden>
+  <nav class="cx-nav" aria-label="Produkt">
+    <div class="cx-in">
+      <div class="cx-brand"><span class="cx-mark" aria-hidden="true"></span><span id="cxBrand">Predict</span><span class="cx-demo">Demo</span></div>
+      <div class="cx-wallet"><span class="k">Saldo</span><b id="cxCash">10.000 kr</b></div>
+    </div>
+  </nav>
+
+  <div class="cx-in cx-wrap">
+    <div class="cx-head">
+      <div class="cx-crumb" id="cxCrumb">Vejr · Danmark</div>
+      <div class="cx-title">
+        <span class="cx-icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V4a2 2 0 0 0-4 0v10.76a4 4 0 1 0 4 0z"/><path d="M12 17.5v-7"/><path d="M17.5 5.5h2M17.5 8.5h2M17.5 11.5h2"/></svg></span>
+        <h1 id="cxTitle"></h1>
+      </div>
+      <div class="cx-meta" id="cxMeta"></div>
+      <div class="cx-top">
+        <div>
+          <div class="cx-prob"><span class="cx-big" id="cxProb">–</span><span class="cx-chance">chance for JA</span></div>
+          <div class="cx-delta" id="cxDelta"></div>
+        </div>
+        <div class="seg cx-range" id="cxRange" role="group" aria-label="Periode">
+          <button type="button" data-v="1d" aria-pressed="false">1D</button>
+          <button type="button" data-v="1u" aria-pressed="false">1U</button>
+          <button type="button" data-v="all" aria-pressed="true">Alt</button>
+        </div>
+      </div>
+      <div class="cx-chart"><canvas id="chCust" role="img" aria-label="Chance for JA over tid"></canvas></div>
+      <div class="cx-news" id="cxNews" hidden></div>
+    </div>
+
+    <aside class="cx-side" aria-label="Køb og salg">
+      <div class="cx-ticket" id="cxTicket">
+        <div class="cx-tabs" id="cxTabs" role="group" aria-label="Køb eller sælg">
+          <button type="button" data-v="buy" aria-pressed="true">Køb</button>
+          <button type="button" data-v="sell" aria-pressed="false">Sælg</button>
+        </div>
+        <div class="cx-sides" role="group" aria-label="Udfald">
+          <button type="button" class="cx-sbtn yes" data-cxside="0" aria-pressed="true"><span class="l">JA</span><span class="p">–</span><span class="o"></span></button>
+          <button type="button" class="cx-sbtn no" data-cxside="1" aria-pressed="false"><span class="l">NEJ</span><span class="p">–</span><span class="o"></span></button>
+        </div>
+        <div class="cx-field">
+          <label for="cxAmt" id="cxAmtLabel">Beløb</label>
+          <div class="cx-amt"><input id="cxAmt" type="number" inputmode="decimal" min="0" step="10" value="100"><span id="cxUnit">kr</span></div>
+          <div class="cx-quick" id="cxQuick"></div>
+        </div>
+        <dl class="cx-sum" id="cxSum"></dl>
+        <p class="cx-warn" id="cxWarn" hidden></p>
+        <button type="button" class="cx-cta" id="cxCta">Køb JA</button>
+        <p class="cx-fine">Demo uden rigtige penge. Huset er modpart på alle handler. 18+ · Spil med omtanke.</p>
+      </div>
+    </aside>
+
+    <div class="cx-rest">
+      <section class="cx-card" id="cxPos" hidden></section>
+      <section class="cx-card">
+        <h2>Seneste handler</h2>
+        <ul class="cx-feed" id="cxFeed"></ul>
+      </section>
+      <section class="cx-card">
+        <h2>Regler</h2>
+        <div class="cx-rules">
+          <p><b>JA</b>, hvis DMI's månedsopgørelse for december 2026 viser en landsgennemsnitlig middeltemperatur over normalen for 1991–2020. Ellers <b>NEJ</b>.</p>
+          <p>Hver andel udbetaler 1 kr, hvis dit udfald sker, og 0 kr hvis ikke. Chancen i procent er prisen på en andel, og den bestemmes af handlen: når flere køber JA, stiger chancen for JA.</p>
+          <p>Du kan sælge hele eller dele af din position, indtil handlen lukker. Gebyret er <span id="cxFee">2 %</span> af beløbet ved køb og salg. Odds er vist inklusive gebyr.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="cx-foot"><div class="cx-in"><span>Demo. Ingen rigtige penge eller rigtige markeder.</span><span>18+ · Spil med omtanke</span></div></footer>
+
+  <div class="cx-sticky" aria-label="Hurtigt køb">
+    <button type="button" class="cx-stk yes" data-stk="0"><span>Køb JA</span><span class="o"></span></button>
+    <button type="button" class="cx-stk no" data-stk="1"><span>Køb NEJ</span><span class="o"></span></button>
+  </div>
+  <div class="cx-toast" id="cxToast" role="status" hidden></div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="engine.js"></script>
 <script>
@@ -362,7 +602,7 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
 
   function readTokens() {
     const cs = getComputedStyle(document.documentElement), g = (n) => cs.getPropertyValue(n).trim();
-    return { ink: g('--ink'), ink2: g('--ink-2'), line: g('--line'), lineStrong: g('--line-strong'), panel: g('--panel'), yes: g('--yes'), no: g('--no') };
+    return { ink: g('--ink'), ink2: g('--ink-2'), line: g('--line'), lineStrong: g('--line-strong'), panel: g('--panel'), cxbg: g('--cx-bg'), yes: g('--yes'), no: g('--no') };
   }
 
   // ---------- parametre ----------
@@ -511,6 +751,7 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
         bar('NEJ', T.no, { borderWidth: { bottom: 2, top: 0, left: 0, right: 0 }, borderSkipped: false, borderRadius: { topLeft: 3, topRight: 3 } })] },
       options: vo,
     });
+    createCustChart();
   }
   // Op til ~1.200 punkter pr. linje; samme punkter i alle linjer, så tooltip viser samme handel
   function syncCharts() {
@@ -572,16 +813,17 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
   // Nye rækker blinker kort; animation-delay holder blinket i gang på tværs af gentegninger
   const seen = new Map();
   let seenAllOld = true;
+  function freshness(t, now) {
+    if (seen.size > 800) for (const k of seen.keys()) if (k < sim.t - 400) seen.delete(k);
+    if (!seen.has(t)) seen.set(t, seenAllOld ? now - 1e4 : now);
+    const age = now - seen.get(t);
+    return age < 1400 ? ` class="fresh" style="--age:${-Math.round(age)}ms"` : '';
+  }
   function renderLog() {
     const now = performance.now();
-    if (seen.size > 600) seen.clear();
     const rows = sim.log.slice(-50).reverse().map((e) => {
-      if (!seen.has(e.t)) seen.set(e.t, seenAllOld ? now - 1e4 : now);
-      const age = now - seen.get(e.t);
-      const tr = age < 1400 ? `<tr class="fresh" style="--age:${-Math.round(age)}ms">` : '<tr>';
-      return `${tr}<td>${e.who}</td><td>${nf0.format(e.t)}</td><td>${e.action} ${sideTag(e.side)}</td><td>${kr(e.kr)}</td><td>${nf1.format(e.shares)}</td><td>${pct(e.kr / e.shares)}</td><td>${pct(e.before)} → ${pct(e.after)}</td></tr>`;
+      return `<tr${freshness(e.t, now)}><td>${e.who}</td><td>${nf0.format(e.t)}</td><td>${e.action} ${sideTag(e.side)}</td><td>${kr(e.kr)}</td><td>${nf1.format(e.shares)}</td><td>${pct(e.kr / e.shares)}</td><td>${pct(e.before)} → ${pct(e.after)}</td></tr>`;
     }).join('');
-    seenAllOld = false;
     $('log').innerHTML = `<thead><tr><th>Spiller</th><th>Handel</th><th>Handling</th><th>Beløb</th><th>Aktier</th><th>Gns. pris</th><th>Pris JA før → efter</th></tr></thead><tbody>` +
       (rows || `<tr><td colspan="7" class="muted">Ingen handler endnu.</td></tr>`) + '</tbody>';
   }
@@ -596,7 +838,12 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
     const y = sim.you;
     $('holdings').innerHTML = `Din beholdning: ${nf1.format(y.hold[0])} JA, ${nf1.format(y.hold[1])} NEJ · kontanter ${kr(y.cash)}`;
   }
-  function renderAll() { renderTiles(); syncCharts(); renderWho(); renderLog(); renderTrade(); updateRunbar(); }
+  function renderAll() {
+    if (view === 'kunde') renderCustomer();
+    else { renderTiles(); syncCharts(); renderWho(); renderLog(); renderTrade(); }
+    updateRunbar();
+    seenAllOld = false;
+  }
 
   // ---------- hændelser ----------
   function bindSeg(id, fn) {
@@ -624,6 +871,239 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
     updateOutputs(); restart();
   });
 
+
+  // ================= kundevisning =================
+  const BRAND = 'Predict'; // produktnavnet i kundevisningen – skriv jeres eget navn her
+  const MARKET = { title: 'Bliver december 2026 varmere end normalt i Danmark?', crumb: 'Vejr · Danmark', closes: '31. dec. 2026' };
+  // Simuleret ur: markedet åbner 1. nov. 2026 kl. 8, og hver handel er 5 minutter senere
+  const OPEN_MS = new Date(2026, 10, 1, 8, 0).getTime(), STEP_MS = 5 * 60 * 1000;
+  const at = (i) => new Date(OPEN_MS + i * STEP_MS);
+  const fmtTime = new Intl.DateTimeFormat('da-DK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const fmtDay = new Intl.DateTimeFormat('da-DK', { day: 'numeric', month: 'short' });
+  const fmtHour = new Intl.DateTimeFormat('da-DK', { hour: '2-digit', minute: '2-digit' });
+  const RANGES = { '1d': [288, 'seneste døgn'], '1u': [2016, 'seneste uge'], all: [Infinity, 'siden åbning'] };
+  const SIDE = ['JA', 'NEJ'];
+  const sideP = (p, s) => (s ? 1 - p : p);
+  const cx = { mode: 'buy', side: 0, range: 'all', amount: { buy: 100, sell: 100 } };
+  const hexA = (hex, a) => {
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+    const n = parseInt(h, 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+  };
+
+  function createCustChart() {
+    charts.cust = new Chart($('chCust'), {
+      type: 'line', plugins: [crosshair],
+      data: { datasets: [{ label: 'JA', data: [], borderColor: T.yes, backgroundColor: hexA(T.yes, 0.1), fill: 'start', borderWidth: 2.5,
+        pointRadius: (c) => (c.dataIndex === c.dataset.data.length - 1 ? 4.5 : 0), pointBackgroundColor: T.yes, pointBorderColor: T.cxbg, pointBorderWidth: 2,
+        pointHoverRadius: 5, pointHitRadius: 6 }] },
+      options: {
+        animation: false, responsive: true, maintainAspectRatio: false, parsing: false, normalized: true,
+        interaction: { mode: 'index', intersect: false },
+        layout: { padding: { top: 6 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { backgroundColor: T.cxbg, borderColor: T.lineStrong, borderWidth: 1, titleColor: T.ink, bodyColor: T.ink, padding: 10, displayColors: false,
+            callbacks: { title: (it) => (it.length ? fmtTime.format(at(it[0].parsed.x)) : ''),
+              label: (c) => `JA ${pct(c.parsed.y)} · odds ${nf2.format((1 - cfg.fee) / c.parsed.y)}` } },
+        },
+        scales: {
+          x: { type: 'linear', grid: { display: false }, border: { color: T.line },
+            ticks: { color: T.ink2, maxTicksLimit: 6, maxRotation: 0, callback(v) { return (this.max - this.min <= 288 ? fmtHour : fmtDay).format(at(v)); } } },
+          y: { position: 'right', border: { display: false }, grid: { color: T.line }, ticks: { color: T.ink2, maxTicksLimit: 5, callback: (v) => Math.round(v * 100) + ' %' } },
+        },
+      },
+    });
+  }
+  function syncCustChart() {
+    const h = sim.hist.price, n = h.length, span = RANGES[cx.range][0];
+    const from = Math.max(0, n - 1 - span), stride = Math.max(1, Math.ceil((n - from) / 600)), data = [];
+    for (let i = from; i < n; i += stride) data.push({ x: i, y: h[i] });
+    if (data[data.length - 1].x !== n - 1) data.push({ x: n - 1, y: h[n - 1] });
+    let lo = 1, hi = 0;
+    for (const d of data) { if (d.y < lo) lo = d.y; if (d.y > hi) hi = d.y; }
+    const c = charts.cust;
+    c.data.datasets[0].data = data;
+    c.options.scales.x.min = from;
+    c.options.scales.x.max = Math.max(n - 1, from + 1);
+    c.options.scales.y.min = Math.max(0, Math.floor((lo - 0.04) * 20) / 20);
+    c.options.scales.y.max = Math.min(1, Math.ceil((hi + 0.04) * 20) / 20);
+    c.update('none');
+  }
+
+  function renderCustomer() {
+    const m = sim.mm, p = m.price(), f = cfg.fee, h = sim.hist.price, n = h.length;
+    const [span, label] = RANGES[cx.range], d = p - h[Math.max(0, n - 1 - span)];
+    $('cxProb').textContent = Math.round(p * 100) + ' %';
+    $('cxDelta').innerHTML = `<span class="mv">${d >= 0 ? '▲' : '▼'} ${nf1.format(Math.abs(d) * 100)} pp</span> ${label}`;
+    const traders = sim.players.filter((x) => x.trades > 0).length + (sim.you.trades > 0 ? 1 : 0);
+    $('cxMeta').innerHTML = `<span>Omsætning <b>${kr(sim.volume)}</b></span><span><b>${nf0.format(traders)}</b> handlere</span>` +
+      `<span>${done() ? '<b>Handlen er lukket</b>' : `Lukker <b>${MARKET.closes}</b>`}</span><span>Opdateret ${fmtTime.format(at(n - 1))}</span>`;
+    $('cxCash').textContent = kr(sim.you.cash);
+    $('cxFee').textContent = nf1.format(f * 100) + ' %';
+    for (const s of [0, 1]) {
+      const ps = sideP(p, s), o = 'odds ' + nf2.format((1 - f) / ps);
+      document.querySelectorAll(`.cx-sbtn[data-cxside="${s}"]`).forEach((el) => { el.querySelector('.p').textContent = Math.round(ps * 100) + ' %'; el.querySelector('.o').textContent = o; });
+      document.querySelectorAll(`.cx-stk[data-stk="${s}"] .o`).forEach((el) => { el.textContent = nf2.format((1 - f) / ps); });
+    }
+    syncCustChart();
+    renderNews();
+    renderPosition();
+    renderFeed();
+    renderTicket();
+  }
+  function renderNews() {
+    const el = $('cxNews'), on = cfg.shockAt > 0 && sim.t >= cfg.shockAt;
+    el.hidden = !on;
+    if (on) el.innerHTML = `<span class="cx-news-tag">Nyhed</span><span>${fmtTime.format(at(cfg.shockAt))}: Nye langtidsprognoser peger på en ${cfg.shockP < cfg.trueP ? 'koldere' : 'mildere'} december end ventet.</span>`;
+  }
+  // Positionskortet bygges kun om, når du får eller lukker en side, så knapperne kan trykkes mens markedet kører
+  let posKey = '';
+  function renderPosition() {
+    const you = sim.you, card = $('cxPos'), sides = [0, 1].filter((s) => you.hold[s] > 1e-6), key = sides.join(',');
+    card.hidden = !sides.length;
+    if (key !== posKey) {
+      posKey = key;
+      card.innerHTML = `<div class="cx-card-head"><h2>Din position</h2><span class="muted" style="font-size:12.5px">Værdi = det du får ved salg nu</span></div>` +
+        sides.map((s) => `<div class="cx-pos"><span class="cx-pill ${s ? 'no' : 'yes'}">${SIDE[s]}</span>
+          <div class="cx-pos-main"><b data-ph="${s}"></b><span class="muted" data-pc="${s}"></span></div>
+          <div class="cx-pos-val"><b data-pv="${s}"></b><span data-pl="${s}"></span></div>
+          <button type="button" class="btn" data-sellpos="${s}">Sælg</button></div>`).join('');
+    }
+    for (const s of sides) {
+      const val = sim.mm.quoteSell(s, you.hold[s]).proceeds, paid = you.cost[s], res = val - paid;
+      card.querySelector(`[data-ph="${s}"]`).textContent = `${nf1.format(you.hold[s])} andele`;
+      card.querySelector(`[data-pc="${s}"]`).textContent = `Betalt ${kr(paid)} · gns. ${pct(paid / you.hold[s])} · udbetaling hvis ${SIDE[s]}: ${kr(you.hold[s])}`;
+      card.querySelector(`[data-pv="${s}"]`).textContent = kr(val);
+      const pl = card.querySelector(`[data-pl="${s}"]`);
+      pl.textContent = skr(res);
+      pl.className = cls(res);
+    }
+  }
+  function renderFeed() {
+    const now = performance.now();
+    $('cxFeed').innerHTML = sim.log.slice(-14).reverse().map((e) => {
+      const me = e.pid === 0, verb = e.action === 'Køb' ? 'købte' : 'solgte';
+      const who = me ? '<b>Du</b> ' : `<span class="who">Spiller ${e.pid}</span> `;
+      return `<li${freshness(e.t, now)}><span class="cx-pill ${e.side ? 'no' : 'yes'}">${SIDE[e.side]}</span><span>${who}${verb} for <b>${kr(e.kr)}</b> til ${Math.round((100 * e.kr) / e.shares)} %</span><time>${fmtTime.format(at(e.t))}</time></li>`;
+    }).join('') || '<li class="muted">Ingen handler endnu.</li>';
+  }
+  function setMode(mode) {
+    cx.mode = mode;
+    $('cxAmt').value = cx.amount[mode];
+    $('cxQuick').innerHTML = mode === 'buy'
+      ? '<button type="button" data-add="50">+50</button><button type="button" data-add="100">+100</button><button type="button" data-add="500">+500</button><button type="button" data-set="max">Max</button>'
+      : '<button type="button" data-set="25">25 %</button><button type="button" data-set="50">50 %</button><button type="button" data-set="100">Alt</button>';
+    if (sim) renderTicket();
+  }
+  function renderTicket() {
+    const buy = cx.mode === 'buy', s = cx.side, S = SIDE[s], you = sim.you, f = cfg.fee;
+    document.querySelectorAll('#cxTabs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === cx.mode)));
+    document.querySelectorAll('.cx-sbtn').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.cxside === s)));
+    $('cxAmtLabel').textContent = buy ? 'Beløb' : 'Andel af din position';
+    $('cxUnit').textContent = buy ? 'kr' : '%';
+    const amt = Math.max(0, cx.amount[cx.mode] || 0);
+    const row = (k, val) => `<div><dt>${k}</dt><dd>${val}</dd></div>`;
+    const win = (k, big, small) => `<div class="win"><dt>${k}</dt><dd><b>${big}</b><span>${small}</span></dd></div>`;
+    let sum = '', cta = buy ? `Køb ${S}` : `Sælg ${S}`, ok = false, warn = '';
+    if (done()) warn = 'Handlen er lukket. Markedet afgøres, når DMI offentliggør månedsopgørelsen.';
+    else if (buy) {
+      const A = Math.min(amt, you.cash);
+      if (amt > you.cash) warn = `Du har ${kr(you.cash)} på saldoen.`;
+      const q = A >= 1 ? sim.quote('buy', s, A) : null;
+      if (q) {
+        sum = row('Gns. pris', pct(A / q.shares)) + row('Andele', nf1.format(q.shares)) + row(`Gebyr (${nf1.format(f * 100)} %)`, kr(q.fee)) +
+          row(`Chance for ${S} efter køb`, pct(sideP(q.newPrice, s))) +
+          win(`Udbetaling hvis ${S}`, kr(q.shares), `gevinst ${skr(q.shares - A)} · odds ${nf2.format(q.shares / A)}`);
+        cta = `Køb ${S} for ${kr(A)}`;
+        ok = true;
+      }
+    } else if (you.hold[s] < 1e-6) warn = `Du har ingen ${S}-andele at sælge.`;
+    else {
+      const frac = Math.min(100, amt) / 100, q = frac > 0 ? sim.quote('sell', s, frac) : null;
+      if (q) {
+        const paid = you.cost[s] * frac;
+        sum = row('Andele du sælger', `${nf1.format(q.shares)} af ${nf1.format(you.hold[s])}`) + row('Gns. pris', pct(q.proceeds / q.shares)) +
+          row(`Gebyr (${nf1.format(f * 100)} %)`, kr(q.fee)) + row('Du betalte', kr(paid)) + win('Du får', kr(q.proceeds), `resultat ${skr(q.proceeds - paid)}`);
+        cta = `Sælg ${S} for ${kr(q.proceeds)}`;
+        ok = true;
+      }
+    }
+    $('cxSum').innerHTML = sum;
+    $('cxWarn').hidden = !warn;
+    $('cxWarn').textContent = warn;
+    const b = $('cxCta');
+    b.textContent = cta;
+    b.className = 'cx-cta ' + (s ? 'no' : 'yes');
+    b.disabled = !ok;
+  }
+  let toastTimer = 0;
+  function toast(msg) {
+    const el = $('cxToast');
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (el.hidden = true), 3200);
+  }
+  function showTicket() {
+    if (window.matchMedia('(max-width: 960px)').matches) $('cxTicket').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  $('cxBrand').textContent = BRAND;
+  $('cxTitle').textContent = MARKET.title;
+  $('cxCrumb').textContent = MARKET.crumb;
+  $('cxTabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setMode(b.dataset.v); });
+  document.querySelectorAll('.cx-sbtn').forEach((b) => b.addEventListener('click', () => { cx.side = +b.dataset.cxside; renderTicket(); }));
+  document.querySelectorAll('.cx-stk').forEach((b) => b.addEventListener('click', () => { cx.side = +b.dataset.stk; setMode('buy'); showTicket(); }));
+  $('cxAmt').addEventListener('input', (e) => { cx.amount[cx.mode] = Math.max(0, +e.target.value || 0); renderTicket(); });
+  $('cxQuick').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.add) cx.amount.buy = Math.round((cx.amount.buy || 0) + +b.dataset.add);
+    else if (b.dataset.set === 'max') cx.amount.buy = Math.floor(sim.you.cash);
+    else cx.amount.sell = +b.dataset.set;
+    $('cxAmt').value = cx.amount[cx.mode];
+    renderTicket();
+  });
+  $('cxPos').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-sellpos]'); if (!b) return;
+    cx.side = +b.dataset.sellpos;
+    cx.amount.sell = 100;
+    setMode('sell');
+    showTicket();
+  });
+  $('cxCta').addEventListener('click', () => {
+    if (done()) return;
+    const s = cx.side, S = SIDE[s];
+    if (cx.mode === 'buy') {
+      const A = Math.min(cx.amount.buy, sim.you.cash);
+      if (A < 1) return;
+      const r = sim.manual('buy', s, A);
+      if (r) toast(`Købt ${nf1.format(r.shares)} ${S}-andele for ${kr(A)}`);
+    } else {
+      const r = sim.manual('sell', s, Math.min(100, cx.amount.sell) / 100);
+      if (r) toast(`Solgt ${nf1.format(r.shares)} ${S}-andele for ${kr(r.kr)}`);
+      if (sim.you.hold[s] < 1e-6) setMode('buy');
+    }
+    renderAll();
+  });
+  bindSeg('cxRange', (v) => { cx.range = v; renderCustomer(); });
+
+  // ---------- visningsskift (#operator / #kunde), mens markedet kører ----------
+  let view = 'operator';
+  function applyView() {
+    view = location.hash === '#kunde' ? 'kunde' : 'operator';
+    $('viewOperator').hidden = view !== 'operator';
+    $('viewCustomer').hidden = view !== 'kunde';
+    document.body.dataset.view = view;
+    $('viewSeg').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === view)));
+    seenAllOld = true; // rækker, den anden visning ikke har vist, skal ikke blinke alle på én gang
+    if (sim) renderAll();
+  }
+  window.addEventListener('hashchange', applyView);
+  bindSeg('viewSeg', (v) => { location.hash = v; });
+  setMode('buy');
+
   function applyTheme() { T = readTokens(); createCharts(); renderAll(); }
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
   if (mq.addEventListener) mq.addEventListener('change', applyTheme);
@@ -632,6 +1112,7 @@ b       = startkapital / ln(1 / min(p0, 1 − p0))</div>
 
   updateOutputs();
   createCharts();
+  applyView();
   restart(150); // første visning har lidt historik, derefter kører markedet live
 })();
 </script>

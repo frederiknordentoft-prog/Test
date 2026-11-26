@@ -116,10 +116,10 @@
           id: i + 1, type: i < nInf ? 'informed' : 'random',
           bias: gauss(this.rng) * 0.06,           // informerede er uenige med hinanden
           aggr: 0.3 + 0.5 * this.rng(),           // hvor langt mod eget skøn de flytter prisen
-          cash: BANKROLL, hold: [0, 0],
+          cash: BANKROLL, hold: [0, 0], cost: [0, 0], trades: 0,
         });
       }
-      this.you = { id: 0, type: 'you', cash: YOU_BANKROLL, hold: [0, 0] };
+      this.you = { id: 0, type: 'you', cash: YOU_BANKROLL, hold: [0, 0], cost: [0, 0], trades: 0 };
       this.t = 0;
       this.volume = 0;          // omsætning: samlet beløb i køb og salg
       this.volBySide = [0, 0];  // omsætning i JA- og NEJ-aktier
@@ -137,6 +137,8 @@
       this.mm.applyBuy(side, r);
       p.cash -= amount;
       p.hold[side] += r.shares;
+      p.cost[side] += amount;   // betalt for positionen (købspris inkl. gebyr)
+      p.trades++;
       this.volume += amount;
       this.volBySide[side] += amount;
       this.trades++;
@@ -148,14 +150,16 @@
       const before = this.mm.price(), r = this.mm.quoteSell(side, shares);
       this.mm.applySell(side, shares, r);
       p.cash += r.proceeds;
+      p.cost[side] *= 1 - shares / p.hold[side]; // solgt andel af positionen tager sin del af købsprisen med
       p.hold[side] -= shares;
+      p.trades++;
       this.volume += r.gross;
       this.volBySide[side] += r.gross;
       this.trades++;
       return this._log(p, 'Sælg', side, r.proceeds, shares, before);
     }
     _log(p, action, side, kr, shares, before) {
-      const e = { t: this.t, who: p.type === 'you' ? 'Dig' : `${p.type === 'informed' ? 'Informeret' : 'Tilfældig'} #${p.id}`,
+      const e = { t: this.t, pid: p.id, who: p.type === 'you' ? 'Dig' : `${p.type === 'informed' ? 'Informeret' : 'Tilfældig'} #${p.id}`,
         action, side, kr, shares, before, after: this.mm.price() };
       this.log.push(e);
       if (this.log.length > 200) this.log.shift();

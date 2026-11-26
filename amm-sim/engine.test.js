@@ -86,6 +86,17 @@ test('omsætning = sum af handlernes beløb, fordelt på JA og NEJ', () => {
   near(sim.mm.fees, sim.cfg.fee * sim.volume, 1e-6, 'gebyr');
 });
 
+test('købspris følger positionen ved delvist salg', () => {
+  const sim = new A.Simulation({ rngSeed: 3 });
+  sim.manual('buy', YES, 500);
+  near(sim.you.cost[YES], 500, 1e-9, 'efter køb');
+  sim.manual('sell', YES, 0.5);
+  near(sim.you.cost[YES], 250, 1e-9, 'efter halvt salg');
+  sim.manual('sell', YES, 1);
+  near(sim.you.cost[YES], 0, 1e-9, 'efter fuldt salg');
+  assert.strictEqual(sim.you.trades, 3);
+});
+
 test('deterministisk med samme seed', () => {
   const a = new A.Simulation({ rngSeed: 9 }); a.run(300);
   const b = new A.Simulation({ rngSeed: 9 }); b.run(300);
